@@ -764,4 +764,16 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         this.getHandle().persistentInvisibility = invisible;
         this.getHandle().setSharedFlag(5, invisible);
     }
+
+    // Paper start
+    @Override
+    public int getArrowsStuck() {
+        return getHandle().getArrowCount();
+    }
+
+    @Override
+    public void setArrowsStuck(int arrows) {
+        getHandle().setArrowCount(arrows);
+    }
+    // Paper end
 }
