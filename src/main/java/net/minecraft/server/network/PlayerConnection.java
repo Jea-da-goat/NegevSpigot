@@ -342,6 +342,7 @@ public class PlayerConnection implements ServerPlayerConnection, TickablePacketL
 
     @Override
     public void tick() {
+        org.bukkit.craftbukkit.SpigotTimings.playerConnectionTimer.startTiming(); // Spigot
         if (this.ackBlockChangesUpTo > -1) {
             this.send(new ClientboundBlockChangedAckPacket(this.ackBlockChangesUpTo));
             this.ackBlockChangesUpTo = -1;
@@ -422,6 +423,7 @@ public class PlayerConnection implements ServerPlayerConnection, TickablePacketL
             this.player.resetLastActionTime(); // CraftBukkit - SPIGOT-854
             this.disconnect(IChatBaseComponent.translatable("multiplayer.disconnect.idling"));
         }
+        org.bukkit.craftbukkit.SpigotTimings.playerConnectionTimer.stopTiming(); // Spigot
 
         this.chatPreviewThrottler.tick();
     }
@@ -2109,6 +2111,7 @@ public class PlayerConnection implements ServerPlayerConnection, TickablePacketL
     }
 
     private void handleCommand(String s) {
+        org.bukkit.craftbukkit.SpigotTimings.playerCommandTimer.startTiming(); // Spigot
         this.LOGGER.info(this.player.getScoreboardName() + " issued server command: " + s);
 
         CraftPlayer player = this.getCraftPlayer();
@@ -2117,6 +2120,7 @@ public class PlayerConnection implements ServerPlayerConnection, TickablePacketL
         this.cserver.getPluginManager().callEvent(event);
 
         if (event.isCancelled()) {
+            org.bukkit.craftbukkit.SpigotTimings.playerCommandTimer.stopTiming(); // Spigot
             return;
         }
 
@@ -2128,6 +2132,8 @@ public class PlayerConnection implements ServerPlayerConnection, TickablePacketL
             player.sendMessage(org.bukkit.ChatColor.RED + "An internal error occurred while attempting to perform this command");
             java.util.logging.Logger.getLogger(PlayerConnection.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
             return;
+        } finally {
+            org.bukkit.craftbukkit.SpigotTimings.playerCommandTimer.stopTiming(); // Spigot
         }
     }
     // CraftBukkit end
