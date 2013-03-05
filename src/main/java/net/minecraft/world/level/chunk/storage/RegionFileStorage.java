@@ -163,6 +163,7 @@ public class RegionFileStorage implements AutoCloseable {
     protected void write(ChunkPos pos, @Nullable CompoundTag nbt) throws IOException {
         RegionFile regionfile = this.getRegionFile(pos, false, true); // CraftBukkit // Paper
         try { // Paper
+        int attempts = 0; Exception laste = null; while (attempts++ < 5) { try { // Paper
 
         if (nbt == null) {
             regionfile.clear(pos);
@@ -187,7 +188,18 @@ public class RegionFileStorage implements AutoCloseable {
                 dataoutputstream.close();
             }
         }
+        // Paper start
+        return;
+        } catch (Exception ex)  {
+            laste = ex;
+        }
+        }
 
+        if (laste != null) {
+            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(laste);
+            net.minecraft.server.MinecraftServer.LOGGER.error("Failed to save chunk " + pos, laste);
+        }
+        // Paper end
         } finally { // Paper start
             regionfile.fileLock.unlock();
         } // Paper end
