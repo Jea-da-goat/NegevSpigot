@@ -174,4 +174,11 @@ public class SpigotWorldConfig
 
         log( "Simulation Distance: " + simulationDistance );
     }
+
+    public byte mobSpawnRange;
+    private void mobSpawnRange()
+    {
+        mobSpawnRange = (byte) getInt( "mob-spawn-range", 6 );
+        log( "Mob Spawn Range: " + mobSpawnRange );
+    }
 }
