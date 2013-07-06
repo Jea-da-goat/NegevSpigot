@@ -183,6 +183,11 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
             this.setPreventProxyConnections(dedicatedserverproperties.preventProxyConnections);
             this.setLocalIp(dedicatedserverproperties.serverIp);
         }
+        // Spigot start
+        this.setPlayerList(new DedicatedPlayerList(this, this.registryHolder, this.playerDataStorage));
+        org.spigotmc.SpigotConfig.init((java.io.File) options.valueOf("spigot-settings"));
+        org.spigotmc.SpigotConfig.registerCommands();
+        // Spigot end
 
         this.setPvpAllowed(dedicatedserverproperties.pvp);
         this.setFlightAllowed(dedicatedserverproperties.allowFlight);
@@ -214,7 +219,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
         }
 
         // CraftBukkit start
-        this.setPlayerList(new DedicatedPlayerList(this, this.registryHolder, this.playerDataStorage));
+        // this.setPlayerList(new DedicatedPlayerList(this, this.registryHolder, this.playerDataStorage)); // Spigot - moved up
         server.loadPlugins();
         server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.STARTUP);
         // CraftBukkit end
