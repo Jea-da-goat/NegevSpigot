@@ -138,11 +138,14 @@ public abstract class BlockBase {
 
     /** @deprecated */
     @Deprecated
-    public void onPlace(IBlockData iblockdata, World world, BlockPosition blockposition, IBlockData iblockdata1, boolean flag) {}
+    public void onPlace(IBlockData iblockdata, World world, BlockPosition blockposition, IBlockData iblockdata1, boolean flag) {
+        org.spigotmc.AsyncCatcher.catchOp("block onPlace"); // Spigot
+    }
 
     /** @deprecated */
     @Deprecated
     public void onRemove(IBlockData iblockdata, World world, BlockPosition blockposition, IBlockData iblockdata1, boolean flag) {
+        org.spigotmc.AsyncCatcher.catchOp("block remove"); // Spigot
         if (iblockdata.hasBlockEntity() && !iblockdata.is(iblockdata1.getBlock())) {
             world.removeBlockEntity(blockposition);
         }
