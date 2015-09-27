@@ -784,7 +784,13 @@ public abstract class LivingEntity extends Entity {
 
     @Override
     public void readAdditionalSaveData(CompoundTag nbt) {
-        this.setAbsorptionAmount(nbt.getFloat("AbsorptionAmount"));
+        // Paper start - jvm keeps optimizing the setter
+        float absorptionAmount = nbt.getFloat("AbsorptionAmount");
+        if (Float.isNaN(absorptionAmount)) {
+            absorptionAmount = 0;
+        }
+        this.setAbsorptionAmount(absorptionAmount);
+        // Paper end
         if (nbt.contains("Attributes", 9) && this.level != null && !this.level.isClientSide) {
             this.getAttributes().load(nbt.getList("Attributes", 10));
         }
@@ -1271,6 +1277,10 @@ public abstract class LivingEntity extends Entity {
     }
 
     public void setHealth(float health) {
+        // Paper start
+        if (Float.isNaN(health)) { health = getMaxHealth(); if (this.valid) {
+            System.err.println("[NAN-HEALTH] " + getScoreboardName() + " had NaN health set");
+        } } // Paper end
         // CraftBukkit start - Handle scaled health
         if (this instanceof ServerPlayer) {
             org.bukkit.craftbukkit.entity.CraftPlayer player = ((ServerPlayer) this).getBukkitEntity();
@@ -3444,7 +3454,7 @@ public abstract class LivingEntity extends Entity {
     }
 
     public void setAbsorptionAmount(float amount) {
-        if (amount < 0.0F) {
+        if (amount < 0.0F || Float.isNaN(amount)) { // Paper
             amount = 0.0F;
         }
 
