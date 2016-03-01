@@ -110,6 +110,7 @@ public abstract class Mob extends LivingEntity {
     private final BodyRotationControl bodyRotationControl;
     protected PathNavigation navigation;
     public GoalSelector goalSelector;
+    @Nullable public net.minecraft.world.entity.ai.goal.FloatGoal goalFloat; // Paper
     public GoalSelector targetSelector;
     @Nullable
     private LivingEntity target;
@@ -818,7 +819,17 @@ public abstract class Mob extends LivingEntity {
     @Override
     protected final void serverAiStep() {
         ++this.noActionTime;
-        if (!this.aware) return; // CraftBukkit
+        if (!this.aware) { // Paper start - Allow nerfed mobs to jump, float and take water damage
+            if (goalFloat != null) {
+                if (goalFloat.canUse()) goalFloat.tick();
+                this.getJumpControl().tick();
+            }
+            if (this.isSensitiveToWater() && isInWaterRainOrBubble()) {
+                hurt(DamageSource.DROWN, 1.0F);
+            }
+            return;
+        }
+        // Paper end
         this.level.getProfiler().push("sensing");
         this.sensing.tick();
         this.level.getProfiler().pop();
