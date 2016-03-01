@@ -70,8 +70,8 @@ public interface EntityGetter {
         }
     }
 
-    @Nullable
-    default Player getNearestPlayer(double x, double y, double z, double maxDistance, @Nullable Predicate<Entity> targetPredicate) {
+    default Player findNearbyPlayer(Entity entity, double d0, @Nullable Predicate<Entity> predicate) { return this.getNearestPlayer(entity.getX(), entity.getY(), entity.getZ(), d0, predicate); } // Paper
+    @Nullable default Player getNearestPlayer(double x, double y, double z, double maxDistance, @Nullable Predicate<Entity> targetPredicate) { // Paper
         double d = -1.0D;
         Player player = null;
 
@@ -98,6 +98,27 @@ public interface EntityGetter {
         Predicate<Entity> predicate = ignoreCreative ? EntitySelector.NO_CREATIVE_OR_SPECTATOR : EntitySelector.NO_SPECTATORS;
         return this.getNearestPlayer(x, y, z, maxDistance, predicate);
     }
+
+    // Paper end
+    default boolean isAffectsSpawningPlayerNearby(double d0, double d1, double d2, double d3) {
+        java.util.Iterator iterator = this.players().iterator();
+        double d4;
+        do {
+            Player entityhuman;
+            do {
+                if (!iterator.hasNext()) {
+                    return false;
+                }
+
+                entityhuman = (Player) iterator.next();
+            } while (!EntitySelector.affectsSpawning.test(entityhuman));
+
+            d4 = entityhuman.distanceToSqr(d0, d1, d2);
+        } while (d3 >= 0.0D && d4 >= d3 * d3);
+
+        return true;
+    }
+    // Paper end
 
     default boolean hasNearbyAlivePlayer(double x, double y, double z, double range) {
         for(Player player : this.players()) {
