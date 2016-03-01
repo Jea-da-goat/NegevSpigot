@@ -46,6 +46,12 @@ public class MinecartTNT extends AbstractMinecart {
     public void tick() {
         super.tick();
         if (this.fuse > 0) {
+            // Paper start - Configurable TNT entity height nerf
+            if (this.level.paperConfig().fixes.tntEntityHeightNerf != 0 && this.getY() > this.level.paperConfig().fixes.tntEntityHeightNerf) {
+                this.discard();
+                return;
+            }
+            // Paper end
             --this.fuse;
             this.level.addParticle(ParticleTypes.SMOKE, this.getX(), this.getY() + 0.5D, this.getZ(), 0.0D, 0.0D, 0.0D);
         } else if (this.fuse == 0) {

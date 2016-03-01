@@ -68,6 +68,12 @@ public class PrimedTnt extends Entity {
         }
 
         this.move(MoverType.SELF, this.getDeltaMovement());
+        // Paper start - Configurable TNT entity height nerf
+        if (this.level.paperConfig().fixes.tntEntityHeightNerf != 0 && this.getY() > this.level.paperConfig().fixes.tntEntityHeightNerf) {
+            this.discard();
+            return;
+        }
+        // Paper end
         this.setDeltaMovement(this.getDeltaMovement().scale(0.98D));
         if (this.onGround) {
             this.setDeltaMovement(this.getDeltaMovement().multiply(0.7D, -0.5D, 0.7D));
