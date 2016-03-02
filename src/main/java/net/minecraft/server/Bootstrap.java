@@ -75,6 +75,7 @@ public class Bootstrap {
                     EntitySelectorOptions.bootStrap();
                     DispenseItemBehavior.bootStrap();
                     CauldronInteraction.bootStrap();
+                    Registry.register(net.minecraft.core.Registry.CONDITION, new net.minecraft.resources.ResourceLocation("paper", "bedrock_condition_source"), net.minecraft.data.worldgen.SurfaceRuleData.PaperBedrockConditionSource.CODEC.codec()); // Paper - register custom flat bedrock thing. TODO is this the best place to do this?
                     Registry.freezeBuiltins();
                     Bootstrap.wrapStreams();
                 }
