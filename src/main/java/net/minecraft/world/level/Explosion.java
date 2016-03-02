@@ -260,14 +260,14 @@ public class Explosion {
                         double d14 = d13;
 
                         if (entity instanceof LivingEntity) {
-                            d14 = ProtectionEnchantment.getExplosionKnockbackAfterDampener((LivingEntity) entity, d13);
+                            d14 = entity instanceof Player && level.paperConfig().environment.disableExplosionKnockback ? 0 : ProtectionEnchantment.getExplosionKnockbackAfterDampener((LivingEntity) entity, d13); // Paper - Disable explosion knockback
                         }
 
                         entity.setDeltaMovement(entity.getDeltaMovement().add(d8 * d14, d9 * d14, d10 * d14));
                         if (entity instanceof Player) {
                             Player entityhuman = (Player) entity;
 
-                            if (!entityhuman.isSpectator() && (!entityhuman.isCreative() || !entityhuman.getAbilities().flying)) {
+                            if (!entityhuman.isSpectator() && (!entityhuman.isCreative() || !entityhuman.getAbilities().flying) && !level.paperConfig().environment.disableExplosionKnockback) { // Paper - Disable explosion knockback
                                 this.hitPlayers.put(entityhuman, new Vec3(d8 * d13, d9 * d13, d10 * d13));
                             }
                         }
