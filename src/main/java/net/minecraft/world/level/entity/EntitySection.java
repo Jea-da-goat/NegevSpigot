@@ -13,6 +13,10 @@ public class EntitySection<T extends EntityAccess> {
     private static final Logger LOGGER = LogUtils.getLogger();
     private final ClassInstanceMultiMap<T> storage;
     private Visibility chunkStatus;
+    // Paper start - track number of items and minecarts
+    public int itemCount;
+    public int inventoryEntityCount;
+    // Paper end
 
     public EntitySection(Class<T> entityClass, Visibility status) {
         this.chunkStatus = status;
@@ -20,10 +24,24 @@ public class EntitySection<T extends EntityAccess> {
     }
 
     public void add(T entity) {
+        // Paper start
+        if (entity instanceof net.minecraft.world.entity.item.ItemEntity) {
+            this.itemCount++;
+        } else if (entity instanceof net.minecraft.world.Container) {
+            this.inventoryEntityCount++;
+        }
+        // Paper end
         this.storage.add(entity);
     }
 
     public boolean remove(T entity) {
+        // Paper start
+        if (entity instanceof net.minecraft.world.entity.item.ItemEntity) {
+            this.itemCount--;
+        } else if (entity instanceof net.minecraft.world.Container) {
+            this.inventoryEntityCount--;
+        }
+        // Paper end
         return this.storage.remove(entity);
     }
 

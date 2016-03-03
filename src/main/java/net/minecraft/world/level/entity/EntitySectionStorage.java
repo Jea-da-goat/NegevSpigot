@@ -112,13 +112,20 @@ public class EntitySectionStorage<T extends EntityAccess> {
     }
 
     public void getEntities(AABB box, Consumer<T> action) {
+        // Paper start
+        this.getEntities(box, action, false);
+    }
+    public void getEntities(AABB box, Consumer<T> action, boolean isContainerSearch) {
+        // Paper end
         this.forEachAccessibleNonEmptySection(box, (section) -> {
+            if (isContainerSearch && section.inventoryEntityCount <= 0) return; // Paper
             section.getEntities(box, action);
         });
     }
 
     public <U extends T> void getEntities(EntityTypeTest<T, U> filter, AABB box, Consumer<U> action) {
         this.forEachAccessibleNonEmptySection(box, (section) -> {
+            if (filter.getBaseClass() == net.minecraft.world.entity.item.ItemEntity.class && section.itemCount <= 0) return; // Paper
             section.getEntities(filter, box, action);
         });
     }

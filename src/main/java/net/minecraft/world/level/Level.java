@@ -966,7 +966,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
                 }
             }
 
-        });
+        }, predicate == net.minecraft.world.entity.EntitySelector.CONTAINER_ENTITY_SELECTOR); // Paper
         return list;
     }
 

@@ -38,7 +38,13 @@ public class LevelEntityGetterAdapter<T extends EntityAccess> implements LevelEn
 
     @Override
     public void get(AABB box, Consumer<T> action) {
-        this.sectionStorage.getEntities(box, action);
+        // Paper start
+        this.get(box, action, false);
+    }
+    @Override
+    public void get(AABB box, Consumer<T> action, boolean isContainerSearch) {
+        this.sectionStorage.getEntities(box, action, isContainerSearch);
+        // Paper end
     }
 
     @Override
