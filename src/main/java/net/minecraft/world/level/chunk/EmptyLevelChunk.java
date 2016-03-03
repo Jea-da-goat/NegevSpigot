@@ -21,6 +21,12 @@ public class EmptyLevelChunk extends LevelChunk {
         this.biome = holder;
     }
 
+    // Paper start
+    @Override
+    public BlockState getBlockState(int x, int y, int z) {
+        return Blocks.VOID_AIR.defaultBlockState();
+    }
+    // Paper end
     @Override
     public BlockState getBlockState(BlockPos pos) {
         return Blocks.VOID_AIR.defaultBlockState();
