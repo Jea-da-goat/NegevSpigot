@@ -461,7 +461,19 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void chat(String msg) {
         if (this.getHandle().connection == null) return;
 
-        this.getHandle().connection.chat(msg, PlayerChatMessage.system(new ChatMessageContent(msg)), false);
+        // Paper start - improve chat handling
+        if (ServerGamePacketListenerImpl.isChatMessageIllegal(msg)) {
+            this.getHandle().connection.disconnect(Component.translatable("multiplayer.disconnect.illegal_characters"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_CHARACTERS);
+        } else {
+            if (msg.startsWith("/")) {
+                this.getHandle().connection.handleCommand(msg);
+            } else {
+                // TODO text filtering
+                // TODO chat decorating
+                this.getHandle().connection.chat(msg, PlayerChatMessage.system(new net.minecraft.network.chat.ChatMessageContent(msg)), false);
+            }
+        }
+        // Paper en
     }
 
     @Override
