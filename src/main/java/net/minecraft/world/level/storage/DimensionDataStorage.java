@@ -120,6 +120,7 @@ public class DimensionDataStorage {
 
             pushbackInputStream.close();
         } catch (Throwable var15) {
+            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(var15); // Paper
             try {
                 fileInputStream.close();
             } catch (Throwable var10) {

@@ -1187,6 +1187,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                 return true;
             } catch (Exception exception) {
                 ChunkMap.LOGGER.error("Failed to save chunk {},{}", new Object[]{chunkcoordintpair.x, chunkcoordintpair.z, exception});
+                com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(exception); // Paper
                 return false;
             }
         }

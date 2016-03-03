@@ -289,6 +289,7 @@ public final class NaturalSpawner {
             }
         } catch (Exception exception) {
             NaturalSpawner.LOGGER.warn("Failed to create mob", exception);
+            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(exception); // Paper
             return null;
         }
     }
@@ -401,6 +402,7 @@ public final class NaturalSpawner {
                                     entity = biomesettingsmobs_c.type.create(world.getLevel());
                                 } catch (Exception exception) {
                                     NaturalSpawner.LOGGER.warn("Failed to create mob", exception);
+                                    com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(exception); // Paper
                                     continue;
                                 }
 
