@@ -416,7 +416,7 @@ public abstract class AbstractContainerMenu {
                     this.resetQuickCraft();
                 }
             } else if (this.quickcraftStatus == 1) {
-                slot = (Slot) this.slots.get(slotIndex);
+                slot = slotIndex < this.slots.size() ? this.slots.get(slotIndex) : null; // Paper - Ensure drag in bounds
                 itemstack = this.getCarried();
                 if (AbstractContainerMenu.canItemQuickReplace(slot, itemstack, true) && slot.mayPlace(itemstack) && (this.quickcraftType == 2 || itemstack.getCount() > this.quickcraftSlots.size()) && this.canDragTo(slot)) {
                     this.quickcraftSlots.add(slot);
