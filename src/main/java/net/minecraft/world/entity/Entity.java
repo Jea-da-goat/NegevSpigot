@@ -132,7 +132,6 @@ import org.bukkit.craftbukkit.event.CraftPortalEvent;
 import org.bukkit.entity.Hanging;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Vehicle;
-import org.spigotmc.CustomTimingsHandler; // Spigot
 import org.bukkit.event.entity.EntityCombustByEntityEvent;
 import org.bukkit.event.hanging.HangingBreakByEntityEvent;
 import org.bukkit.event.vehicle.VehicleBlockCollisionEvent;
@@ -299,7 +298,6 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
     public boolean lastDamageCancelled; // SPIGOT-5339, SPIGOT-6252, SPIGOT-6777: Keep track if the event was canceled
     public boolean persistentInvisibility = false;
     public BlockPos lastLavaContact;
-    public CustomTimingsHandler tickTimer = org.bukkit.craftbukkit.SpigotTimings.getEntityTimings(this); // Spigot
     // Spigot start
     public final org.spigotmc.ActivationRange.ActivationType activationType = org.spigotmc.ActivationRange.initializeEntityActivationType(this);
     public final boolean defaultActivationState;
@@ -749,7 +747,6 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
     }
 
     public void move(MoverType movementType, Vec3 movement) {
-        org.bukkit.craftbukkit.SpigotTimings.entityMoveTimer.startTiming(); // Spigot
         if (this.noPhysics) {
             this.setPos(this.getX() + movement.x, this.getY() + movement.y, this.getZ() + movement.z);
         } else {
@@ -913,7 +910,6 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
                 this.level.getProfiler().pop();
             }
         }
-        org.bukkit.craftbukkit.SpigotTimings.entityMoveTimer.stopTiming(); // Spigot
     }
 
     protected boolean isHorizontalCollisionMinor(Vec3 adjustedMovement) {

@@ -2379,10 +2379,29 @@ public final class CraftServer implements Server {
     private final org.bukkit.Server.Spigot spigot = new org.bukkit.Server.Spigot()
     {
 
+        @Deprecated
         @Override
         public YamlConfiguration getConfig()
         {
             return org.spigotmc.SpigotConfig.config;
+        }
+
+        @Override
+        public YamlConfiguration getBukkitConfig()
+        {
+            return configuration;
+        }
+
+        @Override
+        public YamlConfiguration getSpigotConfig()
+        {
+            return org.spigotmc.SpigotConfig.config;
+        }
+
+        @Override
+        public YamlConfiguration getPaperConfig()
+        {
+            return CraftServer.this.console.paperConfigurations.createLegacyObject(CraftServer.this.console);
         }
 
         @Override

@@ -305,7 +305,14 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
         return Registry.ENTITY_TYPE.getOptional(ResourceLocation.tryParse(id));
     }
 
+    // Paper start - add id
+    public final String id;
+
     public EntityType(EntityType.EntityFactory<T> factory, MobCategory spawnGroup, boolean saveable, boolean summonable, boolean fireImmune, boolean spawnableFarFromPlayer, ImmutableSet<Block> canSpawnInside, EntityDimensions dimensions, int maxTrackDistance, int trackTickInterval) {
+        this(factory, spawnGroup, saveable, summonable, fireImmune, spawnableFarFromPlayer, canSpawnInside, dimensions, maxTrackDistance, trackTickInterval, "custom");
+    }
+    public EntityType(EntityType.EntityFactory<T> factory, MobCategory spawnGroup, boolean saveable, boolean summonable, boolean fireImmune, boolean spawnableFarFromPlayer, ImmutableSet<Block> canSpawnInside, EntityDimensions dimensions, int maxTrackDistance, int trackTickInterval, String id) {
+        // Paper end
         this.builtInRegistryHolder = Registry.ENTITY_TYPE.createIntrusiveHolder(this);
         this.factory = factory;
         this.category = spawnGroup;
@@ -317,6 +324,14 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
         this.dimensions = dimensions;
         this.clientTrackingRange = maxTrackDistance;
         this.updateInterval = trackTickInterval;
+
+        // Paper start - timings
+        this.id = id;
+        this.tickTimer = co.aikar.timings.MinecraftTimings.getEntityTimings(id, "tick");
+        this.inactiveTickTimer = co.aikar.timings.MinecraftTimings.getEntityTimings(id, "inactiveTick");
+        this.passengerTickTimer = co.aikar.timings.MinecraftTimings.getEntityTimings(id, "passengerTick");
+        this.passengerInactiveTickTimer = co.aikar.timings.MinecraftTimings.getEntityTimings(id, "passengerInactiveTick");
+        // Paper end
     }
 
     @Nullable
@@ -567,6 +582,12 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
         return this.updateInterval;
     }
 
+    // Paper start - timings
+    public final co.aikar.timings.Timing tickTimer;
+    public final co.aikar.timings.Timing inactiveTickTimer;
+    public final co.aikar.timings.Timing passengerTickTimer;
+    public final co.aikar.timings.Timing passengerInactiveTickTimer;
+    // Paper end
     public boolean trackDeltas() {
         return this != EntityType.PLAYER && this != EntityType.LLAMA_SPIT && this != EntityType.WITHER && this != EntityType.BAT && this != EntityType.ITEM_FRAME && this != EntityType.GLOW_ITEM_FRAME && this != EntityType.LEASH_KNOT && this != EntityType.PAINTING && this != EntityType.END_CRYSTAL && this != EntityType.EVOKER_FANGS;
     }
@@ -665,7 +686,7 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
                 Util.fetchChoiceType(References.ENTITY_TREE, id);
             }
 
-            return new EntityType<>(this.factory, this.category, this.serialize, this.summon, this.fireImmune, this.canSpawnFarFromPlayer, this.immuneTo, this.dimensions, this.clientTrackingRange, this.updateInterval);
+            return new EntityType<>(this.factory, this.category, this.serialize, this.summon, this.fireImmune, this.canSpawnFarFromPlayer, this.immuneTo, this.dimensions, this.clientTrackingRange, this.updateInterval, id); // Paper - add id
         }
     }
 
