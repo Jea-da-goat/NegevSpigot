@@ -67,7 +67,7 @@ public class BlockSweetBerryBush extends BlockPlant implements IBlockFragilePlan
     public void randomTick(IBlockData iblockdata, WorldServer worldserver, BlockPosition blockposition, RandomSource randomsource) {
         int i = (Integer) iblockdata.getValue(BlockSweetBerryBush.AGE);
 
-        if (i < 3 && randomsource.nextInt(5) == 0 && worldserver.getRawBrightness(blockposition.above(), 0) >= 9) {
+        if (i < 3 && randomsource.nextInt(Math.max(1, (int) (100.0F / worldserver.spigotConfig.sweetBerryModifier) * 5)) == 0 && worldserver.getRawBrightness(blockposition.above(), 0) >= 9) { // Spigot
             IBlockData iblockdata1 = (IBlockData) iblockdata.setValue(BlockSweetBerryBush.AGE, i + 1);
 
             if (!CraftEventFactory.handleBlockGrowEvent(worldserver, blockposition, iblockdata1, 2)) return; // CraftBukkit
