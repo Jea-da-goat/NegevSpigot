@@ -8,7 +8,7 @@ public class ClientboundSetTimePacket implements Packet<ClientGamePacketListener
     private final long dayTime;
 
     public ClientboundSetTimePacket(long time, long timeOfDay, boolean doDaylightCycle) {
-        this.gameTime = time;
+        this.gameTime = time % 192000; // Paper - fix guardian beam
         long l = timeOfDay;
         if (!doDaylightCycle) {
             l = -timeOfDay;
