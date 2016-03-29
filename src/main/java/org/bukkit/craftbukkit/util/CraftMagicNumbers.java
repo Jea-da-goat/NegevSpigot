@@ -100,8 +100,17 @@ public final class CraftMagicNumbers implements UnsafeValues {
     private static final Map<Material, Item> MATERIAL_ITEM = new HashMap<>();
     private static final Map<Material, Block> MATERIAL_BLOCK = new HashMap<>();
     private static final Map<Material, net.minecraft.world.level.material.Fluid> MATERIAL_FLUID = new HashMap<>();
+    // Paper start
+    private static final Map<org.bukkit.entity.EntityType, net.minecraft.world.entity.EntityType<?>> ENTITY_TYPE_ENTITY_TYPES = new HashMap<>();
+    private static final Map<net.minecraft.world.entity.EntityType<?>, org.bukkit.entity.EntityType> ENTITY_TYPES_ENTITY_TYPE = new HashMap<>();
 
     static {
+        for (org.bukkit.entity.EntityType type : org.bukkit.entity.EntityType.values()) {
+            if (type == org.bukkit.entity.EntityType.UNKNOWN) continue;
+            ENTITY_TYPE_ENTITY_TYPES.put(type, net.minecraft.core.Registry.ENTITY_TYPE.get(CraftNamespacedKey.toMinecraft(type.getKey())));
+            ENTITY_TYPES_ENTITY_TYPE.put(net.minecraft.core.Registry.ENTITY_TYPE.get(CraftNamespacedKey.toMinecraft(type.getKey())), type);
+        }
+        // Paper end
         for (Block block : net.minecraft.core.Registry.BLOCK) {
             BLOCK_MATERIAL.put(block, Material.getMaterial(net.minecraft.core.Registry.BLOCK.getKey(block).getPath().toUpperCase(Locale.ROOT)));
         }
@@ -167,6 +176,14 @@ public final class CraftMagicNumbers implements UnsafeValues {
     public static ResourceLocation key(Material mat) {
         return CraftNamespacedKey.toMinecraft(mat.getKey());
     }
+    // Paper start
+    public static net.minecraft.world.entity.EntityType<?> getEntityTypes(org.bukkit.entity.EntityType type) {
+        return ENTITY_TYPE_ENTITY_TYPES.get(type);
+    }
+    public static org.bukkit.entity.EntityType getEntityType(net.minecraft.world.entity.EntityType<?> entityTypes) {
+        return ENTITY_TYPES_ENTITY_TYPE.get(entityTypes);
+    }
+    // Paper end
     // ========================================================================
 
     public static byte toLegacyData(BlockState data) {

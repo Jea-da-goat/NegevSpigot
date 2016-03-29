@@ -243,6 +243,8 @@ public class ServerPlayer extends Player {
     public String kickLeaveMessage = null; // SPIGOT-3034: Forward leave message to PlayerQuitEvent
     // CraftBukkit end
 
+    public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> cachedSingleHashSet; // Paper
+
     public ServerPlayer(MinecraftServer server, ServerLevel world, GameProfile profile, @Nullable ProfilePublicKey publicKey) {
         super(world, world.getSharedSpawnPos(), world.getSharedSpawnAngle(), profile, publicKey);
         this.chatVisibility = ChatVisiblity.FULL;
@@ -305,6 +307,8 @@ public class ServerPlayer extends Player {
         this.advancements = server.getPlayerList().getPlayerAdvancements(this);
         this.maxUpStep = 1.0F;
         this.fudgeSpawnLocation(world);
+
+        this.cachedSingleHashSet = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<>(this); // Paper
 
         // CraftBukkit start
         this.displayName = this.getScoreboardName();

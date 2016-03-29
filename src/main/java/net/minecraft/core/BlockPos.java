@@ -531,6 +531,7 @@ public class BlockPos extends Vec3i {
             }
         }
 
+        // Paper start - comment out useless overrides @Override - TODO figure out why this is suddenly important to keep
         @Override
         public BlockPos.MutableBlockPos setX(int i) {
             super.setX(i);
@@ -548,6 +549,7 @@ public class BlockPos extends Vec3i {
             super.setZ(i);
             return this;
         }
+        // Paper end
 
         @Override
         public BlockPos immutable() {

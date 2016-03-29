@@ -659,14 +659,14 @@ public abstract class BlockBehaviour {
 
     public abstract static class BlockStateBase extends StateHolder<Block, BlockState> {
 
-        private final int lightEmission;
-        private final boolean useShapeForLightOcclusion;
+        private final int lightEmission; public final int getEmittedLight() { return this.lightEmission; } // Paper - OBFHELPER
+        private final boolean useShapeForLightOcclusion; public final boolean isTransparentOnSomeFaces() { return this.useShapeForLightOcclusion; } // Paper - OBFHELPER
         private final boolean isAir;
         private final Material material;
         private final MaterialColor materialColor;
         public final float destroySpeed;
         private final boolean requiresCorrectToolForDrops;
-        private final boolean canOcclude;
+        private final boolean canOcclude; public final boolean isOpaque() { return this.canOcclude; } // Paper - OBFHELPER
         private final BlockBehaviour.StatePredicate isRedstoneConductor;
         private final BlockBehaviour.StatePredicate isSuffocating;
         private final BlockBehaviour.StatePredicate isViewBlocking;
@@ -696,10 +696,18 @@ public abstract class BlockBehaviour {
             this.offsetType = (BlockBehaviour.OffsetType) blockbase_info.offsetType.apply(this.asState());
         }
 
+        // Paper start
+        protected boolean shapeExceedsCube = true;
+        public final boolean shapeExceedsCube() {
+            return this.shapeExceedsCube;
+        }
+        // Paper end
+
         public void initCache() {
             if (!this.getBlock().hasDynamicShape()) {
                 this.cache = new BlockBehaviour.BlockStateBase.Cache(this.asState());
             }
+            this.shapeExceedsCube = this.cache == null || this.cache.largeCollisionShape; // Paper - moved from actual method to here
 
         }
 
@@ -735,8 +743,8 @@ public abstract class BlockBehaviour {
             return this.getBlock().getOcclusionShape(this.asState(), world, pos);
         }
 
-        public boolean hasLargeCollisionShape() {
-            return this.cache == null || this.cache.largeCollisionShape;
+        public final boolean hasLargeCollisionShape() { // Paper
+            return this.shapeExceedsCube; // Paper - moved into shape cache init
         }
 
         public boolean useShapeForLightOcclusion() {
