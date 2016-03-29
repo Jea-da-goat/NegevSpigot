@@ -2195,6 +2195,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
                 entity.setOrigin(entity.getOriginVector().toLocation(getWorld()));
             }
             // Paper end
+            new com.destroystokyo.paper.event.entity.EntityAddToWorldEvent(entity.getBukkitEntity()).callEvent(); // Paper - fire while valid
         }
 
         public void onTrackingEnd(Entity entity) {
@@ -2270,6 +2271,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
                 }
             }
             // CraftBukkit end
+            new com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent(entity.getBukkitEntity()).callEvent(); // Paper - fire while valid
         }
 
         public void onSectionChange(Entity entity) {
