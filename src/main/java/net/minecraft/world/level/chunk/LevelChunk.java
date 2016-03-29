@@ -281,6 +281,13 @@ public class LevelChunk extends ChunkAccess {
         return new ChunkAccess.TicksToSave(this.blockTicks, this.fluidTicks);
     }
 
+    // Paper start
+    @Override
+    public long getInhabitedTime() {
+        return this.level.paperConfig().chunks.fixedChunkInhabitedTime < 0 ? super.getInhabitedTime() : this.level.paperConfig().chunks.fixedChunkInhabitedTime;
+    }
+    // Paper end
+
     @Override
     public GameEventDispatcher getEventDispatcher(int ySectionCoord) {
         Level world = this.level;
