@@ -31,7 +31,7 @@ public class PoiSection {
     private boolean isValid;
 
     public static Codec<PoiSection> codec(Runnable updateListener) {
-        return RecordCodecBuilder.create((instance) -> {
+        return RecordCodecBuilder.<PoiSection>create((instance) -> { // Paper - decompile fix
             return instance.group(RecordCodecBuilder.point(updateListener), Codec.BOOL.optionalFieldOf("Valid", Boolean.valueOf(false)).forGetter((poiSet) -> {
                 return poiSet.isValid;
             }), PoiRecord.codec(updateListener).listOf().fieldOf("Records").forGetter((poiSet) -> {

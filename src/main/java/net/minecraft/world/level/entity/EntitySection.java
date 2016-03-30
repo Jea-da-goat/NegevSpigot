@@ -42,7 +42,7 @@ public class EntitySection<T extends EntityAccess> {
             for(T entityAccess : collection) {
                 U entityAccess2 = (U)((EntityAccess)type.tryCast(entityAccess));
                 if (entityAccess2 != null && entityAccess.getBoundingBox().intersects(box)) {
-                    action.accept((T)entityAccess2);
+                    action.accept(entityAccess2); // Paper - decompile fix
                 }
             }
 

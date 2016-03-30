@@ -105,7 +105,7 @@ public class Frog extends Animal {
 
     @Override
     public Brain<Frog> getBrain() {
-        return super.getBrain();
+        return (Brain<Frog>) super.getBrain(); // Paper - decompile fix
     }
 
     @Override

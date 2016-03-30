@@ -76,7 +76,7 @@ public class RegistryLoader {
     }
 
     private <E> RegistryLoader.ReadCache<E> readCache(ResourceKey<? extends Registry<E>> registryRef) {
-        return this.readCache.computeIfAbsent(registryRef, (ref) -> {
+        return (RegistryLoader.ReadCache<E>) this.readCache.computeIfAbsent(registryRef, (ref) -> { // Paper - decompile fix
             return new RegistryLoader.ReadCache();
         });
     }

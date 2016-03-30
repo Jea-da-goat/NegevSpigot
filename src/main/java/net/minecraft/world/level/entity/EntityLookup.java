@@ -20,7 +20,7 @@ public class EntityLookup<T extends EntityAccess> {
         for(T entityAccess : this.byId.values()) {
             U entityAccess2 = (U)((EntityAccess)filter.tryCast(entityAccess));
             if (entityAccess2 != null) {
-                action.accept((T)entityAccess2);
+                action.accept(entityAccess2); // Paper - decompile fix
             }
         }
 

@@ -40,14 +40,14 @@ import net.minecraft.world.level.material.FluidState;
 import org.slf4j.Logger;
 
 public final class NbtUtils {
-    private static final Comparator<ListTag> YXZ_LISTTAG_INT_COMPARATOR = Comparator.comparingInt((nbt) -> {
+    private static final Comparator<ListTag> YXZ_LISTTAG_INT_COMPARATOR = Comparator.<ListTag>comparingInt((nbt) -> { // Paper - decompile fix
         return nbt.getInt(1);
     }).thenComparingInt((nbt) -> {
         return nbt.getInt(0);
     }).thenComparingInt((nbt) -> {
         return nbt.getInt(2);
     });
-    private static final Comparator<ListTag> YXZ_LISTTAG_DOUBLE_COMPARATOR = Comparator.comparingDouble((nbt) -> {
+    private static final Comparator<ListTag> YXZ_LISTTAG_DOUBLE_COMPARATOR = Comparator.<ListTag>comparingDouble((nbt) -> { // Paper - decompile fix
         return nbt.getDouble(1);
     }).thenComparingDouble((nbt) -> {
         return nbt.getDouble(0);
@@ -495,7 +495,7 @@ public final class NbtUtils {
     }
 
     public static CompoundTag update(DataFixer fixer, DataFixTypes fixTypes, CompoundTag compound, int oldVersion, int targetVersion) {
-        return fixer.update(fixTypes.getType(), new Dynamic<>(NbtOps.INSTANCE, compound), oldVersion, targetVersion).getValue();
+        return (CompoundTag) fixer.update(fixTypes.getType(), new Dynamic<>(NbtOps.INSTANCE, compound), oldVersion, targetVersion).getValue(); // Paper - decompile fix
     }
 
     public static Component toPrettyComponent(Tag element) {
