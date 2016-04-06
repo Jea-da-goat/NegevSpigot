@@ -24,8 +24,10 @@ import net.minecraft.network.chat.PlayerChatMessage;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.util.LazyPlayerSet;
 import org.bukkit.craftbukkit.util.Waitable;
@@ -332,10 +334,16 @@ public final class ChatProcessor {
     }
 
     static String legacyDisplayName(final CraftPlayer player) {
+        if (((org.bukkit.craftbukkit.CraftWorld) player.getWorld()).getHandle().paperConfig().scoreboards.useVanillaWorldScoreboardNameColoring) {
+            return legacySection().serialize(player.teamDisplayName()) + ChatColor.RESET;
+        }
         return player.getDisplayName();
     }
 
     static Component displayName(final CraftPlayer player) {
+        if (((CraftWorld) player.getWorld()).getHandle().paperConfig().scoreboards.useVanillaWorldScoreboardNameColoring) {
+            return player.teamDisplayName();
+        }
         return player.displayName();
     }
 
