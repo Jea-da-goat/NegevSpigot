@@ -94,6 +94,7 @@ import net.minecraft.world.level.storage.PlayerDataStorage;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.Objective;
 import net.minecraft.world.scores.PlayerTeam;
+import net.minecraft.world.scores.Scoreboard; // Paper
 import net.minecraft.world.scores.Team;
 import org.slf4j.Logger;
 
@@ -155,6 +156,7 @@ public abstract class PlayerList {
     // CraftBukkit start
     private CraftServer cserver;
     private final Map<String,ServerPlayer> playersByName = new java.util.HashMap<>();
+    public @Nullable String collideRuleTeamName; // Paper - Team name used for collideRule
 
     public PlayerList(MinecraftServer server, RegistryAccess.Frozen registryManager, PlayerDataStorage saveHandler, int maxPlayers) {
         this.cserver = server.server = new CraftServer((DedicatedServer) server, this);
@@ -391,6 +393,13 @@ public abstract class PlayerList {
 
         player.initInventoryMenu();
         // CraftBukkit - Moved from above, added world
+        // Paper start - Add to collideRule team if needed
+        final Scoreboard scoreboard = this.getServer().getLevel(Level.OVERWORLD).getScoreboard();
+        final PlayerTeam collideRuleTeam = scoreboard.getPlayerTeam(this.collideRuleTeamName);
+        if (this.collideRuleTeamName != null && collideRuleTeam != null && player.getTeam() == null) {
+            scoreboard.addPlayerToTeam(player.getScoreboardName(), collideRuleTeam);
+        }
+        // Paper end
         PlayerList.LOGGER.info("{}[{}] logged in with entity id {} at ([{}]{}, {}, {})", player.getName().getString(), s1, player.getId(), worldserver1.serverLevelData.getLevelName(), player.getX(), player.getY(), player.getZ());
     }
 
@@ -509,6 +518,16 @@ public abstract class PlayerList {
 
         entityplayer.doTick(); // SPIGOT-924
         // CraftBukkit end
+
+        // Paper start - Remove from collideRule team if needed
+        if (this.collideRuleTeamName != null) {
+            final Scoreboard scoreBoard = this.server.getLevel(Level.OVERWORLD).getScoreboard();
+            final PlayerTeam team = scoreBoard.getPlayersTeam(this.collideRuleTeamName);
+            if (entityplayer.getTeam() == team && team != null) {
+                scoreBoard.removePlayerFromTeam(entityplayer.getScoreboardName(), team);
+            }
+        }
+        // Paper end
 
         this.save(entityplayer);
         if (entityplayer.isPassenger()) {
@@ -1138,6 +1157,13 @@ public abstract class PlayerList {
         }
         // CraftBukkit end
 
+        // Paper start - Remove collideRule team if it exists
+        if (this.collideRuleTeamName != null) {
+            final Scoreboard scoreboard = this.getServer().getLevel(Level.OVERWORLD).getScoreboard();
+            final PlayerTeam team = scoreboard.getPlayersTeam(this.collideRuleTeamName);
+            if (team != null) scoreboard.removePlayerTeam(team);
+        }
+        // Paper end
     }
 
     // CraftBukkit start
