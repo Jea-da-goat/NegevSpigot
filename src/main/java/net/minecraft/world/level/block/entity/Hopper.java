@@ -14,6 +14,8 @@ public interface Hopper extends Container {
         return SUCK;
     }
 
+    default net.minecraft.core.BlockPos getBlockPosition() { return new net.minecraft.core.BlockPos(getLevelX(), getLevelY(), getLevelZ()); } // Paper
+
     double getLevelX();
 
     double getLevelY();

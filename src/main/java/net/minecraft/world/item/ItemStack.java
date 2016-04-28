@@ -625,11 +625,12 @@ public final class ItemStack {
         return this.getItem().interactLivingEntity(this, user, entity, hand);
     }
 
-    public ItemStack copy() {
-        if (this.isEmpty()) {
+    public ItemStack copy() { return cloneItemStack(false); } // Paper
+    public ItemStack cloneItemStack(boolean origItem) { // Paper
+        if (!origItem && this.isEmpty()) { // Paper
             return ItemStack.EMPTY;
         } else {
-            ItemStack itemstack = new ItemStack(this.getItem(), this.count);
+            ItemStack itemstack = new ItemStack(origItem ? this.item : this.getItem(), this.count); // Paper
 
             itemstack.setPopTime(this.getPopTime());
             if (this.tag != null) {
