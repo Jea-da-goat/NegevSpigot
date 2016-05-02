@@ -65,12 +65,14 @@ public class ChestBoat extends Boat implements HasCustomInventoryScreen, Contain
     @Override
     protected void addAdditionalSaveData(CompoundTag nbt) {
         super.addAdditionalSaveData(nbt);
+        this.lootableData.loadNbt(nbt); // Paper
         this.addChestVehicleSaveData(nbt);
     }
 
     @Override
     protected void readAdditionalSaveData(CompoundTag nbt) {
         super.readAdditionalSaveData(nbt);
+        this.lootableData.loadNbt(nbt); // Paper
         this.readChestVehicleSaveData(nbt);
     }
 
@@ -223,6 +225,20 @@ public class ChestBoat extends Boat implements HasCustomInventoryScreen, Contain
         this.itemStacks = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
     }
 
+    // Paper start
+    {
+        this.lootableData = new com.destroystokyo.paper.loottable.PaperLootableInventoryData(new com.destroystokyo.paper.loottable.PaperContainerEntityLootableInventory(this));
+    }
+    @Override
+    public Entity getEntity() {
+        return this;
+    }
+
+    @Override
+    public com.destroystokyo.paper.loottable.PaperLootableInventoryData getLootableData() {
+        return this.lootableData;
+    }
+    // Paper end
     // CraftBukkit start
     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
     private int maxStack = MAX_STACK;
