@@ -210,6 +210,19 @@ public abstract class Mob extends LivingEntity {
         return this.lookControl;
     }
 
+    // Paper start
+    @Override
+    public void inactiveTick() {
+        super.inactiveTick();
+        if (this.goalSelector.inactiveTick()) {
+            this.goalSelector.tick();
+        }
+        if (this.targetSelector.inactiveTick()) {
+            this.targetSelector.tick();
+        }
+    }
+    // Paper end
+
     public MoveControl getMoveControl() {
         if (this.isPassenger() && this.getVehicle() instanceof Mob) {
             Mob entityinsentient = (Mob) this.getVehicle();
