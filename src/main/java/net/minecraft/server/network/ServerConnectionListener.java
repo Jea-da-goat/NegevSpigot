@@ -63,6 +63,15 @@ public class ServerConnectionListener {
     public volatile boolean running;
     private final List<ChannelFuture> channels = Collections.synchronizedList(Lists.newArrayList());
     final List<Connection> connections = Collections.synchronizedList(Lists.newArrayList());
+    // Paper start - prevent blocking on adding a new network manager while the server is ticking
+    private final java.util.Queue<Connection> pending = new java.util.concurrent.ConcurrentLinkedQueue<>();
+    private final void addPending() {
+        Connection manager = null;
+        while ((manager = pending.poll()) != null) {
+            connections.add(manager);
+        }
+    }
+    // Paper end
 
     public ServerConnectionListener(MinecraftServer server) {
         this.server = server;
@@ -98,7 +107,8 @@ public class ServerConnectionListener {
                     int j = ServerConnectionListener.this.server.getRateLimitPacketsPerSecond();
                     Object object = j > 0 ? new RateKickingConnection(j) : new Connection(PacketFlow.SERVERBOUND);
 
-                    ServerConnectionListener.this.connections.add((Connection) object); // CraftBukkit - decompile error
+                    // ServerConnectionListener.this.connections.add((Connection) object); // CraftBukkit - decompile error
+                    pending.add((Connection) object); // Paper
                     channel.pipeline().addLast("packet_handler", (ChannelHandler) object);
                     ((Connection) object).setListener(new ServerHandshakePacketListenerImpl(ServerConnectionListener.this.server, (Connection) object));
                 }
@@ -157,6 +167,7 @@ public class ServerConnectionListener {
 
         synchronized (this.connections) {
             // Spigot Start
+            this.addPending(); // Paper
             // This prevents players from 'gaming' the server, and strategically relogging to increase their position in the tick order
             if ( org.spigotmc.SpigotConfig.playerShuffle > 0 && MinecraftServer.currentTick % org.spigotmc.SpigotConfig.playerShuffle == 0 )
             {
