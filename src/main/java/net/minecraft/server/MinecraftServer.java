@@ -945,7 +945,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
         } catch (java.lang.InterruptedException ignored) {} // Paper
         if (org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly) {
             MinecraftServer.LOGGER.info("Saving usercache.json");
-            this.getProfileCache().save();
+            this.getProfileCache().save(false); // Paper
         }
         // Spigot end
         com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.close(true, true); // Paper
