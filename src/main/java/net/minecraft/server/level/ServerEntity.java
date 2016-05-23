@@ -65,7 +65,7 @@ public class ServerEntity {
     private boolean wasRiding;
     private boolean wasOnGround;
     // CraftBukkit start
-    private final Set<ServerPlayerConnection> trackedPlayers;
+    final Set<ServerPlayerConnection> trackedPlayers; // Paper - private -> package
 
     public ServerEntity(ServerLevel worldserver, Entity entity, int i, boolean flag, Consumer<Packet<?>> consumer, Set<ServerPlayerConnection> trackedPlayers) {
         this.trackedPlayers = trackedPlayers;
