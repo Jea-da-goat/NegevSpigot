@@ -653,8 +653,9 @@ public class EnderDragon extends Mob implements Enemy {
             if (this.dragonDeathTime == 1 && !this.isSilent()) {
                 // CraftBukkit start - Use relative location for far away sounds
                 // this.world.b(1028, this.getChunkCoordinates(), 0);
-                int viewDistance = ((ServerLevel) this.level).getCraftServer().getViewDistance() * 16;
-                for (net.minecraft.server.level.ServerPlayer player : this.level.getServer().getPlayerList().players) {
+                //int viewDistance = ((WorldServer) this.world).getServer().getViewDistance() * 16; // Paper - updated to use worlds actual view distance incase we have to uncomment this due to removal of player view distance API
+                for (net.minecraft.server.level.ServerPlayer player : (List<net.minecraft.server.level.ServerPlayer>) ((ServerLevel)level).players()) {
+                    final int viewDistance = player.getViewDistance(); // TODO apply view distance api patch
                     double deltaX = this.getX() - player.getX();
                     double deltaZ = this.getZ() - player.getZ();
                     double distanceSquared = deltaX * deltaX + deltaZ * deltaZ;
