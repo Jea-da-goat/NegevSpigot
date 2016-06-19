@@ -7,11 +7,13 @@ public final class Ticket<T> implements Comparable<Ticket<?>> {
     private final int ticketLevel;
     public final T key;
     public long createdTick;
+    public long delayUnloadBy; // Paper
 
     protected Ticket(TicketType<T> type, int level, T argument) {
         this.type = type;
         this.ticketLevel = level;
         this.key = argument;
+        this.delayUnloadBy = type.timeout; // Paper
     }
 
     @Override
@@ -60,7 +62,7 @@ public final class Ticket<T> implements Comparable<Ticket<?>> {
     }
 
     protected boolean timedOut(long currentTick) {
-        long l = this.type.timeout();
+        long l = delayUnloadBy; // Paper
         return l != 0L && currentTick - this.createdTick > l;
     }
 }

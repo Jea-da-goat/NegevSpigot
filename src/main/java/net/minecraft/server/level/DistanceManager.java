@@ -198,6 +198,27 @@ public abstract class DistanceManager {
         boolean removed = false; // CraftBukkit
         if (arraysetsorted.remove(ticket)) {
             removed = true; // CraftBukkit
+            // Paper start - delay chunk unloads for player tickets
+            long delayChunkUnloadsBy = chunkMap.level.paperConfig().chunks.delayChunkUnloadsBy.ticks();
+            if (ticket.getType() == TicketType.PLAYER && delayChunkUnloadsBy > 0) {
+                boolean hasPlayer = false;
+                for (Ticket<?> ticket1 : arraysetsorted) {
+                    if (ticket1.getType() == TicketType.PLAYER) {
+                        hasPlayer = true;
+                        break;
+                    }
+                }
+                ChunkHolder playerChunk = chunkMap.getUpdatingChunkIfPresent(i);
+                if (!hasPlayer && playerChunk != null && playerChunk.isFullChunkReady()) {
+                    Ticket<Long> delayUnload = new Ticket<Long>(TicketType.DELAY_UNLOAD, 33, i);
+                    delayUnload.delayUnloadBy = delayChunkUnloadsBy;
+                    delayUnload.setCreatedTick(this.ticketTickCounter);
+                    arraysetsorted.remove(delayUnload);
+                    // refresh ticket
+                    arraysetsorted.add(delayUnload);
+                }
+            }
+            // Paper end
         }
 
         if (arraysetsorted.isEmpty()) {
