@@ -316,6 +316,18 @@ public class FallingBlockEntity extends Entity {
     @Override
     protected void readAdditionalSaveData(CompoundTag nbt) {
         this.blockState = NbtUtils.readBlockState(nbt.getCompound("BlockState"));
+        // Paper start - Block FallingBlocks with Command Blocks
+        final Block b = this.blockState.getBlock();
+        if (this.level.paperConfig().entities.spawning.filterNbtDataFromSpawnEggsAndRelated
+            && (b == Blocks.COMMAND_BLOCK
+            || b == Blocks.REPEATING_COMMAND_BLOCK
+            || b == Blocks.CHAIN_COMMAND_BLOCK
+            || b == Blocks.JIGSAW
+            || b == Blocks.STRUCTURE_BLOCK
+            || b instanceof net.minecraft.world.level.block.GameMasterBlock)) {
+            this.blockState = Blocks.STONE.defaultBlockState();
+        }
+        // Paper end
         this.time = nbt.getInt("Time");
         if (nbt.contains("HurtEntities", 99)) {
             this.hurtEntities = nbt.getBoolean("HurtEntities");
