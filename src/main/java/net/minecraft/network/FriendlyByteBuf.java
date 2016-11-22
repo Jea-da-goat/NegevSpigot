@@ -579,7 +579,7 @@ public class FriendlyByteBuf extends ByteBuf {
             if (item.canBeDepleted() || item.shouldOverrideMultiplayerNbt()) {
                 // Spigot start - filter
                 stack = stack.copy();
-                CraftItemStack.setItemMeta(stack, CraftItemStack.getItemMeta(stack));
+                // CraftItemStack.setItemMeta(stack, CraftItemStack.getItemMeta(stack)); // Paper - This is no longer with raw NBT being handled in metadata
                 // Spigot end
                 nbttagcompound = stack.getTag();
             }
@@ -600,7 +600,7 @@ public class FriendlyByteBuf extends ByteBuf {
 
             itemstack.setTag(this.readNbt());
             // CraftBukkit start
-            if (itemstack.getTag() != null) {
+            if (false && itemstack.getTag() != null) { // Paper - This is no longer needed with raw NBT being handled in metadata
                 CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack));
             }
             // CraftBukkit end
