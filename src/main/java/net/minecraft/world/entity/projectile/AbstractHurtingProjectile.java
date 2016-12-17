@@ -11,6 +11,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
@@ -82,7 +83,16 @@ public abstract class AbstractHurtingProjectile extends Projectile {
 
             HitResult movingobjectposition = ProjectileUtil.getHitResult(this, this::canHitEntity);
 
-            if (movingobjectposition.getType() != HitResult.Type.MISS) {
+            // Paper start - Call ProjectileCollideEvent
+            if (movingobjectposition instanceof EntityHitResult) {
+                com.destroystokyo.paper.event.entity.ProjectileCollideEvent event = CraftEventFactory.callProjectileCollideEvent(this, (EntityHitResult)movingobjectposition);
+                if (event.isCancelled()) {
+                    movingobjectposition = null;
+                }
+            }
+            // Paper end
+
+            if (movingobjectposition != null && movingobjectposition.getType() != HitResult.Type.MISS) { // Paper - add null check in case cancelled
                 this.preOnHit(movingobjectposition); // CraftBukkit - projectile hit event
 
                 // CraftBukkit start - Fire ProjectileHitEvent

@@ -10,6 +10,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.TheEndGatewayBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
@@ -66,7 +67,17 @@ public abstract class ThrowableProjectile extends Projectile {
         }
 
         if (movingobjectposition.getType() != HitResult.Type.MISS && !flag) {
+            // Paper start - Call ProjectileCollideEvent
+            if (movingobjectposition instanceof EntityHitResult) {
+                com.destroystokyo.paper.event.entity.ProjectileCollideEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileCollideEvent(this, (EntityHitResult)movingobjectposition);
+                if (event.isCancelled()) {
+                    movingobjectposition = null;
+                }
+            }
+            if (movingobjectposition != null) {
+            // Paper end
             this.preOnHit(movingobjectposition); // CraftBukkit - projectile hit event
+            } // Paper
         }
 
         this.checkInsideBlocks();

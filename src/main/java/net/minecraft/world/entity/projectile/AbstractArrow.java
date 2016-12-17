@@ -226,6 +226,17 @@ public abstract class AbstractArrow extends Projectile {
                     }
                 }
 
+                // Paper start - Call ProjectileCollideEvent
+                // TODO: flag - noclip - call cancelled?
+                if (object instanceof EntityHitResult) {
+                    com.destroystokyo.paper.event.entity.ProjectileCollideEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileCollideEvent(this, (EntityHitResult)object);
+                    if (event.isCancelled()) {
+                        object = null;
+                        movingobjectpositionentity = null;
+                    }
+                }
+                // Paper end
+
                 if (object != null && !flag) {
                     this.preOnHit((HitResult) object); // CraftBukkit - projectile hit event
                     this.hasImpulse = true;
