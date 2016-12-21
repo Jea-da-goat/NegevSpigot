@@ -91,6 +91,7 @@ public class ArmorStand extends LivingEntity {
     public Rotations rightArmPose;
     public Rotations leftLegPose;
     public Rotations rightLegPose;
+    public boolean canMove = true; // Paper
 
     public ArmorStand(EntityType<? extends ArmorStand> type, Level world) {
         super(type, world);
@@ -925,4 +926,13 @@ public class ArmorStand extends LivingEntity {
     public boolean canBeSeenByAnyone() {
         return !this.isInvisible() && !this.isMarker();
     }
+
+    // Paper start
+    @Override
+    public void move(net.minecraft.world.entity.MoverType type, Vec3 movement) {
+        if (this.canMove) {
+            super.move(type, movement);
+        }
+    }
+    // Paper end
 }
