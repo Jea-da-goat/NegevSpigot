@@ -39,6 +39,7 @@ public class FireworkRocketEntity extends Projectile implements ItemSupplier {
     public int lifetime;
     @Nullable
     public LivingEntity attachedToEntity; // PAIL private -> public
+    public java.util.UUID spawningEntity; // Paper
 
     public FireworkRocketEntity(EntityType<? extends FireworkRocketEntity> type, Level world) {
         super(type, world);
@@ -318,6 +319,11 @@ public class FireworkRocketEntity extends Projectile implements ItemSupplier {
         }
 
         nbt.putBoolean("ShotAtAngle", (Boolean) this.entityData.get(FireworkRocketEntity.DATA_SHOT_AT_ANGLE));
+        // Paper start
+        if (this.spawningEntity != null) {
+            nbt.putUUID("SpawningEntity", this.spawningEntity);
+        }
+        // Paper end
     }
 
     @Override
@@ -334,7 +340,11 @@ public class FireworkRocketEntity extends Projectile implements ItemSupplier {
         if (nbt.contains("ShotAtAngle")) {
             this.entityData.set(FireworkRocketEntity.DATA_SHOT_AT_ANGLE, nbt.getBoolean("ShotAtAngle"));
         }
-
+        // Paper start
+        if (nbt.hasUUID("SpawningEntity")) {
+            this.spawningEntity = nbt.getUUID("SpawningEntity");
+        }
+        // Paper end
     }
 
     @Override
