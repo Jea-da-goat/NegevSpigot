@@ -3286,8 +3286,11 @@ public abstract class LivingEntity extends Entity {
                 }
             }
 
-            for (j = 0; j < list.size(); ++j) {
+            this.numCollisions = Math.max(0, this.numCollisions - this.level.paperConfig().collisions.maxEntityCollisions); // Paper
+            for (j = 0; j < list.size() && this.numCollisions < this.level.paperConfig().collisions.maxEntityCollisions; ++j) { // Paper
                 Entity entity = (Entity) list.get(j);
+                entity.numCollisions++; // Paper
+                this.numCollisions++; // Paper
 
                 this.doPush(entity);
             }
