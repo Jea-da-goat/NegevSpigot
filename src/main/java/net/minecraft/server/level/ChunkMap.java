@@ -247,7 +247,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
         this.entityMap = new Int2ObjectOpenHashMap();
         this.chunkTypeCache = new Long2ByteOpenHashMap();
         this.chunkSaveCooldowns = new Long2LongOpenHashMap();
-        this.unloadQueue = Queues.newConcurrentLinkedQueue();
+        this.unloadQueue = new com.destroystokyo.paper.utils.CachedSizeConcurrentLinkedQueue<>(); // Paper - need constant-time size()
         this.structureTemplateManager = structureTemplateManager;
         Path path = session.getDimensionPath(world.dimension());
 
@@ -674,7 +674,6 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
 
     private void processUnloads(BooleanSupplier shouldKeepTicking) {
         LongIterator longiterator = this.toDrop.iterator();
-
         for (int i = 0; longiterator.hasNext() && (shouldKeepTicking.getAsBoolean() || i < 200 || this.toDrop.size() > 2000); longiterator.remove()) {
             long j = longiterator.nextLong();
             ChunkHolder playerchunk = this.updatingChunks.queueRemove(j); // Paper - Don't copy
@@ -688,7 +687,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
             }
         }
 
-        int k = Math.max(0, this.unloadQueue.size() - 2000);
+        int k = Math.max(100, this.unloadQueue.size() - 2000); // Paper - Unload more than just up to queue size 2000
 
         Runnable runnable;
 
