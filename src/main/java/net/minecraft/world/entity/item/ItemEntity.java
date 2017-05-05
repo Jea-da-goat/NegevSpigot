@@ -52,6 +52,7 @@ public class ItemEntity extends Entity {
     private UUID owner;
     public final float bobOffs;
     private int lastTick = MinecraftServer.currentTick - 1; // CraftBukkit
+    public boolean canMobPickup = true; // Paper
 
     public ItemEntity(EntityType<? extends ItemEntity> type, Level world) {
         super(type, world);

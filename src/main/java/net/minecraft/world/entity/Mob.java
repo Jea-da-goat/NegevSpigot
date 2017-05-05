@@ -635,6 +635,11 @@ public abstract class Mob extends LivingEntity {
                 ItemEntity entityitem = (ItemEntity) iterator.next();
 
                 if (!entityitem.isRemoved() && !entityitem.getItem().isEmpty() && !entityitem.hasPickUpDelay() && this.wantsToPickUp(entityitem.getItem())) {
+                    // Paper Start
+                    if (!entityitem.canMobPickup) {
+                        continue;
+                    }
+                    // Paper End
                     this.pickUpItem(entityitem);
                 }
             }
