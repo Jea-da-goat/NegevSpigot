@@ -45,7 +45,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
-import jline.console.ConsoleReader;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -1276,9 +1275,13 @@ public final class CraftServer implements Server {
         return this.logger;
     }
 
+    // Paper start - JLine update
+    /*
     public ConsoleReader getReader() {
         return console.reader;
     }
+    */
+    // Paper end
 
     @Override
     public PluginCommand getPluginCommand(String name) {
