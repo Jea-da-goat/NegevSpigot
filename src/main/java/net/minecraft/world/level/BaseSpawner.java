@@ -160,6 +160,7 @@ public abstract class BaseSpawner {
                             // Spigot End
                         }
                         entity.spawnedViaMobSpawner = true; // Paper
+                        flag = true; // Paper
                         // Spigot Start
                         if (org.bukkit.craftbukkit.event.CraftEventFactory.callSpawnerSpawnEvent(entity, pos).isCancelled()) {
                             Entity vehicle = entity.getVehicle();
@@ -184,7 +185,7 @@ public abstract class BaseSpawner {
                             ((Mob) entity).spawnAnim();
                         }
 
-                        flag = true;
+                        //flag = true; // Paper - moved up above cancellable event
                     }
                 }
 
