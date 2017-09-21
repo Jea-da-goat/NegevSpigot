@@ -17,7 +17,7 @@ dependencies {
           all its classes to check if they are plugins.
           Scanning takes about 1-2 seconds so adding this speeds up the server start.
      */
-    runtimeOnly("org.apache.logging.log4j:log4j-core:2.14.1")
+    implementation("org.apache.logging.log4j:log4j-core:2.14.1") // Paper - implementation
     // Paper end
     implementation("org.apache.logging.log4j:log4j-iostreams:2.17.1") // Paper
     implementation("org.ow2.asm:asm:9.3")
