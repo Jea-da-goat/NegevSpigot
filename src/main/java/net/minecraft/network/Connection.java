@@ -89,6 +89,10 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
     private float averageSentPackets;
     private int tickCount;
     private boolean handlingFault;
+    // Paper start - NetworkClient implementation
+    public int protocolVersion;
+    public java.net.InetSocketAddress virtualHost;
+    // Paper end
 
     public Connection(PacketFlow side) {
         this.receiving = side;
