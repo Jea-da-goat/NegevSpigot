@@ -2,6 +2,9 @@ package net.minecraft.server;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
+import co.aikar.timings.Timings;
+import com.destroystokyo.paper.event.server.PaperServerListPingEvent;
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -1309,7 +1312,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
             this.lastServerStatus = i;
             this.status.setPlayers(new ServerStatus.Players(this.getMaxPlayers(), this.getPlayerCount()));
             if (!this.hidesOnlinePlayers()) {
-                GameProfile[] agameprofile = new GameProfile[Math.min(this.getPlayerCount(), 12)];
+                GameProfile[] agameprofile = new GameProfile[Math.min(this.getPlayerCount(), org.spigotmc.SpigotConfig.playerSample)]; // Paper
                 int j = Mth.nextInt(this.random, 0, this.getPlayerCount() - agameprofile.length);
 
                 for (int k = 0; k < agameprofile.length; ++k) {
