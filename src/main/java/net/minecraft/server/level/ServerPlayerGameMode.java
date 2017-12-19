@@ -419,7 +419,7 @@ public class ServerPlayerGameMode {
 
                 // Drop event experience
                 if (flag && event != null) {
-                    iblockdata.getBlock().popExperience(this.level, pos, event.getExpToDrop());
+                    iblockdata.getBlock().popExperience(this.level, pos, event.getExpToDrop(), this.player); // Paper
                 }
 
                 return true;

@@ -647,7 +647,7 @@ public class EnderDragon extends Mob implements Enemy {
 
         if (this.level instanceof ServerLevel) {
             if (this.dragonDeathTime > 150 && this.dragonDeathTime % 5 == 0 && true) {  // CraftBukkit - SPIGOT-2420: Already checked for the game rule when calculating the xp
-                ExperienceOrb.award((ServerLevel) this.level, this.position(), Mth.floor((float) short0 * 0.08F));
+                ExperienceOrb.award((ServerLevel) this.level, this.position(), Mth.floor((float) short0 * 0.08F), org.bukkit.entity.ExperienceOrb.SpawnReason.ENTITY_DEATH, this.lastHurtByPlayer, this); // Paper
             }
 
             if (this.dragonDeathTime == 1 && !this.isSilent()) {
@@ -678,7 +678,7 @@ public class EnderDragon extends Mob implements Enemy {
         this.yBodyRot = this.getYRot();
         if (this.dragonDeathTime == 200 && this.level instanceof ServerLevel) {
             if (true) { // CraftBukkit - SPIGOT-2420: Already checked for the game rule when calculating the xp
-                ExperienceOrb.award((ServerLevel) this.level, this.position(), Mth.floor((float) short0 * 0.2F));
+                ExperienceOrb.award((ServerLevel) this.level, this.position(), Mth.floor((float) short0 * 0.2F), org.bukkit.entity.ExperienceOrb.SpawnReason.ENTITY_DEATH, this.lastHurtByPlayer, this); // Paper
             }
 
             if (this.dragonFight != null) {
