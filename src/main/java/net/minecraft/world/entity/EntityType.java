@@ -347,6 +347,20 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
 
     @Nullable
     public T spawn(ServerLevel worldserver, @Nullable CompoundTag nbttagcompound, @Nullable Component ichatbasecomponent, @Nullable Player entityhuman, BlockPos blockposition, MobSpawnType enummobspawn, boolean flag, boolean flag1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
+        // Paper start - Call PreCreatureSpawnEvent
+        org.bukkit.entity.EntityType type = org.bukkit.entity.EntityType.fromName(EntityType.getKey(this).getPath());
+        if (type != null) {
+            com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event;
+            event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
+                net.minecraft.server.MCUtil.toLocation(worldserver, blockposition),
+                type,
+                spawnReason
+            );
+            if (!event.callEvent()) {
+                return null;
+            }
+        }
+        // Paper end
         T t0 = this.create(worldserver, nbttagcompound, ichatbasecomponent, entityhuman, blockposition, enummobspawn, flag, flag1);
 
         if (t0 != null) {
