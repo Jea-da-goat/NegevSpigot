@@ -1,5 +1,6 @@
 package net.minecraft.server.level;
 
+import com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent;
 import com.google.common.collect.Lists;
 import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Either;
@@ -246,6 +247,7 @@ public class ServerPlayer extends Player {
     public Integer clientViewDistance;
     public String kickLeaveMessage = null; // SPIGOT-3034: Forward leave message to PlayerQuitEvent
     // CraftBukkit end
+    public PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper
 
     public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> cachedSingleHashSet; // Paper
 
