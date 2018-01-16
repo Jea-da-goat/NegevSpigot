@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import com.destroystokyo.paper.profile.CraftPlayerProfile;
+import com.destroystokyo.paper.profile.PlayerProfile;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -23,6 +25,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkStatus;
 import org.apache.commons.lang.exception.ExceptionUtils;
+import com.mojang.authlib.GameProfile;
 import org.bukkit.Location;
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -368,6 +371,10 @@ public final class MCUtil {
             return null;
         }
         return run.get();
+    }
+
+    public static PlayerProfile toBukkit(GameProfile profile) {
+        return CraftPlayerProfile.asBukkitMirror(profile);
     }
 
     /**
