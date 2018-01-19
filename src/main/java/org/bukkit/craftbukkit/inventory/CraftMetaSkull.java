@@ -143,6 +143,19 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
         return this.hasOwner() ? this.profile.getName() : null;
     }
 
+    // Paper start
+    @Override
+    public void setPlayerProfile(@org.jetbrains.annotations.Nullable com.destroystokyo.paper.profile.PlayerProfile profile) {
+        setProfile((profile == null) ? null : com.destroystokyo.paper.profile.CraftPlayerProfile.asAuthlibCopy(profile));
+    }
+
+    @org.jetbrains.annotations.Nullable
+    @Override
+    public com.destroystokyo.paper.profile.PlayerProfile getPlayerProfile() {
+        return profile != null ? com.destroystokyo.paper.profile.CraftPlayerProfile.asBukkitCopy(profile) : null;
+    }
+    // Paper end
+
     @Override
     public OfflinePlayer getOwningPlayer() {
         if (this.hasOwner()) {
@@ -193,6 +206,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     }
 
     @Override
+    @Deprecated // Paper
     public PlayerProfile getOwnerProfile() {
         if (!this.hasOwner()) {
             return null;
@@ -202,11 +216,12 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     }
 
     @Override
+    @Deprecated // Paper
     public void setOwnerProfile(PlayerProfile profile) {
         if (profile == null) {
             this.setProfile(null);
         } else {
-            this.setProfile(CraftPlayerProfile.validateSkullProfile(((CraftPlayerProfile) profile).buildGameProfile()));
+            this.setProfile(CraftPlayerProfile.validateSkullProfile(((com.destroystokyo.paper.profile.SharedPlayerProfile) profile).buildGameProfile())); // Paper
         }
     }
 
@@ -243,7 +258,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     Builder<String, Object> serialize(Builder<String, Object> builder) {
         super.serialize(builder);
         if (this.profile != null) {
-            return builder.put(SKULL_OWNER.BUKKIT, new CraftPlayerProfile(this.profile));
+            return builder.put(SKULL_OWNER.BUKKIT, new com.destroystokyo.paper.profile.CraftPlayerProfile(this.profile)); // Paper
         }
         return builder;
     }
