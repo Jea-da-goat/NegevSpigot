@@ -2254,6 +2254,17 @@ public abstract class Player extends LivingEntity {
         return ImmutableList.of(Pose.STANDING, Pose.CROUCHING, Pose.SWIMMING);
     }
 
+    // Paper start
+    protected boolean tryReadyArrow(ItemStack bow, ItemStack itemstack) {
+        return !(this instanceof ServerPlayer) ||
+                new com.destroystokyo.paper.event.player.PlayerReadyArrowEvent(
+                    ((ServerPlayer) this).getBukkitEntity(),
+                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(bow),
+                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack)
+                ).callEvent();
+        // Paper end
+    }
+
     @Override
     public ItemStack getProjectile(ItemStack stack) {
         if (!(stack.getItem() instanceof ProjectileWeaponItem)) {
@@ -2270,7 +2281,7 @@ public abstract class Player extends LivingEntity {
                 for (int i = 0; i < this.inventory.getContainerSize(); ++i) {
                     ItemStack itemstack2 = this.inventory.getItem(i);
 
-                    if (predicate.test(itemstack2)) {
+                    if (predicate.test(itemstack2) && tryReadyArrow(stack, itemstack2)) { // Paper
                         return itemstack2;
                     }
                 }
