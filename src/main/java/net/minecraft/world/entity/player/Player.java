@@ -271,7 +271,7 @@ public abstract class Player extends LivingEntity {
         this.updateIsUnderwater();
         super.tick();
         if (!this.level.isClientSide && this.containerMenu != null && !this.containerMenu.stillValid(this)) {
-            this.closeContainer();
+            this.closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.CANT_USE); // Paper
             this.containerMenu = this.inventoryMenu;
         }
 
@@ -494,6 +494,13 @@ public abstract class Player extends LivingEntity {
         }
 
     }
+
+    // Paper start - unused code, but to keep signatures aligned
+    public void closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason reason) {
+        closeContainer();
+        this.containerMenu = this.inventoryMenu;
+    }
+    // Paper end
 
     public void closeContainer() {
         this.containerMenu = this.inventoryMenu;
