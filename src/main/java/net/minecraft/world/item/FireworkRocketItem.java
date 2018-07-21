@@ -11,6 +11,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.stats.Stats;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
@@ -45,8 +46,12 @@ public class FireworkRocketItem extends Item {
             Direction direction = context.getClickedFace();
             FireworkRocketEntity fireworkRocketEntity = new FireworkRocketEntity(level, context.getPlayer(), vec3.x + (double)direction.getStepX() * 0.15D, vec3.y + (double)direction.getStepY() * 0.15D, vec3.z + (double)direction.getStepZ() * 0.15D, itemStack);
             fireworkRocketEntity.spawningEntity = context.getPlayer() == null ? null : context.getPlayer().getUUID(); // Paper
-            level.addFreshEntity(fireworkRocketEntity);
-            itemStack.shrink(1);
+            // Paper start - PlayerLaunchProjectileEvent
+            com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) context.getPlayer().getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack), (org.bukkit.entity.Firework) fireworkRocketEntity.getBukkitEntity());
+            if (!event.callEvent() || !level.addFreshEntity(fireworkRocketEntity)) return InteractionResult.PASS;
+            if (event.shouldConsume() && !context.getPlayer().getAbilities().instabuild) itemStack.shrink(1);
+            else if (context.getPlayer() instanceof ServerPlayer) ((ServerPlayer) context.getPlayer()).getBukkitEntity().updateInventory();
+            // Paper end
         }
 
         return InteractionResult.sidedSuccess(level.isClientSide);
