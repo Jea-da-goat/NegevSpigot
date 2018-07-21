@@ -78,7 +78,22 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
 
     private boolean addEntityUuid(T entity) {
         if (!this.knownUuids.add(entity.getUUID())) {
+            // Paper start
+            T conflict = this.visibleEntityStorage.getEntity(entity.getUUID());
+            if (conflict != null && ((Entity) conflict).isRemoved()) {
+                stopTracking(conflict); // remove the existing entity
+                return true;
+            }
+            // Paper end
             PersistentEntitySectionManager.LOGGER.warn("UUID of added entity already exists: {}", entity);
+            // Paper start
+            if (net.minecraft.world.level.Level.DEBUG_ENTITIES && ((Entity) entity).level.paperConfig().entities.spawning.duplicateUuid.mode != io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode.NOTHING) {
+                if (((Entity) entity).addedToWorldStack != null) {
+                    ((Entity) entity).addedToWorldStack.printStackTrace();
+                }
+                net.minecraft.server.level.ServerLevel.getAddToWorldStackTrace((Entity) entity).printStackTrace();
+            }
+            // Paper end
             return false;
         } else {
             return true;

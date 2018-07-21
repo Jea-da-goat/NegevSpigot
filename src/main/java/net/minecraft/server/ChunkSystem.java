@@ -260,7 +260,9 @@ public final class ChunkSystem {
     }
 
     public static void onEntityPreAdd(final ServerLevel level, final Entity entity) {
-
+        if (net.minecraft.server.level.ChunkMap.checkDupeUUID(level, entity)) {
+            return;
+        }
     }
 
     public static void onChunkHolderCreate(final ServerLevel level, final ChunkHolder holder) {
