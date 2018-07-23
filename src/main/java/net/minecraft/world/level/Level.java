@@ -74,6 +74,10 @@ import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import net.minecraft.world.level.storage.LevelData;
 import net.minecraft.world.level.storage.WritableLevelData;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.shapes.BooleanOp;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.scores.Scoreboard;
 
 // CraftBukkit start
@@ -265,6 +269,45 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
         this.tileLimiter = new org.spigotmc.TickLimiter(spigotConfig.tileMaxTickTime);
     }
 
+    // Paper start
+    // ret true if no collision
+    public final boolean checkEntityCollision(BlockState data, Entity source, CollisionContext voxelshapedcollision,
+                                              BlockPos position, boolean checkCanSee) {
+        // Copied from IWorldReader#a(IBlockData, BlockPosition, VoxelShapeCollision) & EntityAccess#a(Entity, VoxelShape)
+        VoxelShape voxelshape = data.getCollisionShape(this, position, voxelshapedcollision);
+        if (voxelshape.isEmpty()) {
+            return true;
+        }
+
+        voxelshape = voxelshape.move((double) position.getX(), (double) position.getY(), (double) position.getZ());
+        if (voxelshape.isEmpty()) {
+            return true;
+        }
+
+        List<Entity> entities = this.getEntities(null, voxelshape.bounds());
+        for (int i = 0, len = entities.size(); i < len; ++i) {
+            Entity entity = entities.get(i);
+
+            if (checkCanSee && source instanceof net.minecraft.server.level.ServerPlayer && entity instanceof net.minecraft.server.level.ServerPlayer
+                && !((net.minecraft.server.level.ServerPlayer) source).getBukkitEntity().canSee(((net.minecraft.server.level.ServerPlayer) entity).getBukkitEntity())) {
+                continue;
+            }
+
+            // !entity1.dead && entity1.i && (entity == null || !entity1.x(entity));
+            // elide the last check since vanilla calls with entity = null
+            // only we care about the source for the canSee check
+            if (entity.isRemoved() || !entity.blocksBuilding) {
+                continue;
+            }
+
+            if (Shapes.joinIsNotEmpty(voxelshape, Shapes.create(entity.getBoundingBox()), BooleanOp.AND)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+    // Paper end
     @Override
     public boolean isClientSide() {
         return this.isClientSide;
