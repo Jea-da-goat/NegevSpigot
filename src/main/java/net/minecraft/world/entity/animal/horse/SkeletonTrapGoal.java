@@ -17,6 +17,7 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper;
 public class SkeletonTrapGoal extends Goal {
 
     private final SkeletonHorse horse;
+    private java.util.List<org.bukkit.entity.HumanEntity> eligiblePlayers; // Paper
 
     public SkeletonTrapGoal(SkeletonHorse skeletonHorse) {
         this.horse = skeletonHorse;
@@ -24,12 +25,13 @@ public class SkeletonTrapGoal extends Goal {
 
     @Override
     public boolean canUse() {
-        return this.horse.level.hasNearbyAlivePlayer(this.horse.getX(), this.horse.getY(), this.horse.getZ(), 10.0D);
+        return !(eligiblePlayers = this.horse.level.findNearbyBukkitPlayers(this.horse.getX(), this.horse.getY(), this.horse.getZ(), 10.0D, false)).isEmpty(); // Paper
     }
 
     @Override
     public void tick() {
         ServerLevel worldserver = (ServerLevel) this.horse.level;
+        if (!new com.destroystokyo.paper.event.entity.SkeletonHorseTrapEvent((org.bukkit.entity.SkeletonHorse) this.horse.getBukkitEntity(), eligiblePlayers).callEvent()) return; // Paper
         DifficultyInstance difficultydamagescaler = worldserver.getCurrentDifficultyAt(this.horse.blockPosition());
 
         this.horse.setTrap(false);
