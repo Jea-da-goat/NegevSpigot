@@ -199,7 +199,7 @@ public class Goat extends Animal {
 
         if (itemstack.is(Items.BUCKET) && !this.isBaby()) {
             // CraftBukkit start - Got milk?
-            org.bukkit.event.player.PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent((ServerLevel) player.level, player, this.blockPosition(), this.blockPosition(), null, itemstack, Items.MILK_BUCKET);
+            org.bukkit.event.player.PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent((ServerLevel) player.level, player, this.blockPosition(), this.blockPosition(), null, itemstack, Items.MILK_BUCKET, hand); // Paper - add enumHand
 
             if (event.isCancelled()) {
                 return InteractionResult.PASS;

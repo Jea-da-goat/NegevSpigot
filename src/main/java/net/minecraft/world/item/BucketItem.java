@@ -71,7 +71,7 @@ public class BucketItem extends Item implements DispensibleContainerItem {
                         // CraftBukkit start
                         ItemStack dummyFluid = ifluidsource.pickupBlock(DummyGeneratorAccess.INSTANCE, blockposition, iblockdata);
                         if (dummyFluid.isEmpty()) return InteractionResultHolder.fail(itemstack); // Don't fire event if the bucket won't be filled.
-                        PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent((ServerLevel) world, user, blockposition, blockposition, movingobjectpositionblock.getDirection(), itemstack, dummyFluid.getItem());
+                        PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent((ServerLevel) world, user, blockposition, blockposition, movingobjectpositionblock.getDirection(), itemstack, dummyFluid.getItem(), hand); // Paper - add enumhand
 
                         if (event.isCancelled()) {
                             ((ServerPlayer) user).connection.send(new ClientboundBlockUpdatePacket(world, blockposition)); // SPIGOT-5163 (see PlayerInteractManager)
@@ -102,7 +102,7 @@ public class BucketItem extends Item implements DispensibleContainerItem {
                     iblockdata = world.getBlockState(blockposition);
                     BlockPos blockposition2 = iblockdata.getBlock() instanceof LiquidBlockContainer && this.content == Fluids.WATER ? blockposition : blockposition1;
 
-                    if (this.emptyContents(user, world, blockposition2, movingobjectpositionblock, movingobjectpositionblock.getDirection(), blockposition, itemstack)) { // CraftBukkit
+                    if (this.emptyContents(user, world, blockposition2, movingobjectpositionblock, movingobjectpositionblock.getDirection(), blockposition, itemstack, hand)) { // CraftBukkit // Paper - add enumhand
                         this.checkExtraContent(user, world, itemstack, blockposition2);
                         if (user instanceof ServerPlayer) {
                             CriteriaTriggers.PLACED_BLOCK.trigger((ServerPlayer) user, blockposition2, itemstack);
@@ -129,10 +129,12 @@ public class BucketItem extends Item implements DispensibleContainerItem {
 
     @Override
     public boolean emptyContents(@Nullable Player player, Level world, BlockPos pos, @Nullable BlockHitResult hitResult) {
-        return this.emptyContents(player, world, pos, hitResult, null, null, null);
+        // Paper start - add enumHand
+        return emptyContents(player, world, pos, hitResult, null, null, null, null);
     }
 
-    public boolean emptyContents(Player entityhuman, Level world, BlockPos blockposition, @Nullable BlockHitResult movingobjectpositionblock, Direction enumdirection, BlockPos clicked, ItemStack itemstack) {
+    public boolean emptyContents(Player entityhuman, Level world, BlockPos blockposition, @Nullable BlockHitResult movingobjectpositionblock, Direction enumdirection, BlockPos clicked, ItemStack itemstack, InteractionHand enumhand) {
+        // Paper end
         // CraftBukkit end
         if (!(this.content instanceof FlowingFluid)) {
             return false;
@@ -145,7 +147,7 @@ public class BucketItem extends Item implements DispensibleContainerItem {
 
             // CraftBukkit start
             if (flag1 && entityhuman != null) {
-                PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent((ServerLevel) world, entityhuman, blockposition, clicked, enumdirection, itemstack);
+                PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent((ServerLevel) world, entityhuman, blockposition, clicked, enumdirection, itemstack, enumhand); // Paper - add enumhand
                 if (event.isCancelled()) {
                     ((ServerPlayer) entityhuman).connection.send(new ClientboundBlockUpdatePacket(world, blockposition)); // SPIGOT-4238: needed when looking through entity
                     ((ServerPlayer) entityhuman).getBukkitEntity().updateInventory(); // SPIGOT-4541
@@ -154,7 +156,7 @@ public class BucketItem extends Item implements DispensibleContainerItem {
             }
             // CraftBukkit end
             if (!flag1) {
-                return movingobjectpositionblock != null && this.emptyContents(entityhuman, world, movingobjectpositionblock.getBlockPos().relative(movingobjectpositionblock.getDirection()), (BlockHitResult) null, enumdirection, clicked, itemstack); // CraftBukkit
+                return movingobjectpositionblock != null && this.emptyContents(entityhuman, world, movingobjectpositionblock.getBlockPos().relative(movingobjectpositionblock.getDirection()), (BlockHitResult) null, enumdirection, clicked, itemstack, enumhand); // CraftBukkit // Paper
             } else if (world.dimensionType().ultraWarm() && this.content.is(FluidTags.WATER)) {
                 int i = blockposition.getX();
                 int j = blockposition.getY();
