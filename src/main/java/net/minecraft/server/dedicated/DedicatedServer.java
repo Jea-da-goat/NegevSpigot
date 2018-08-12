@@ -74,7 +74,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface 
     static final Logger LOGGER = LogUtils.getLogger();
     private static final int CONVERSION_RETRY_DELAY_MS = 5000;
     private static final int CONVERSION_RETRIES = 2;
-    private final List<ConsoleInput> consoleInput = Collections.synchronizedList(Lists.newArrayList());
+    private final java.util.Queue<ConsoleInput> serverCommandQueue = new java.util.concurrent.ConcurrentLinkedQueue<>(); // Paper - use a proper queuemmands
     @Nullable
     private QueryThreadGs4 queryThreadGs4;
     public final RconConsoleSource rconConsoleSource;
@@ -419,13 +419,15 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface 
     }
 
     public void handleConsoleInput(String command, CommandSourceStack commandSource) {
-        this.consoleInput.add(new ConsoleInput(command, commandSource));
+        this.serverCommandQueue.add(new ConsoleInput(command, commandSource));
     }
 
     public void handleConsoleInputs() {
         MinecraftTimings.serverCommandTimer.startTiming(); // Spigot
-        while (!this.consoleInput.isEmpty()) {
-            ConsoleInput servercommand = (ConsoleInput) this.consoleInput.remove(0);
+        // Paper start - use proper queue
+        ConsoleInput servercommand;
+        while ((servercommand = this.serverCommandQueue.poll()) != null) {
+            // Paper end
 
             // CraftBukkit start - ServerCommand for preprocessing
             ServerCommandEvent event = new ServerCommandEvent(console, servercommand.msg);
