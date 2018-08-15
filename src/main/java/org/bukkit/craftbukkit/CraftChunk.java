@@ -4,8 +4,10 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.mojang.serialization.Codec;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.BooleanSupplier;
@@ -177,6 +179,13 @@ public class CraftChunk implements Chunk {
 
     @Override
     public BlockState[] getTileEntities() {
+        // Paper start
+        return getTileEntities(true);
+    }
+
+    @Override
+    public BlockState[] getTileEntities(boolean useSnapshot) {
+        // Paper end
         if (!this.isLoaded()) {
             this.getWorld().getChunkAt(x, z); // Transient load for this tick
         }
@@ -191,7 +200,29 @@ public class CraftChunk implements Chunk {
             }
 
             BlockPos position = (BlockPos) obj;
-            entities[index++] = this.worldServer.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ()).getState();
+            // Paper start
+            entities[index++] = this.worldServer.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ()).getState(useSnapshot);
+        }
+
+        return entities;
+    }
+
+    @Override
+    public Collection<BlockState> getTileEntities(Predicate<Block> blockPredicate, boolean useSnapshot) {
+        Preconditions.checkNotNull(blockPredicate, "blockPredicate");
+        if (!isLoaded()) {
+            getWorld().getChunkAt(x, z); // Transient load for this tick
+        }
+        net.minecraft.world.level.chunk.LevelChunk chunk = getHandle();
+
+        List<BlockState> entities = new ArrayList<>();
+
+        for (BlockPos position : chunk.blockEntities.keySet()) {
+            Block block = worldServer.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ());
+            if (blockPredicate.test(block)) {
+                entities.add(block.getState(useSnapshot));
+            }
+            // Paper end
         }
 
         return entities;
