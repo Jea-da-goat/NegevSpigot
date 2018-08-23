@@ -695,6 +695,14 @@ public abstract class BlockBehaviour {
             this.emissiveRendering = blockbase_info.emissiveRendering;
             this.offsetType = (BlockBehaviour.OffsetType) blockbase_info.offsetType.apply(this.asState());
         }
+        // Paper start - impl cached craft block data, lazy load to fix issue with loading at the wrong time
+        private org.bukkit.craftbukkit.block.data.CraftBlockData cachedCraftBlockData;
+
+        public org.bukkit.craftbukkit.block.data.CraftBlockData createCraftBlockData() {
+            if (cachedCraftBlockData == null) cachedCraftBlockData = org.bukkit.craftbukkit.block.data.CraftBlockData.createData(asState());
+            return (org.bukkit.craftbukkit.block.data.CraftBlockData) cachedCraftBlockData.clone();
+        }
+        // Paper end
 
         // Paper start
         protected boolean shapeExceedsCube = true;
