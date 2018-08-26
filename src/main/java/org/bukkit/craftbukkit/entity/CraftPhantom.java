@@ -34,4 +34,11 @@ public class CraftPhantom extends CraftFlying implements Phantom {
     public EntityType getType() {
         return EntityType.PHANTOM;
     }
+
+    // Paper start
+    @Override
+    public java.util.UUID getSpawningEntity() {
+        return getHandle().getSpawningEntity();
+    }
+    // Paper end
 }
