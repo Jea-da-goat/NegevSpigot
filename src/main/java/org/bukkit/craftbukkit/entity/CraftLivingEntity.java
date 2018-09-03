@@ -200,6 +200,28 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         return blocks.get(0);
     }
 
+    // Paper start
+    @Override
+    public Block getTargetBlock(int maxDistance, com.destroystokyo.paper.block.TargetBlockInfo.FluidMode fluidMode) {
+        net.minecraft.world.phys.HitResult rayTrace = getHandle().getRayTrace(maxDistance, net.minecraft.server.MCUtil.getNMSFluidCollisionOption(fluidMode));
+        return !(rayTrace instanceof net.minecraft.world.phys.BlockHitResult) ? null : org.bukkit.craftbukkit.block.CraftBlock.at(getHandle().level, ((net.minecraft.world.phys.BlockHitResult)rayTrace).getBlockPos());
+    }
+
+    @Override
+    public org.bukkit.block.BlockFace getTargetBlockFace(int maxDistance, com.destroystokyo.paper.block.TargetBlockInfo.FluidMode fluidMode) {
+        net.minecraft.world.phys.HitResult rayTrace = getHandle().getRayTrace(maxDistance, net.minecraft.server.MCUtil.getNMSFluidCollisionOption(fluidMode));
+        return !(rayTrace instanceof net.minecraft.world.phys.BlockHitResult) ? null : net.minecraft.server.MCUtil.toBukkitBlockFace(((net.minecraft.world.phys.BlockHitResult)rayTrace).getDirection());
+    }
+
+    @Override
+    public com.destroystokyo.paper.block.TargetBlockInfo getTargetBlockInfo(int maxDistance, com.destroystokyo.paper.block.TargetBlockInfo.FluidMode fluidMode) {
+        net.minecraft.world.phys.HitResult rayTrace = getHandle().getRayTrace(maxDistance, net.minecraft.server.MCUtil.getNMSFluidCollisionOption(fluidMode));
+        return !(rayTrace instanceof net.minecraft.world.phys.BlockHitResult) ? null :
+            new com.destroystokyo.paper.block.TargetBlockInfo(org.bukkit.craftbukkit.block.CraftBlock.at(getHandle().level, ((net.minecraft.world.phys.BlockHitResult)rayTrace).getBlockPos()),
+                net.minecraft.server.MCUtil.toBukkitBlockFace(((net.minecraft.world.phys.BlockHitResult)rayTrace).getDirection()));
+    }
+    // Paper end
+
     @Override
     public List<Block> getLastTwoTargetBlocks(Set<Material> transparent, int maxDistance) {
         return this.getLineOfSight(transparent, maxDistance, 2);

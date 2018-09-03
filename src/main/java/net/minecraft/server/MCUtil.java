@@ -508,6 +508,18 @@ public final class MCUtil {
         return getNMSWorld(entity.getWorld());
     }
 
+    public static ClipContext.Fluid getNMSFluidCollisionOption(com.destroystokyo.paper.block.TargetBlockInfo.FluidMode fluidMode) {
+        switch (fluidMode) {
+            case NEVER:
+                return ClipContext.Fluid.NONE;
+            case SOURCE_ONLY:
+                return ClipContext.Fluid.SOURCE_ONLY;
+            case ALWAYS:
+                return ClipContext.Fluid.ANY;
+        }
+        return null;
+    }
+
     public static BlockFace toBukkitBlockFace(Direction enumDirection) {
         switch (enumDirection) {
             case DOWN:
