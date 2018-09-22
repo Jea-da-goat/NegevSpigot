@@ -30,7 +30,7 @@ public abstract class BaseContainerBlockEntity extends BlockEntity implements Co
         super.load(nbt);
         this.lockKey = LockCode.fromTag(nbt);
         if (nbt.contains("CustomName", 8)) {
-            this.name = Component.Serializer.fromJson(nbt.getString("CustomName"));
+            this.name = net.minecraft.server.MCUtil.getBaseComponentFromNbt("CustomName", nbt); // Paper - Catch ParseException
         }
 
     }

@@ -365,7 +365,7 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider {
         this.levels = nbt.getInt("Levels"); // SPIGOT-5053, use where available
         // CraftBukkit end
         if (nbt.contains("CustomName", 8)) {
-            this.name = Component.Serializer.fromJson(nbt.getString("CustomName"));
+            this.name = net.minecraft.server.MCUtil.getBaseComponentFromNbt("CustomName", nbt); // Paper - Catch ParseException
         }
 
         this.lockKey = LockCode.fromTag(nbt);
