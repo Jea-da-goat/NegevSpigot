@@ -1891,14 +1891,58 @@ public class ServerPlayer extends Player {
     }
 
     public void setCamera(@Nullable Entity entity) {
+        // Paper start - Add PlayerStartSpectatingEntityEvent and PlayerStopSpectatingEntity Event and improve implementation
         Entity entity1 = this.getCamera();
 
-        this.camera = (Entity) (entity == null ? this : entity);
-        if (entity1 != this.camera) {
-            this.connection.send(new ClientboundSetCameraPacket(this.camera));
-            this.connection.teleport(this.camera.getX(), this.camera.getY(), this.camera.getZ(), this.getYRot(), this.getXRot(), TeleportCause.SPECTATE); // CraftBukkit
+        if (entity == null) {
+            entity = this;
         }
 
+        if (entity1 == entity) return; // new spec target is the current spec target
+
+        if (entity == this) {
+            com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent playerStopSpectatingEntityEvent = new com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent(this.getBukkitEntity(), entity1.getBukkitEntity());
+
+            if (!playerStopSpectatingEntityEvent.callEvent()) {
+                return;
+            }
+        } else {
+            com.destroystokyo.paper.event.player.PlayerStartSpectatingEntityEvent playerStartSpectatingEntityEvent = new com.destroystokyo.paper.event.player.PlayerStartSpectatingEntityEvent(this.getBukkitEntity(), entity1.getBukkitEntity(), entity.getBukkitEntity());
+
+            if (!playerStartSpectatingEntityEvent.callEvent()) {
+                return;
+            }
+        }
+        // Validate
+        if (entity != this) {
+            if (entity.isRemoved() || !entity.valid || entity.level == null) {
+                MinecraftServer.LOGGER.info("Blocking player " + this + " from spectating invalid entity " + entity);
+                return;
+            }
+            if (this.isImmobile()) {
+                // use debug: clients might maliciously spam this
+                MinecraftServer.LOGGER.debug("Blocking frozen player " + this + " from spectating entity " + entity);
+                return;
+            }
+        }
+
+        this.camera = entity; // only set after validating state
+
+        if (entity != this) {
+            // Make sure we're in the right place
+            this.ejectPassengers(); // teleport can fail if we have passengers...
+            this.getBukkitEntity().teleport(new Location(entity.getCommandSenderWorld().getWorld(), entity.getX(), entity.getY(), entity.getZ(), this.getYRot(), this.getXRot()), TeleportCause.SPECTATE); // Correctly handle cross-world entities from api calls by using CB teleport
+
+            // Make sure we're tracking the entity before sending
+            ChunkMap.TrackedEntity tracker = ((ServerLevel)entity.level).getChunkSource().chunkMap.entityMap.get(entity.getId());
+            if (tracker != null) { // dumb plugins...
+                tracker.updatePlayer(this);
+            }
+        } else {
+            this.connection.teleport(this.camera.getX(), this.camera.getY(), this.camera.getZ(), this.getYRot(), this.getXRot(), TeleportCause.SPECTATE); // CraftBukkit
+        }
+        this.connection.send(new ClientboundSetCameraPacket(entity));
+        // Paper end
     }
 
     @Override
