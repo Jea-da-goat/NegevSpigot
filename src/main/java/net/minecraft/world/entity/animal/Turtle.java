@@ -480,14 +480,17 @@ public class Turtle extends Animal {
 
             if (!this.turtle.isInWater() && this.isReachedTarget()) {
                 if (this.turtle.layEggCounter < 1) {
-                    this.turtle.setLayingEgg(true);
+                    this.turtle.setLayingEgg(new com.destroystokyo.paper.event.entity.TurtleStartDiggingEvent((org.bukkit.entity.Turtle) this.turtle.getBukkitEntity(), net.minecraft.server.MCUtil.toLocation(this.turtle.level, this.getTargetPosition())).callEvent()); // Paper
                 } else if (this.turtle.layEggCounter > this.adjustedTickDelay(200)) {
                     Level world = this.turtle.level;
 
                     // CraftBukkit start
-                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.turtle, this.blockPos.above(), (BlockState) Blocks.TURTLE_EGG.defaultBlockState().setValue(TurtleEggBlock.EGGS, this.turtle.random.nextInt(4) + 1)).isCancelled()) {
+                    // Paper start
+                    int eggCount = this.turtle.random.nextInt(4) + 1;
+                    com.destroystokyo.paper.event.entity.TurtleLayEggEvent layEggEvent = new com.destroystokyo.paper.event.entity.TurtleLayEggEvent((org.bukkit.entity.Turtle) this.turtle.getBukkitEntity(), net.minecraft.server.MCUtil.toLocation(this.turtle.level, this.blockPos.above()), eggCount);
+                    if (layEggEvent.callEvent() && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.turtle, this.blockPos.above(), Blocks.TURTLE_EGG.defaultBlockState().setValue(TurtleEggBlock.EGGS, layEggEvent.getEggCount())).isCancelled()) {
                     world.playSound((Player) null, blockposition, SoundEvents.TURTLE_LAY_EGG, SoundSource.BLOCKS, 0.3F, 0.9F + world.random.nextFloat() * 0.2F);
-                    world.setBlock(this.blockPos.above(), (BlockState) Blocks.TURTLE_EGG.defaultBlockState().setValue(TurtleEggBlock.EGGS, this.turtle.random.nextInt(4) + 1), 3);
+                    world.setBlock(this.blockPos.above(), (BlockState) Blocks.TURTLE_EGG.defaultBlockState().setValue(TurtleEggBlock.EGGS, layEggEvent.getEggCount()), 3);
                     }
                     // CraftBukkit end
                     this.turtle.setHasEgg(false);
@@ -555,7 +558,7 @@ public class Turtle extends Animal {
 
         @Override
         public boolean canUse() {
-            return this.turtle.isBaby() ? false : (this.turtle.hasEgg() ? true : (this.turtle.getRandom().nextInt(reducedTickDelay(700)) != 0 ? false : !this.turtle.getHomePos().closerToCenterThan(this.turtle.position(), 64.0D)));
+            return this.turtle.isBaby() ? false : (this.turtle.hasEgg() ? true : (this.turtle.getRandom().nextInt(reducedTickDelay(700)) != 0 ? false : !this.turtle.getHomePos().closerToCenterThan(this.turtle.position(), 64.0D))) && new com.destroystokyo.paper.event.entity.TurtleGoHomeEvent((org.bukkit.entity.Turtle) this.turtle.getBukkitEntity()).callEvent(); // Paper
         }
 
         @Override
