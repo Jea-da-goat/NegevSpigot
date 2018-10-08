@@ -67,6 +67,7 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
     private ProfilePublicKey.Data profilePublicKeyData;
     public String hostname = ""; // CraftBukkit - add field
     public boolean iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation = false; // Paper - username validation overriding
+    private int velocityLoginMessageId = -1; // Paper - Velocity support
 
     public ServerLoginPacketListenerImpl(MinecraftServer server, Connection connection) {
         this.state = ServerLoginPacketListenerImpl.State.HELLO;
@@ -290,6 +291,16 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
                 this.state = ServerLoginPacketListenerImpl.State.KEY;
                 this.connection.send(new ClientboundHelloPacket("", this.server.getKeyPair().getPublic().getEncoded(), this.nonce));
             } else {
+                // Paper start - Velocity support
+                if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) {
+                    this.velocityLoginMessageId = java.util.concurrent.ThreadLocalRandom.current().nextInt();
+                    net.minecraft.network.FriendlyByteBuf buf = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
+                    buf.writeByte(com.destroystokyo.paper.proxy.VelocityProxy.MAX_SUPPORTED_FORWARDING_VERSION);
+                    net.minecraft.network.protocol.login.ClientboundCustomQueryPacket packet1 = new net.minecraft.network.protocol.login.ClientboundCustomQueryPacket(this.velocityLoginMessageId, com.destroystokyo.paper.proxy.VelocityProxy.PLAYER_INFO_CHANNEL, buf);
+                    this.connection.send(packet1);
+                    return;
+                }
+                // Paper end
                 // Spigot start
             // Paper start - Cache authenticator threads
             authenticatorPool.execute(new Runnable() {
@@ -403,6 +414,12 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
     public class LoginHandler {
 
         public void fireEvents() throws Exception {
+                            // Paper start - Velocity support
+                            if (ServerLoginPacketListenerImpl.this.velocityLoginMessageId == -1 && io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) {
+                                disconnect("This server requires you to connect with Velocity.");
+                                return;
+                            }
+                            // Paper end
                         String playerName = ServerLoginPacketListenerImpl.this.gameProfile.getName();
                         java.net.InetAddress address = ((java.net.InetSocketAddress) ServerLoginPacketListenerImpl.this.connection.getRemoteAddress()).getAddress();
                         java.net.InetAddress rawAddress = ((java.net.InetSocketAddress) connection.getRawAddress()).getAddress(); // Paper
@@ -451,6 +468,60 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
     // Spigot end
 
     public void handleCustomQueryPacket(ServerboundCustomQueryPacket packet) {
+        // Paper start - Velocity support
+        if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled && packet.getTransactionId() == this.velocityLoginMessageId) {
+            net.minecraft.network.FriendlyByteBuf buf = packet.getData();
+            if (buf == null) {
+                this.disconnect("This server requires you to connect with Velocity.");
+                return;
+            }
+
+            if (!com.destroystokyo.paper.proxy.VelocityProxy.checkIntegrity(buf)) {
+                this.disconnect("Unable to verify player details");
+                return;
+            }
+
+            int version = buf.readVarInt();
+            if (version > com.destroystokyo.paper.proxy.VelocityProxy.MAX_SUPPORTED_FORWARDING_VERSION) {
+                throw new IllegalStateException("Unsupported forwarding version " + version + ", wanted upto " + com.destroystokyo.paper.proxy.VelocityProxy.MAX_SUPPORTED_FORWARDING_VERSION);
+            }
+
+            java.net.SocketAddress listening = this.connection.getRemoteAddress();
+            int port = 0;
+            if (listening instanceof java.net.InetSocketAddress) {
+                port = ((java.net.InetSocketAddress) listening).getPort();
+            }
+            this.connection.address = new java.net.InetSocketAddress(com.destroystokyo.paper.proxy.VelocityProxy.readAddress(buf), port);
+
+            this.gameProfile = com.destroystokyo.paper.proxy.VelocityProxy.createProfile(buf);
+
+            // We should already have this, but, we'll read it out anyway
+            //noinspection NonStrictComparisonCanBeEquality
+            if (version >= com.destroystokyo.paper.proxy.VelocityProxy.MODERN_FORWARDING_WITH_KEY_V2) {
+                final ProfilePublicKey.Data forwardedKeyData = com.destroystokyo.paper.proxy.VelocityProxy.readForwardedKey(buf);
+                final UUID signer = com.destroystokyo.paper.proxy.VelocityProxy.readSignerUuidOrElse(buf, this.gameProfile.getId());
+                if (this.profilePublicKeyData == null) {
+                    try {
+                        ServerLoginPacketListenerImpl.validatePublicKey(forwardedKeyData, signer, this.server.getServiceSignatureValidator(), this.server.enforceSecureProfile());
+                        this.profilePublicKeyData = forwardedKeyData;
+                    } catch (ProfilePublicKey.ValidationException err) {
+                        this.disconnect("Unable to validate forwarded player key");
+                    }
+                }
+            }
+
+            // Proceed with login
+            authenticatorPool.execute(() -> {
+                try {
+                    new LoginHandler().fireEvents();
+                } catch (Exception ex) {
+                    disconnect("Failed to verify username!");
+                    server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + gameProfile.getName(), ex);
+                }
+            });
+            return;
+        }
+        // Paper end
         this.disconnect(Component.translatable("multiplayer.disconnect.unexpected_query_response"));
     }
 
