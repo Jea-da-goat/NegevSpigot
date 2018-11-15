@@ -1351,11 +1351,13 @@ public class ServerPlayer extends Player {
         }
     }
 
-    @Override
-    public void stopRiding() {
+    // Paper start
+    @Override public void stopRiding() { stopRiding(false); }
+    @Override public void stopRiding(boolean suppressCancellation) {
+        // Paper end
         Entity entity = this.getVehicle();
 
-        super.stopRiding();
+        super.stopRiding(suppressCancellation); // Paper
         Entity entity1 = this.getVehicle();
 
         if (entity1 != entity && this.connection != null) {

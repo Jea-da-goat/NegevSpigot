@@ -3404,9 +3404,15 @@ public abstract class LivingEntity extends Entity {
 
     @Override
     public void stopRiding() {
+        // Paper start
+        stopRiding(false);
+    }
+    @Override
+    public void stopRiding(boolean suppressCancellation) {
+        // Paper end
         Entity entity = this.getVehicle();
 
-        super.stopRiding();
+        super.stopRiding(suppressCancellation); // Paper - suppress
         if (entity != null && entity != this.getVehicle() && !this.level.isClientSide) {
             this.dismountVehicle(entity);
         }
