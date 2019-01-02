@@ -179,6 +179,7 @@ public abstract class PlayerList {
 
     public void placeNewPlayer(Connection connection, ServerPlayer player) {
         player.isRealPlayer = true; // Paper - Chunk priority
+        player.loginTime = System.currentTimeMillis(); // Paper
         GameProfile gameprofile = player.getGameProfile();
         GameProfileCache usercache = this.server.getProfileCache();
         Optional<GameProfile> optional = usercache.get(gameprofile.getId());
