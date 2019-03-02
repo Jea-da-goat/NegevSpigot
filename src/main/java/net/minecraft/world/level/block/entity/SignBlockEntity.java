@@ -25,6 +25,7 @@ import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 
 public class SignBlockEntity extends BlockEntity implements CommandSource { // CraftBukkit - implements
+    private static final boolean CONVERT_LEGACY_SIGNS = Boolean.getBoolean("convertLegacySigns"); // Paper
 
     public static final int LINES = 4;
     private static final String[] RAW_TEXT_FIELD_NAMES = new String[]{"Text1", "Text2", "Text3", "Text4"};
@@ -65,7 +66,7 @@ public class SignBlockEntity extends BlockEntity implements CommandSource { // C
         }
 
         // CraftBukkit start
-        if (Boolean.getBoolean("convertLegacySigns")) {
+        if (CONVERT_LEGACY_SIGNS) { // Paper
             nbt.putBoolean("Bukkit.isConverted", true);
         }
         // CraftBukkit end
