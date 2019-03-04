@@ -223,6 +223,7 @@ public class Zombie extends Monster {
                     ++this.inWaterTime;
                     if (this.inWaterTime >= 600) {
                         this.startUnderWaterConversion(300);
+                        this.lastTick = MinecraftServer.currentTick; // Paper - Make sure this is set at start of process - GH-1887
                     }
                 } else {
                     this.inWaterTime = -1;
