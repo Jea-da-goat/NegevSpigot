@@ -371,6 +371,12 @@ public class ServerEntity {
 
     }
 
+    // Paper start - Add broadcast method
+    void broadcast(Packet<?> packet) {
+        this.broadcast.accept(packet);
+    }
+    // Paper end
+
     private void broadcastAndSend(Packet<?> packet) {
         this.broadcast.accept(packet);
         if (this.entity instanceof ServerPlayer) {

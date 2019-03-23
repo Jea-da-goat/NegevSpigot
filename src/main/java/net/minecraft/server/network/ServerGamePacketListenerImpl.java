@@ -2732,7 +2732,14 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
 
                         if (event.isCancelled() || ServerGamePacketListenerImpl.this.player.getInventory().getSelected() == null || ServerGamePacketListenerImpl.this.player.getInventory().getSelected().getItem() != origItem) {
                             // Refresh the current entity metadata
-                            ServerGamePacketListenerImpl.this.send(new ClientboundSetEntityDataPacket(entity.getId(), entity.getEntityData(), true));
+                            // Paper start - update entity for all players
+                            ClientboundSetEntityDataPacket entityDataPacket = new ClientboundSetEntityDataPacket(entity.getId(), entity.getEntityData(), true);
+                            if (entity.tracker != null) {
+                                entity.tracker.broadcast(entityDataPacket);
+                            } else {
+                                ServerGamePacketListenerImpl.this.send(entityDataPacket);
+                            }
+                            // Paper end
                             // SPIGOT-7136 - Allays
                             if (entity instanceof Allay) {
                                 ServerGamePacketListenerImpl.this.send(new ClientboundSetEquipmentPacket(entity.getId(), Arrays.stream(net.minecraft.world.entity.EquipmentSlot.values()).map((slot) -> Pair.of(slot, ((LivingEntity) entity).getItemBySlot(slot).copy())).collect(Collectors.toList())));
