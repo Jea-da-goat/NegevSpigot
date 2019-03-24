@@ -74,6 +74,8 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.Nameable;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.animal.AbstractFish;
+import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.vehicle.Boat;
@@ -231,6 +233,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
         }
     }
     // Paper end
+    public org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason; // Paper
 
     public com.destroystokyo.paper.loottable.PaperLootableInventoryData lootableData; // Paper
     private CraftEntity bukkitEntity;
@@ -1971,6 +1974,9 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
                 }
                 nbt.put("Paper.Origin", this.newDoubleList(origin.getX(), origin.getY(), origin.getZ()));
             }
+            if (spawnReason != null) {
+                nbt.putString("Paper.SpawnReason", spawnReason.name());
+            }
             // Save entity's from mob spawner status
             if (spawnedViaMobSpawner) {
                 nbt.putBoolean("Paper.FromMobSpawner", true);
@@ -2116,6 +2122,26 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
             }
 
             spawnedViaMobSpawner = nbt.getBoolean("Paper.FromMobSpawner"); // Restore entity's from mob spawner status
+            if (nbt.contains("Paper.SpawnReason")) {
+                String spawnReasonName = nbt.getString("Paper.SpawnReason");
+                try {
+                    spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.valueOf(spawnReasonName);
+                } catch (Exception ignored) {
+                    LOGGER.error("Unknown SpawnReason " + spawnReasonName + " for " + this);
+                }
+            }
+            if (spawnReason == null) {
+                if (spawnedViaMobSpawner) {
+                    spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER;
+                } else if (this instanceof Mob && (this instanceof Animal || this instanceof AbstractFish) && !((Mob) this).removeWhenFarAway(0.0)) {
+                    if (!nbt.getBoolean("PersistenceRequired")) {
+                        spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL;
+                    }
+                }
+            }
+            if (spawnReason == null) {
+                spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT;
+            }
             // Paper end
 
         } catch (Throwable throwable) {
