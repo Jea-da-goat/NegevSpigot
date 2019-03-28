@@ -1308,6 +1308,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
         });
         isOversleep = false;MinecraftTimings.serverOversleep.stopTiming();
         // Paper end
+        new com.destroystokyo.paper.event.server.ServerTickStartEvent(this.tickCount+1).callEvent(); // Paper
 
         ++this.tickCount;
         this.tickChildren(shouldKeepTicking);
@@ -1345,6 +1346,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
         try (co.aikar.timings.Timing ignored = MinecraftTimings.processTasksTimer.startTiming()) {
             this.runAllTasks();
         }
+        // Paper end
+        // Paper start
+        long endTime = System.nanoTime();
+        long remaining = (TICK_TIME - (endTime - lastTick)) - catchupTime;
+        new com.destroystokyo.paper.event.server.ServerTickEndEvent(this.tickCount, ((double)(endTime - lastTick) / 1000000D), remaining).callEvent();
         // Paper end
         this.profiler.push("tallying");
         long l = this.tickTimes[this.tickCount % 100] = Util.getNanos() - i;
