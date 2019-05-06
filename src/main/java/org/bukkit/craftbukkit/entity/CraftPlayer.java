@@ -402,6 +402,46 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             connection.disconnect(message == null ? net.kyori.adventure.text.Component.empty() : message);
         }
     }
+
+    @Override
+    public int getViewDistance() {
+        throw new UnsupportedOperationException("Per-Player View Distance APIs need further understanding to properly implement (There are per world view distances though!)"); // TODO
+    }
+
+    @Override
+    public void setViewDistance(int viewDistance) {
+        throw new UnsupportedOperationException("Per-Player View Distance APIs need further understanding to properly implement (There are per world view distances though!)"); // TODO
+    }
+
+    @Override
+    public int getSimulationDistance() {
+        throw new UnsupportedOperationException("Per-Player View Distance APIs need further understanding to properly implement (There are per world view distances though!)"); // TODO
+    }
+
+    @Override
+    public void setSimulationDistance(int simulationDistance) {
+        throw new UnsupportedOperationException("Per-Player View Distance APIs need further understanding to properly implement (There are per world view distances though!)"); // TODO
+    }
+
+    @Override
+    public int getNoTickViewDistance() {
+        throw new UnsupportedOperationException("Per-Player View Distance APIs need further understanding to properly implement (There are per world view distances though!)"); // TODO
+    }
+
+    @Override
+    public void setNoTickViewDistance(int viewDistance) {
+        throw new UnsupportedOperationException("Per-Player View Distance APIs need further understanding to properly implement (There are per world view distances though!)"); // TODO
+    }
+
+    @Override
+    public int getSendViewDistance() {
+        throw new UnsupportedOperationException("Per-Player View Distance APIs need further understanding to properly implement (There are per world view distances though!)"); // TODO
+    }
+
+    @Override
+    public void setSendViewDistance(int viewDistance) {
+        throw new UnsupportedOperationException("Per-Player View Distance APIs need further understanding to properly implement (There are per world view distances though!)"); // TODO
+    }
     // Paper end
 
     @Override

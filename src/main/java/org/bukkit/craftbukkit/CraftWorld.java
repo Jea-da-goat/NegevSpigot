@@ -1913,6 +1913,37 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         return world.spigotConfig.simulationDistance;
     }
     // Spigot end
+    // Paper start - view distance api
+    @Override
+    public void setViewDistance(int viewDistance) {
+        throw new UnsupportedOperationException(); //TODO
+    }
+
+    @Override
+    public void setSimulationDistance(int simulationDistance) {
+        throw new UnsupportedOperationException(); //TODO
+    }
+
+    @Override
+    public int getNoTickViewDistance() {
+        throw new UnsupportedOperationException(); //TODO
+    }
+
+    @Override
+    public void setNoTickViewDistance(int viewDistance) {
+        throw new UnsupportedOperationException(); //TODO
+    }
+
+    @Override
+    public int getSendViewDistance() {
+        throw new UnsupportedOperationException(); //TODO
+    }
+
+    @Override
+    public void setSendViewDistance(int viewDistance) {
+        throw new UnsupportedOperationException(); //TODO
+    }
+    // Paper end - view distance api
 
     // Spigot start
     private final org.bukkit.World.Spigot spigot = new org.bukkit.World.Spigot()
