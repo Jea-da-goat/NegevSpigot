@@ -519,7 +519,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
 
         Objects.requireNonNull(this.connection);
         // CraftBukkit - Don't wait
-        minecraftserver.wrapRunnable(networkmanager::handleDisconnection);
+        minecraftserver.scheduleOnMain(networkmanager::handleDisconnection); // Paper
     }
 
     private <T, R> CompletableFuture<R> filterTextPacket(T text, BiFunction<TextFilter, T, CompletableFuture<R>> filterer) {
