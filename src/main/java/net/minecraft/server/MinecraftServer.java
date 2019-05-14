@@ -2327,7 +2327,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
     // CraftBukkit start
     @Override
     public boolean isSameThread() {
-        return super.isSameThread() || this.isStopped(); // CraftBukkit - MC-142590
+        return super.isSameThread() /*|| this.isStopped()*/; // CraftBukkit - MC-142590 // Paper - causes issues elsewhere
     }
 
     public boolean isDebugging() {
