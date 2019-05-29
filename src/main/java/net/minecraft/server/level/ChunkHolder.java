@@ -73,6 +73,7 @@ public class ChunkHolder {
     private boolean resendLight;
     private CompletableFuture<Void> pendingFullStateConfirmation;
 
+    boolean isUpdateQueued = false; // Paper
     private final ChunkMap chunkMap; // Paper
 
     // Paper start
