@@ -1087,6 +1087,37 @@ public class ServerLevel extends Level implements WorldGenLevel {
         return !this.server.isUnderSpawnProtection(this, pos, player) && this.getWorldBorder().isWithinBounds(pos);
     }
 
+    // Paper start - derived from below
+    public void saveIncrementally(boolean doFull) {
+        ServerChunkCache chunkproviderserver = this.getChunkSource();
+
+        if (doFull) {
+            org.bukkit.Bukkit.getPluginManager().callEvent(new org.bukkit.event.world.WorldSaveEvent(getWorld()));
+        }
+
+        try (co.aikar.timings.Timing ignored = this.timings.worldSave.startTiming()) {
+            if (doFull) {
+                this.saveLevelData();
+            }
+
+            this.timings.worldSaveChunks.startTiming(); // Paper
+            if (!this.noSave()) chunkproviderserver.saveIncrementally();
+            this.timings.worldSaveChunks.stopTiming(); // Paper
+
+            // Copied from save()
+            // CraftBukkit start - moved from MinecraftServer.saveChunks
+            if (doFull) { // Paper
+                ServerLevel worldserver1 = this;
+
+                this.serverLevelData.setWorldBorder(worldserver1.getWorldBorder().createSettings());
+                this.serverLevelData.setCustomBossEvents(this.server.getCustomBossEvents().save());
+                this.convertable.saveDataTag(this.server.registryHolder, this.serverLevelData, this.server.getPlayerList().getSingleplayerData());
+            }
+            // CraftBukkit end
+        }
+    }
+    // Paper end
+
     public void save(@Nullable ProgressListener progressListener, boolean flush, boolean savingDisabled) {
         ServerChunkCache chunkproviderserver = this.getChunkSource();
 

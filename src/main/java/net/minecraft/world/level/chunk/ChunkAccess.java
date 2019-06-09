@@ -457,6 +457,7 @@ public abstract class ChunkAccess implements BlockGetter, BiomeManager.NoiseBiom
     public LevelHeightAccessor getHeightAccessorForGeneration() {
         return this;
     }
+    public void setLastSaved(long ticks) {} // Paper
 
     public static record TicksToSave(SerializableTickContainer<Block> blocks, SerializableTickContainer<Fluid> fluids) {
 

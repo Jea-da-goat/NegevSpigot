@@ -854,7 +854,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
 
         try {
             this.isSaving = true;
-            this.getPlayerList().saveAll();
+            this.getPlayerList().saveAll(); // Diff on change
             flag3 = this.saveAllChunks(suppressLogs, flush, force);
         } finally {
             this.isSaving = false;
@@ -1400,13 +1400,28 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
             }
         }
 
-        if (this.autosavePeriod > 0 && this.tickCount % this.autosavePeriod == 0) { // CraftBukkit
-            MinecraftServer.LOGGER.debug("Autosave started");
-            this.profiler.push("save");
-            this.saveEverything(true, false, false);
-            this.profiler.pop();
-            MinecraftServer.LOGGER.debug("Autosave finished");
+        // Paper start - incremental chunk and player saving
+        int playerSaveInterval = io.papermc.paper.configuration.GlobalConfiguration.get().playerAutoSave.rate;
+        if (playerSaveInterval < 0) {
+            playerSaveInterval = autosavePeriod;
         }
+        this.profiler.push("save");
+        final boolean fullSave = autosavePeriod > 0 && this.tickCount % autosavePeriod == 0;
+        try {
+            this.isSaving = true;
+            if (playerSaveInterval > 0) {
+                this.playerList.saveAll(playerSaveInterval);
+            }
+            for (ServerLevel level : this.getAllLevels()) {
+                if (level.paperConfig().chunks.autoSaveInterval.value() > 0) {
+                    level.saveIncrementally(fullSave);
+                }
+            }
+        } finally {
+            this.isSaving = false;
+        }
+        this.profiler.pop();
+        // Paper end
         io.papermc.paper.util.CachedLists.reset(); // Paper
         // Paper start - move executeAll() into full server tick timing
         try (co.aikar.timings.Timing ignored = MinecraftTimings.processTasksTimer.startTiming()) {

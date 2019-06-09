@@ -87,6 +87,12 @@ public class LevelChunk extends ChunkAccess {
     private final Int2ObjectMap<GameEventDispatcher> gameEventDispatcherSections;
     private final LevelChunkTicks<Block> blockTicks;
     private final LevelChunkTicks<Fluid> fluidTicks;
+    // Paper start - track last save time
+    public long lastSaveTime;
+    public void setLastSaved(long ticks) {
+        this.lastSaveTime = ticks;
+    }
+    // Paper end
 
     public LevelChunk(Level world, ChunkPos pos) {
         this(world, pos, UpgradeData.EMPTY, new LevelChunkTicks<>(), new LevelChunkTicks<>(), 0L, (LevelChunkSection[]) null, (LevelChunk.PostLoadProcessor) null, (BlendingData) null);

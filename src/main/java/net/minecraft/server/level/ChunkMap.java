@@ -103,6 +103,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 import net.minecraft.world.level.storage.DimensionDataStorage;
 import net.minecraft.world.level.storage.LevelStorageSource;
 import net.minecraft.world.phys.Vec3;
+import it.unimi.dsi.fastutil.objects.ObjectRBTreeSet; // Paper
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.slf4j.Logger;
@@ -779,6 +780,64 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
 
     }
 
+    // Paper start - incremental autosave
+    final ObjectRBTreeSet<ChunkHolder> autoSaveQueue = new ObjectRBTreeSet<>((playerchunk1, playerchunk2) -> {
+        int timeCompare =  Long.compare(playerchunk1.lastAutoSaveTime, playerchunk2.lastAutoSaveTime);
+        if (timeCompare != 0) {
+            return timeCompare;
+        }
+
+        return Long.compare(MCUtil.getCoordinateKey(playerchunk1.pos), MCUtil.getCoordinateKey(playerchunk2.pos));
+    });
+
+    protected void saveIncrementally() {
+        int savedThisTick = 0;
+        // optimized since we search far less chunks to hit ones that need to be saved
+        List<ChunkHolder> reschedule = new java.util.ArrayList<>(this.level.paperConfig().chunks.maxAutoSaveChunksPerTick);
+        long currentTick = this.level.getGameTime();
+        long maxSaveTime = currentTick - this.level.paperConfig().chunks.autoSaveInterval.value();
+
+        for (Iterator<ChunkHolder> iterator = this.autoSaveQueue.iterator(); iterator.hasNext();) {
+            ChunkHolder playerchunk = iterator.next();
+            if (playerchunk.lastAutoSaveTime > maxSaveTime) {
+                break;
+            }
+
+            iterator.remove();
+
+            ChunkAccess ichunkaccess = playerchunk.getChunkToSave().getNow(null);
+            if (ichunkaccess instanceof LevelChunk) {
+                boolean shouldSave = ((LevelChunk)ichunkaccess).lastSaveTime <= maxSaveTime;
+
+                if (shouldSave && this.save(ichunkaccess) && this.level.entityManager.storeChunkSections(playerchunk.pos.toLong(), entity -> {})) {
+                    ++savedThisTick;
+
+                    if (!playerchunk.setHasBeenLoaded()) {
+                        // do not fall through to reschedule logic
+                        playerchunk.inactiveTimeStart = currentTick;
+                        if (savedThisTick >= this.level.paperConfig().chunks.maxAutoSaveChunksPerTick) {
+                            break;
+                        }
+                        continue;
+                    }
+                }
+            }
+
+            reschedule.add(playerchunk);
+
+            if (savedThisTick >= this.level.paperConfig().chunks.maxAutoSaveChunksPerTick) {
+                break;
+            }
+        }
+
+        for (int i = 0, len = reschedule.size(); i < len; ++i) {
+            ChunkHolder playerchunk = reschedule.get(i);
+            playerchunk.lastAutoSaveTime = this.level.getGameTime();
+            this.autoSaveQueue.add(playerchunk);
+        }
+    }
+    // Paper end
+
     protected void saveAllChunks(boolean flush) {
         // Paper start - do not overload I/O threads with too much work when saving
         int[] saved = new int[1];
@@ -874,13 +933,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
         }
 
         int l = 0;
-        Iterator objectiterator = net.minecraft.server.ChunkSystem.getVisibleChunkHolders(this.level).iterator(); // Paper
-
-        while (l < 20 && shouldKeepTicking.getAsBoolean() && objectiterator.hasNext()) {
-            if (this.saveChunkIfNeeded((ChunkHolder) objectiterator.next())) {
-                ++l;
-            }
-        }
+        // Paper - incremental chunk and player saving
 
     }
 
@@ -916,6 +969,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
 
                         this.level.unload(chunk);
                     }
+                    this.autoSaveQueue.remove(holder); // Paper
 
                     this.lightEngine.updateChunkStatus(ichunkaccess.getPos());
                     this.lightEngine.tryScheduleUpdate();
@@ -1367,6 +1421,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
             asyncSaveData, chunk);
 
         chunk.setUnsaved(false);
+        chunk.setLastSaved(this.level.getGameTime()); // Paper - track last saved time
     }
     // Paper end
 
@@ -1376,6 +1431,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
         if (!chunk.isUnsaved()) {
             return false;
         } else {
+            chunk.setLastSaved(this.level.getGameTime()); // Paper - track save time
             chunk.setUnsaved(false);
             ChunkPos chunkcoordintpair = chunk.getPos();
 

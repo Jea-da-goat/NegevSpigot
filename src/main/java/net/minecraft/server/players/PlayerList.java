@@ -569,6 +569,7 @@ public abstract class PlayerList {
     protected void save(ServerPlayer player) {
         if (!player.getBukkitEntity().isPersistent()) return; // CraftBukkit
         if (!player.didPlayerJoinEvent) return; // Paper - If we never fired PJE, we disconnected during login. Data has not changed, and additionally, our saved vehicle is not loaded! If we save now, we will lose our vehicle (CraftBukkit bug)
+        player.lastSave = MinecraftServer.currentTick; // Paper
         this.playerIo.save(player);
         ServerStatsCounter serverstatisticmanager = (ServerStatsCounter) player.getStats(); // CraftBukkit
 
@@ -1171,10 +1172,22 @@ public abstract class PlayerList {
     }
 
     public void saveAll() {
+        // Paper start - incremental player saving
+        this.saveAll(-1);
+    }
+
+    public void saveAll(int interval) {
         net.minecraft.server.MCUtil.ensureMain("Save Players" , () -> { // Paper - Ensure main
         MinecraftTimings.savePlayers.startTiming(); // Paper
+        int numSaved = 0;
+        long now = MinecraftServer.currentTick;
         for (int i = 0; i < this.players.size(); ++i) {
-            this.save(this.players.get(i));
+            ServerPlayer entityplayer = this.players.get(i);
+            if (interval == -1 || now - entityplayer.lastSave >= interval) {
+                this.save(entityplayer);
+                if (interval != -1 && ++numSaved <= io.papermc.paper.configuration.GlobalConfiguration.get().playerAutoSave.maxPerTick()) { break; }
+            }
+            // Paper end
         }
         MinecraftTimings.savePlayers.stopTiming(); // Paper
         return null; }); // Paper - ensure main

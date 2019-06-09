@@ -99,6 +99,8 @@ public class ChunkHolder {
     com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> playersInMobSpawnRange;
     com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> playersInChunkTickRange;
     // Paper end - optimise anyPlayerCloseEnoughForSpawning
+    long lastAutoSaveTime; // Paper - incremental autosave
+    long inactiveTimeStart; // Paper - incremental autosave
 
     public ChunkHolder(ChunkPos pos, int level, LevelHeightAccessor world, LevelLightEngine lightingProvider, ChunkHolder.LevelChangeListener levelUpdateListener, ChunkHolder.PlayerProvider playersWatchingChunkProvider) {
         this.futures = new AtomicReferenceArray(ChunkHolder.CHUNK_STATUSES.size());
@@ -527,7 +529,19 @@ public class ChunkHolder {
         boolean flag2 = playerchunk_state.isOrAfter(ChunkHolder.FullChunkStatus.BORDER);
         boolean flag3 = playerchunk_state1.isOrAfter(ChunkHolder.FullChunkStatus.BORDER);
 
+        boolean prevHasBeenLoaded = this.wasAccessibleSinceLastSave; // Paper
         this.wasAccessibleSinceLastSave |= flag3;
+        // Paper start - incremental autosave
+        if (this.wasAccessibleSinceLastSave & !prevHasBeenLoaded) {
+            long timeSinceAutoSave = this.inactiveTimeStart - this.lastAutoSaveTime;
+            if (timeSinceAutoSave < 0) {
+                // safest bet is to assume autosave is needed here
+                timeSinceAutoSave = this.chunkMap.level.paperConfig().chunks.autoSaveInterval.value();
+            }
+            this.lastAutoSaveTime = this.chunkMap.level.getGameTime() - timeSinceAutoSave;
+            this.chunkMap.autoSaveQueue.add(this);
+        }
+        // Paper end
         if (!flag2 && flag3) {
             int expectCreateCount = ++this.fullChunkCreateCount; // Paper
             this.fullChunkFuture = chunkStorage.prepareAccessibleChunk(this);
@@ -689,8 +703,32 @@ public class ChunkHolder {
     }
 
     public void refreshAccessibility() {
+        boolean prev = this.wasAccessibleSinceLastSave; // Paper
         this.wasAccessibleSinceLastSave = ChunkHolder.getFullChunkStatus(this.ticketLevel).isOrAfter(ChunkHolder.FullChunkStatus.BORDER);
+        // Paper start - incremental autosave
+        if (prev != this.wasAccessibleSinceLastSave) {
+            if (this.wasAccessibleSinceLastSave) {
+                long timeSinceAutoSave = this.inactiveTimeStart - this.lastAutoSaveTime;
+                if (timeSinceAutoSave < 0) {
+                    // safest bet is to assume autosave is needed here
+                    timeSinceAutoSave = this.chunkMap.level.paperConfig().chunks.autoSaveInterval.value();
+                }
+                this.lastAutoSaveTime = this.chunkMap.level.getGameTime() - timeSinceAutoSave;
+                this.chunkMap.autoSaveQueue.add(this);
+            } else {
+                this.inactiveTimeStart = this.chunkMap.level.getGameTime();
+                this.chunkMap.autoSaveQueue.remove(this);
+            }
+        }
+        // Paper end
     }
+
+    // Paper start - incremental autosave
+    public boolean setHasBeenLoaded() {
+        this.wasAccessibleSinceLastSave = getFullChunkStatus(this.ticketLevel).isOrAfter(ChunkHolder.FullChunkStatus.BORDER);
+        return this.wasAccessibleSinceLastSave;
+    }
+    // Paper end
 
     public void replaceProtoChunk(ImposterProtoChunk chunk) {
         for (int i = 0; i < this.futures.length(); ++i) {
