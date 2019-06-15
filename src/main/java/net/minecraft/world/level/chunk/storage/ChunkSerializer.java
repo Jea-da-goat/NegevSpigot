@@ -623,6 +623,17 @@ public class ChunkSerializer {
         }));
     }
 
+    // Paper start
+    public static @Nullable ChunkStatus getStatus(@Nullable CompoundTag compound) {
+        if (compound == null) {
+            return null;
+        }
+
+        // Note: Copied from below
+        return ChunkStatus.getStatus(compound.getString("Status"));
+    }
+    // Paper end
+
     public static ChunkStatus.ChunkType getChunkTypeFromTag(@Nullable CompoundTag nbt) {
         return nbt != null ? ChunkStatus.byName(nbt.getString("Status")).getChunkType() : ChunkStatus.ChunkType.PROTOCHUNK;
     }
