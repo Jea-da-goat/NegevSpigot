@@ -223,7 +223,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
     }
 
     @Override public LevelChunk getChunkIfLoaded(int x, int z) { // Paper - this was added in world too but keeping here for NMS ABI
-        return this.chunkSource.getChunk(x, z, false);
+        return this.chunkSource.getChunkAtIfLoadedImmediately(x, z); // Paper
     }
 
     @Override
@@ -1441,7 +1441,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
 
         for (int l1 = j; l1 <= i1; ++l1) {
             for (int i2 = l; i2 <= k1; ++i2) {
-                LevelChunk chunk = this.getChunkSource().getChunkNow(l1, i2);
+                LevelChunk chunk = (LevelChunk) this.getChunkIfLoadedImmediately(l1, i2); // Paper
 
                 if (chunk != null) {
                     for (int j2 = k; j2 <= j1; ++j2) {
