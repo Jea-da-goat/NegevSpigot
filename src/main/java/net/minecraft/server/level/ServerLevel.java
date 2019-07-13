@@ -315,6 +315,78 @@ public class ServerLevel extends Level implements WorldGenLevel {
             }
         }
     }
+
+    // Paper start - Asynchronous IO
+    public final com.destroystokyo.paper.io.PaperFileIOThread.ChunkDataController poiDataController = new com.destroystokyo.paper.io.PaperFileIOThread.ChunkDataController() {
+        @Override
+        public void writeData(int x, int z, net.minecraft.nbt.CompoundTag compound) throws java.io.IOException {
+            ServerLevel.this.getChunkSource().chunkMap.getPoiManager().write(new ChunkPos(x, z), compound);
+        }
+
+        @Override
+        public net.minecraft.nbt.CompoundTag readData(int x, int z) throws java.io.IOException {
+            return ServerLevel.this.getChunkSource().chunkMap.getPoiManager().read(new ChunkPos(x, z));
+        }
+
+        @Override
+        public <T> T computeForRegionFile(int chunkX, int chunkZ, java.util.function.Function<net.minecraft.world.level.chunk.storage.RegionFile, T> function) {
+            synchronized (ServerLevel.this.getChunkSource().chunkMap.getPoiManager()) {
+                net.minecraft.world.level.chunk.storage.RegionFile file;
+
+                try {
+                    file = ServerLevel.this.getChunkSource().chunkMap.getPoiManager().getRegionFile(new ChunkPos(chunkX, chunkZ), false);
+                } catch (java.io.IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+
+                return function.apply(file);
+            }
+        }
+
+        @Override
+        public <T> T computeForRegionFileIfLoaded(int chunkX, int chunkZ, java.util.function.Function<net.minecraft.world.level.chunk.storage.RegionFile, T> function) {
+            synchronized (ServerLevel.this.getChunkSource().chunkMap.getPoiManager()) {
+                net.minecraft.world.level.chunk.storage.RegionFile file = ServerLevel.this.getChunkSource().chunkMap.getPoiManager().getRegionFileIfLoaded(new ChunkPos(chunkX, chunkZ));
+                return function.apply(file);
+            }
+        }
+    };
+
+    public final com.destroystokyo.paper.io.PaperFileIOThread.ChunkDataController chunkDataController = new com.destroystokyo.paper.io.PaperFileIOThread.ChunkDataController() {
+        @Override
+        public void writeData(int x, int z, net.minecraft.nbt.CompoundTag compound) throws java.io.IOException {
+            ServerLevel.this.getChunkSource().chunkMap.write(new ChunkPos(x, z), compound);
+        }
+
+        @Override
+        public net.minecraft.nbt.CompoundTag readData(int x, int z) throws java.io.IOException {
+            return ServerLevel.this.getChunkSource().chunkMap.readSync(new ChunkPos(x, z));
+        }
+
+        @Override
+        public <T> T computeForRegionFile(int chunkX, int chunkZ, java.util.function.Function<net.minecraft.world.level.chunk.storage.RegionFile, T> function) {
+            synchronized (ServerLevel.this.getChunkSource().chunkMap) {
+                net.minecraft.world.level.chunk.storage.RegionFile file;
+
+                try {
+                    file = ServerLevel.this.getChunkSource().chunkMap.regionFileCache.getRegionFile(new ChunkPos(chunkX, chunkZ), false);
+                } catch (java.io.IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+
+                return function.apply(file);
+            }
+        }
+
+        @Override
+        public <T> T computeForRegionFileIfLoaded(int chunkX, int chunkZ, java.util.function.Function<net.minecraft.world.level.chunk.storage.RegionFile, T> function) {
+            synchronized (ServerLevel.this.getChunkSource().chunkMap) {
+                net.minecraft.world.level.chunk.storage.RegionFile file = ServerLevel.this.getChunkSource().chunkMap.regionFileCache.getRegionFileIfLoaded(new ChunkPos(chunkX, chunkZ));
+                return function.apply(file);
+            }
+        }
+    };
+    public final com.destroystokyo.paper.io.chunk.ChunkTaskManager asyncChunkTaskManager;
     // Paper end
 
     // Add env and gen to constructor, IWorldDataServer -> WorldDataServer
@@ -397,6 +469,8 @@ public class ServerLevel extends Level implements WorldGenLevel {
 
         this.sleepStatus = new SleepStatus();
         this.getCraftServer().addWorld(this.getWorld()); // CraftBukkit
+
+        this.asyncChunkTaskManager = new com.destroystokyo.paper.io.chunk.ChunkTaskManager(this); // Paper
     }
 
     public void setWeatherParameters(int clearDuration, int rainDuration, boolean raining, boolean thundering) {

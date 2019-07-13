@@ -34,10 +34,10 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.LevelHeightAccessor;
 import org.slf4j.Logger;
 
-public class SectionStorage<R> implements AutoCloseable {
+public class SectionStorage<R> extends RegionFileStorage implements AutoCloseable { // Paper - nuke IOWorker
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String SECTIONS_TAG = "Sections";
-    private final IOWorker worker;
+    // Paper - remove mojang I/O thread
     private final Long2ObjectMap<Optional<R>> storage = new Long2ObjectOpenHashMap<>();
     public final LongLinkedOpenHashSet dirty = new LongLinkedOpenHashSet();
     private final Function<Runnable, Codec<R>> codec;
@@ -48,13 +48,14 @@ public class SectionStorage<R> implements AutoCloseable {
     protected final LevelHeightAccessor levelHeightAccessor;
 
     public SectionStorage(Path path, Function<Runnable, Codec<R>> codecFactory, Function<Runnable, R> factory, DataFixer dataFixer, DataFixTypes dataFixTypes, boolean dsync, RegistryAccess dynamicRegistryManager, LevelHeightAccessor world) {
+        super(path, dsync); // Paper - remove mojang I/O thread
         this.codec = codecFactory;
         this.factory = factory;
         this.fixerUpper = dataFixer;
         this.type = dataFixTypes;
         this.registryAccess = dynamicRegistryManager;
         this.levelHeightAccessor = world;
-        this.worker = new IOWorker(path, dsync, path.getFileName().toString());
+        // Paper - remove mojang I/O thread
     }
 
     protected void tick(BooleanSupplier shouldKeepTicking) {
@@ -122,15 +123,20 @@ public class SectionStorage<R> implements AutoCloseable {
     }
 
     private CompletableFuture<Optional<CompoundTag>> tryRead(ChunkPos pos) {
-        return this.worker.loadAsync(pos).exceptionally((throwable) -> {
-            if (throwable instanceof IOException iOException) {
-                LOGGER.error("Error reading chunk {} data from disk", pos, iOException);
-                return Optional.empty();
-            } else {
-                throw new CompletionException(throwable);
-            }
-        });
+        // Paper start - async chunk io
+        try {
+            return CompletableFuture.completedFuture(Optional.ofNullable(this.read(pos)));
+        } catch (Throwable thr) {
+            return CompletableFuture.failedFuture(thr);
+        }
+        // Paper end - async chunk io
     }
+
+    // Paper start - async chunk io
+    public void loadInData(ChunkPos chunkPos, CompoundTag compound) {
+        this.readColumn(chunkPos, RegistryOps.create(NbtOps.INSTANCE, this.registryAccess), compound);
+    }
+    // Paper end - aync chnnk i
 
     private <T> void readColumn(ChunkPos pos, DynamicOps<T> ops, @Nullable T data) {
         if (data == null) {
@@ -170,7 +176,7 @@ public class SectionStorage<R> implements AutoCloseable {
         Dynamic<Tag> dynamic = this.writeColumn(pos, registryOps);
         Tag tag = dynamic.getValue();
         if (tag instanceof CompoundTag) {
-            this.worker.store(pos, (CompoundTag)tag);
+            try { this.write(pos, (CompoundTag)tag); } catch (IOException ioexception) { SectionStorage.LOGGER.error("Error writing data to disk", ioexception); } // Paper - nuke IOWorker
         } else {
             LOGGER.error("Expected compound tag, got {}", (Object)tag);
         }
@@ -197,6 +203,21 @@ public class SectionStorage<R> implements AutoCloseable {
 
         return new Dynamic<>(ops, ops.createMap(ImmutableMap.of(ops.createString("Sections"), ops.createMap(map), ops.createString("DataVersion"), ops.createInt(SharedConstants.getCurrentVersion().getWorldVersion()))));
     }
+
+    // Paper start - internal get data function, copied from above
+    private CompoundTag getDataInternal(ChunkPos pos) {
+        RegistryOps<Tag> registryOps = RegistryOps.create(NbtOps.INSTANCE, this.registryAccess);
+        Dynamic<Tag> dynamic = this.writeColumn(pos, registryOps);
+        Tag nbtbase = (Tag) dynamic.getValue();
+
+        if (nbtbase instanceof CompoundTag) {
+            return (CompoundTag)nbtbase;
+        } else {
+            SectionStorage.LOGGER.error("Expected compound tag, got {}", nbtbase);
+        }
+        return null;
+    }
+    // Paper end
 
     private static long getKey(ChunkPos chunkPos, int y) {
         return SectionPos.asLong(chunkPos.x, y, chunkPos.z);
@@ -233,6 +254,24 @@ public class SectionStorage<R> implements AutoCloseable {
 
     @Override
     public void close() throws IOException {
-        this.worker.close();
+        //this.worker.close(); // Paper - nuke I/O worker - don't call the worker
+        super.close(); // Paper - nuke I/O worker - call super.close method which is responsible for closing used files.
     }
+
+    // Paper start - get data function
+    public CompoundTag getData(ChunkPos chunkcoordintpair) {
+        // Note: Copied from above
+        // This is checking if the data needs to be written, then it builds it later in getDataInternal(ChunkCoordIntPair)
+        if (!this.dirty.isEmpty()) {
+            for (int i = this.levelHeightAccessor.getMinSection(); i < this.levelHeightAccessor.getMaxSection(); ++i) {
+                long j = SectionPos.of(chunkcoordintpair, i).asLong();
+
+                if (this.dirty.contains(j)) {
+                    return this.getDataInternal(chunkcoordintpair);
+                }
+            }
+        }
+        return null;
+    }
+    // Paper end
 }

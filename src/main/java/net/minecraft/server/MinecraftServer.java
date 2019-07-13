@@ -932,7 +932,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
             this.getProfileCache().save();
         }
         // Spigot end
-
+        com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.close(true, true); // Paper
     }
 
     public String getLocalIp() {

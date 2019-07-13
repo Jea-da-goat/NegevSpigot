@@ -40,9 +40,11 @@ public class PoiManager extends SectionStorage<PoiSection> {
     public static final int VILLAGE_SECTION_SIZE = 1;
     private final PoiManager.DistanceTracker distanceTracker;
     private final LongSet loadedChunks = new LongOpenHashSet();
+    private final net.minecraft.server.level.ServerLevel world; // Paper
 
     public PoiManager(Path path, DataFixer dataFixer, boolean dsync, RegistryAccess registryManager, LevelHeightAccessor world) {
         super(path, PoiSection::codec, PoiSection::new, dataFixer, DataFixTypes.POI_CHUNK, dsync, registryManager, world);
+        this.world = (net.minecraft.server.level.ServerLevel)world; // Paper
         this.distanceTracker = new PoiManager.DistanceTracker();
     }
 
@@ -195,7 +197,18 @@ public class PoiManager extends SectionStorage<PoiSection> {
 
     @Override
     public void tick(BooleanSupplier shouldKeepTicking) {
-        super.tick(shouldKeepTicking);
+        // Paper start - async chunk io
+        while (!this.dirty.isEmpty() && shouldKeepTicking.getAsBoolean()) {
+            ChunkPos chunkcoordintpair = SectionPos.of(this.dirty.firstLong()).chunk();
+
+            net.minecraft.nbt.CompoundTag data;
+            try (co.aikar.timings.Timing ignored1 = this.world.timings.poiSaveDataSerialization.startTiming()) {
+                data = this.getData(chunkcoordintpair);
+            }
+            com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.scheduleSave(this.world,
+                chunkcoordintpair.x, chunkcoordintpair.z, data, null, com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY);
+        }
+        // Paper end
         this.distanceTracker.runAllUpdates();
     }
 
@@ -287,6 +300,35 @@ public class PoiManager extends SectionStorage<PoiSection> {
             super.runUpdates(Integer.MAX_VALUE);
         }
     }
+
+    // Paper start - Asynchronous chunk io
+    @javax.annotation.Nullable
+    @Override
+    public net.minecraft.nbt.CompoundTag read(ChunkPos chunkcoordintpair) throws java.io.IOException {
+        if (this.world != null && Thread.currentThread() != com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE) {
+            net.minecraft.nbt.CompoundTag ret = com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE
+                .loadChunkDataAsyncFuture(this.world, chunkcoordintpair.x, chunkcoordintpair.z, com.destroystokyo.paper.io.IOUtil.getPriorityForCurrentThread(),
+                    true, false, true).join().poiData;
+
+            if (ret == com.destroystokyo.paper.io.PaperFileIOThread.FAILURE_VALUE) {
+                throw new java.io.IOException("See logs for further detail");
+            }
+            return ret;
+        }
+        return super.read(chunkcoordintpair);
+    }
+
+    @Override
+    public void write(ChunkPos chunkcoordintpair, net.minecraft.nbt.CompoundTag nbttagcompound) throws java.io.IOException {
+        if (this.world != null && Thread.currentThread() != com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE) {
+            com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.scheduleSave(
+                this.world, chunkcoordintpair.x, chunkcoordintpair.z, nbttagcompound, null,
+                com.destroystokyo.paper.io.IOUtil.getPriorityForCurrentThread());
+            return;
+        }
+        super.write(chunkcoordintpair, nbttagcompound);
+    }
+    // Paper end
 
     public static enum Occupancy {
         HAS_SPACE(PoiRecord::hasSpace),

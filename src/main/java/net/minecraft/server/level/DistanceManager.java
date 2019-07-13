@@ -402,7 +402,7 @@ public abstract class DistanceManager {
     }
 
     public void removeTicketsOnClosing() {
-        ImmutableSet<TicketType<?>> immutableset = ImmutableSet.of(TicketType.UNKNOWN, TicketType.POST_TELEPORT, TicketType.LIGHT, TicketType.FUTURE_AWAIT); // Paper - add additional tickets to preserve
+        ImmutableSet<TicketType<?>> immutableset = ImmutableSet.of(TicketType.UNKNOWN, TicketType.POST_TELEPORT, TicketType.LIGHT, TicketType.FUTURE_AWAIT, TicketType.ASYNC_LOAD); // Paper - add additional tickets to preserve
         ObjectIterator objectiterator = this.tickets.long2ObjectEntrySet().fastIterator();
 
         while (objectiterator.hasNext()) {

@@ -388,10 +388,33 @@ public class ServerChunkCache extends ChunkSource {
         return ret;
     }
     // Paper end
+    // Paper start - async chunk io
+    public CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> getChunkAtAsynchronously(int x, int z, boolean gen, boolean isUrgent) {
+        CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> ret = new CompletableFuture<>();
+
+        ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority priority;
+        if (isUrgent) {
+            priority = ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.HIGHER;
+        } else {
+            priority = ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.NORMAL;
+        }
+
+        net.minecraft.server.ChunkSystem.scheduleChunkLoad(this.level, x, z, gen, ChunkStatus.FULL, true, priority, (chunk) -> {
+            if (chunk == null) {
+                ret.complete(ChunkHolder.UNLOADED_CHUNK);
+            } else {
+                ret.complete(Either.left(chunk));
+            }
+        });
+
+        return ret;
+    }
+    // Paper end - async chunk io
 
     @Nullable
     @Override
     public ChunkAccess getChunk(int x, int z, ChunkStatus leastStatus, boolean create) {
+        final int x1 = x; final int z1 = z; // Paper - conflict on variable change
         if (Thread.currentThread() != this.mainThread) {
             return (ChunkAccess) CompletableFuture.supplyAsync(() -> {
                 return this.getChunk(x, z, leastStatus, create);
@@ -414,13 +437,18 @@ public class ServerChunkCache extends ChunkSource {
             }
 
             gameprofilerfiller.incrementCounter("getChunkCacheMiss");
-            CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> completablefuture = this.getChunkFutureMainThread(x, z, leastStatus, create);
+            CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> completablefuture = this.getChunkFutureMainThread(x, z, leastStatus, create, true); // Paper
             ServerChunkCache.MainThreadExecutor chunkproviderserver_b = this.mainThreadProcessor;
 
             Objects.requireNonNull(completablefuture);
             if (!completablefuture.isDone()) { // Paper
+                // Paper start - async chunk io/loading
+                this.level.asyncChunkTaskManager.raisePriority(x1, z1, com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY);
+                com.destroystokyo.paper.io.chunk.ChunkTaskManager.pushChunkWait(this.level, x1, z1);
+                // Paper end
                 this.level.timings.syncChunkLoad.startTiming(); // Paper
             chunkproviderserver_b.managedBlock(completablefuture::isDone);
+                com.destroystokyo.paper.io.chunk.ChunkTaskManager.popChunkWait(); // Paper - async chunk debug
                 this.level.timings.syncChunkLoad.stopTiming(); // Paper
             } // Paper
             ichunkaccess = (ChunkAccess) ((Either) completablefuture.join()).map((ichunkaccess1) -> {
@@ -507,6 +535,11 @@ public class ServerChunkCache extends ChunkSource {
     }
 
     private CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> getChunkFutureMainThread(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) {
+        // Paper start - add isUrgent - old sig left in place for dirty nms plugins
+        return getChunkFutureMainThread(chunkX, chunkZ, leastStatus, create, false);
+    }
+    private CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> getChunkFutureMainThread(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create, boolean isUrgent) {
+        // Paper end
         ChunkPos chunkcoordintpair = new ChunkPos(chunkX, chunkZ);
         long k = chunkcoordintpair.toLong();
         int l = 33 + ChunkStatus.getDistance(leastStatus);
@@ -921,11 +954,12 @@ public class ServerChunkCache extends ChunkSource {
         // CraftBukkit start - process pending Chunk loadCallback() and unloadCallback() after each run task
         public boolean pollTask() {
         try {
+            boolean execChunkTask = com.destroystokyo.paper.io.chunk.ChunkTaskManager.pollChunkWaitQueue() || ServerChunkCache.this.level.asyncChunkTaskManager.pollNextChunkTask(); // Paper
             if (ServerChunkCache.this.runDistanceManagerUpdates()) {
                 return true;
             } else {
                 ServerChunkCache.this.lightEngine.tryScheduleUpdate();
-                return super.pollTask();
+                return super.pollTask() || execChunkTask; // Paper
             }
         } finally {
             chunkMap.callbackExecutor.run();
