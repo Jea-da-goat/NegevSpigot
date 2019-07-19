@@ -392,6 +392,12 @@ public class ServerLevel extends Level implements WorldGenLevel {
     };
     public final com.destroystokyo.paper.io.chunk.ChunkTaskManager asyncChunkTaskManager;
     // Paper end
+    // Paper start
+    @Override
+    public boolean hasChunk(int chunkX, int chunkZ) {
+        return this.getChunkSource().getChunkAtIfLoadedImmediately(chunkX, chunkZ) != null;
+    }
+    // Paper end
 
     // Paper start - optimise getPlayerByUUID
     @Nullable

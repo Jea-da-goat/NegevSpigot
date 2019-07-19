@@ -5,6 +5,7 @@ import io.papermc.paper.command.subcommands.EntityCommand;
 import io.papermc.paper.command.subcommands.FixLightCommand;
 import io.papermc.paper.command.subcommands.HeapDumpCommand;
 import io.papermc.paper.command.subcommands.ReloadCommand;
+import io.papermc.paper.command.subcommands.SyncLoadInfoCommand;
 import io.papermc.paper.command.subcommands.VersionCommand;
 import it.unimi.dsi.fastutil.Pair;
 import java.util.ArrayList;
@@ -44,6 +45,7 @@ public final class PaperCommand extends Command {
         commands.put(Set.of("version"), new VersionCommand());
         commands.put(Set.of("debug", "chunkinfo"), new ChunkDebugCommand());
         commands.put(Set.of("fixlight"), new FixLightCommand());
+        commands.put(Set.of("syncloadinfo"), new SyncLoadInfoCommand());
 
         return commands.entrySet().stream()
             .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))

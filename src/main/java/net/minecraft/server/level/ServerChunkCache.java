@@ -478,6 +478,7 @@ public class ServerChunkCache extends ChunkSource {
                 this.level.asyncChunkTaskManager.raisePriority(x1, z1, com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY);
                 com.destroystokyo.paper.io.chunk.ChunkTaskManager.pushChunkWait(this.level, x1, z1);
                 // Paper end
+                com.destroystokyo.paper.io.SyncLoadFinder.logSyncLoad(this.level, x1, z1); // Paper - sync load info
                 this.level.timings.syncChunkLoad.startTiming(); // Paper
             chunkproviderserver_b.managedBlock(completablefuture::isDone);
                 com.destroystokyo.paper.io.chunk.ChunkTaskManager.popChunkWait(); // Paper - async chunk debug
