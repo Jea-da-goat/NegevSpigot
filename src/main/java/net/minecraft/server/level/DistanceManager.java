@@ -466,6 +466,12 @@ public abstract class DistanceManager {
 
     }
 
+    // Paper start
+    public int getSimulationDistance() {
+        return this.simulationDistance;
+    }
+    // Paper end
+
     public int getNaturalSpawnChunkCount() {
         this.naturalSpawnChunkCounter.runAllUpdates();
         return this.naturalSpawnChunkCounter.chunks.size();
