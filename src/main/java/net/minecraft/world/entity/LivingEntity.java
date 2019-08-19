@@ -3621,9 +3621,14 @@ public abstract class LivingEntity extends Entity {
     }
 
     public void startUsingItem(InteractionHand hand) {
+        // Paper start - forwarder to method with forceUpdate parameter
+        this.startUsingItem(hand, false);
+    }
+    public void startUsingItem(InteractionHand hand, boolean forceUpdate) {
+        // Paper end
         ItemStack itemstack = this.getItemInHand(hand);
 
-        if (!itemstack.isEmpty() && !this.isUsingItem()) {
+        if (!itemstack.isEmpty() && !this.isUsingItem() || forceUpdate) { // Paper use override flag
             this.useItem = itemstack;
             this.useItemRemaining = itemstack.getUseDuration();
             if (!this.level.isClientSide) {
@@ -3703,6 +3708,7 @@ public abstract class LivingEntity extends Entity {
                 this.releaseUsingItem();
             } else {
                 if (!this.useItem.isEmpty() && this.isUsingItem()) {
+                this.startUsingItem(this.getUsedItemHand(), true); // Paper
                     this.triggerItemUseEffects(this.useItem, 16);
                     // CraftBukkit start - fire PlayerItemConsumeEvent
                     ItemStack itemstack;
@@ -3737,8 +3743,8 @@ public abstract class LivingEntity extends Entity {
                     }
 
                     this.stopUsingItem();
-                // Paper start - if the replacement is anything but the default, update the client inventory
-                if (this instanceof ServerPlayer && !com.google.common.base.Objects.equal(defaultReplacement, itemstack)) {
+                // Paper start
+                if (this instanceof ServerPlayer) {
                     ((ServerPlayer) this).getBukkitEntity().updateInventory();
                 }
                 // Paper end
