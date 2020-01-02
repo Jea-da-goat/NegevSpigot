@@ -475,6 +475,18 @@ public class CraftBlock implements Block {
 
     @Override
     public boolean breakNaturally(ItemStack item) {
+        // Paper start
+        return breakNaturally(item, false);
+    }
+
+    @Override
+    public boolean breakNaturally(boolean triggerEffect) {
+        return breakNaturally(null, triggerEffect);
+    }
+
+    @Override
+    public boolean breakNaturally(ItemStack item, boolean triggerEffect) {
+        // Paper end
         // Order matters here, need to drop before setting to air so skulls can get their data
         net.minecraft.world.level.block.state.BlockState iblockdata = this.getNMS();
         net.minecraft.world.level.block.Block block = iblockdata.getBlock();
@@ -484,6 +496,7 @@ public class CraftBlock implements Block {
         // Modelled off EntityHuman#hasBlock
         if (block != Blocks.AIR && (item == null || !iblockdata.requiresCorrectToolForDrops() || nmsItem.isCorrectToolForDrops(iblockdata))) {
             net.minecraft.world.level.block.Block.dropResources(iblockdata, this.world.getMinecraftWorld(), position, this.world.getBlockEntity(position), null, nmsItem);
+            if (triggerEffect) world.levelEvent(org.bukkit.Effect.STEP_SOUND.getId(), position, net.minecraft.world.level.block.Block.getId(block.defaultBlockState())); // Paper
             result = true;
         }
 
