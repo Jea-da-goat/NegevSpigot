@@ -496,6 +496,7 @@ public class Bee extends Animal implements NeutralMob, FlyingAnimal {
         if (!this.hasHive()) {
             return false;
         } else {
+            if (level.getChunkIfLoadedImmediately(hivePos.getX() >> 4, hivePos.getZ() >> 4) == null) return true; // Paper - just assume the hive is still there, no need to load the chunk(s)
             BlockEntity tileentity = this.level.getBlockEntity(this.hivePos);
 
             return tileentity != null && tileentity.getType() == BlockEntityType.BEEHIVE;
