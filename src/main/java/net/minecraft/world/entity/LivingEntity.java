@@ -3564,6 +3564,11 @@ public abstract class LivingEntity extends Entity {
         return ((Byte) this.entityData.get(LivingEntity.DATA_LIVING_ENTITY_FLAGS) & 2) > 0 ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
     }
 
+    // Paper start - lag compensate eating
+    protected long eatStartTime;
+    protected int totalEatTimeTicks;
+    // Paper end
+
     private void updatingUsingItem() {
         if (this.isUsingItem()) {
             if (ItemStack.isSameIgnoreDurability(this.getItemInHand(this.getUsedItemHand()), this.useItem)) {
@@ -3581,8 +3586,12 @@ public abstract class LivingEntity extends Entity {
         if (this.shouldTriggerItemUseEffects()) {
             this.triggerItemUseEffects(stack, 5);
         }
-
-        if (--this.useItemRemaining == 0 && !this.level.isClientSide && !stack.useOnRelease()) {
+        // Paper start - lag compensate eating
+        // we add 1 to the expected time to avoid lag compensating when we should not
+        boolean shouldLagCompensate = this.useItem.getItem().isEdible() && this.eatStartTime != -1 && (System.nanoTime() - this.eatStartTime) > ((1 + this.totalEatTimeTicks) * 50 * (1000 * 1000));
+        if ((--this.useItemRemaining == 0 || shouldLagCompensate) && !this.level.isClientSide && !this.useItem.useOnRelease()) {
+            this.useItemRemaining = 0;
+            // Paper end
             this.completeUsingItem();
         }
 
@@ -3630,7 +3639,10 @@ public abstract class LivingEntity extends Entity {
 
         if (!itemstack.isEmpty() && !this.isUsingItem() || forceUpdate) { // Paper use override flag
             this.useItem = itemstack;
-            this.useItemRemaining = itemstack.getUseDuration();
+            // Paper start - lag compensate eating
+            this.useItemRemaining = this.totalEatTimeTicks = itemstack.getUseDuration();
+            this.eatStartTime = System.nanoTime();
+            // Paper end
             if (!this.level.isClientSide) {
                 this.setLivingEntityFlag(1, true);
                 this.setLivingEntityFlag(2, hand == InteractionHand.OFF_HAND);
@@ -3655,7 +3667,10 @@ public abstract class LivingEntity extends Entity {
                 }
             } else if (!this.isUsingItem() && !this.useItem.isEmpty()) {
                 this.useItem = ItemStack.EMPTY;
-                this.useItemRemaining = 0;
+                // Paper start - lag compensate eating
+                this.useItemRemaining = this.totalEatTimeTicks = 0;
+                this.eatStartTime = -1L;
+                // Paper end
             }
         }
 
@@ -3788,7 +3803,10 @@ public abstract class LivingEntity extends Entity {
         }
 
         this.useItem = ItemStack.EMPTY;
-        this.useItemRemaining = 0;
+        // Paper start - lag compensate eating
+        this.useItemRemaining = this.totalEatTimeTicks = 0;
+        this.eatStartTime = -1L;
+        // Paper end
     }
 
     public boolean isBlocking() {
