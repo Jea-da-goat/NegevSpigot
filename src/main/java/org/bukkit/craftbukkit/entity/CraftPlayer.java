@@ -574,6 +574,24 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void setSendViewDistance(int viewDistance) {
         throw new UnsupportedOperationException("Per-Player View Distance APIs need further understanding to properly implement (There are per world view distances though!)"); // TODO
     }
+
+    @Override
+    public <T> T getClientOption(com.destroystokyo.paper.ClientOption<T> type) {
+        if(com.destroystokyo.paper.ClientOption.SKIN_PARTS.equals(type)) {
+            return type.getType().cast(new com.destroystokyo.paper.PaperSkinParts(getHandle().getEntityData().get(net.minecraft.world.entity.player.Player.DATA_PLAYER_MODE_CUSTOMISATION)));
+        } else if(com.destroystokyo.paper.ClientOption.CHAT_COLORS_ENABLED.equals(type)) {
+            return type.getType().cast(getHandle().canChatInColor());
+        } else if(com.destroystokyo.paper.ClientOption.CHAT_VISIBILITY.equals(type)) {
+            return type.getType().cast(getHandle().getChatVisibility() == null ? com.destroystokyo.paper.ClientOption.ChatVisibility.UNKNOWN : com.destroystokyo.paper.ClientOption.ChatVisibility.valueOf(getHandle().getChatVisibility().name()));
+        } else if(com.destroystokyo.paper.ClientOption.LOCALE.equals(type)) {
+            return type.getType().cast(getLocale());
+        } else if(com.destroystokyo.paper.ClientOption.MAIN_HAND.equals(type)) {
+            return type.getType().cast(getMainHand());
+        } else if(com.destroystokyo.paper.ClientOption.VIEW_DISTANCE.equals(type)) {
+            return type.getType().cast(getClientViewDistance());
+        }
+        throw new RuntimeException("Unknown settings type");
+    }
     // Paper end
 
     @Override
