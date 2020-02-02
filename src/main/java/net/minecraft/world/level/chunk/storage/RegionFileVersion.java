@@ -14,7 +14,7 @@ import javax.annotation.Nullable;
 import net.minecraft.util.FastBufferedInputStream;
 
 public class RegionFileVersion {
-    private static final Int2ObjectMap<RegionFileVersion> VERSIONS = new Int2ObjectOpenHashMap<>();
+    public static final Int2ObjectMap<RegionFileVersion> VERSIONS = new Int2ObjectOpenHashMap<>(); // Paper - public
     public static final RegionFileVersion VERSION_GZIP = register(new RegionFileVersion(1, (inputStream) -> {
         return new FastBufferedInputStream(new GZIPInputStream(inputStream));
     }, (outputStream) -> {
