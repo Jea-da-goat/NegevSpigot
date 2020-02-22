@@ -451,10 +451,14 @@ public class Zombie extends Monster {
     public boolean wasKilled(ServerLevel world, LivingEntity other) {
         boolean flag = super.wasKilled(world, other);
 
-        if ((world.getDifficulty() == Difficulty.NORMAL || world.getDifficulty() == Difficulty.HARD) && other instanceof Villager) {
-            if (world.getDifficulty() != Difficulty.HARD && this.random.nextBoolean()) {
+        // Paper start
+        if (level.paperConfig().entities.behavior.zombieVillagerInfectionChance != 0.0 && (level.paperConfig().entities.behavior.zombieVillagerInfectionChance != -1.0 || world.getDifficulty() == Difficulty.NORMAL || world.getDifficulty() == Difficulty.HARD) && other instanceof Villager) {
+            if (level.paperConfig().entities.behavior.zombieVillagerInfectionChance == -1.0 && world.getDifficulty() != Difficulty.HARD && this.random.nextBoolean()) {
                 return flag;
             }
+            if (level.paperConfig().entities.behavior.zombieVillagerInfectionChance != -1.0 && (this.random.nextDouble() * 100.0) > level.paperConfig().entities.behavior.zombieVillagerInfectionChance) {
+                return flag;
+            } // Paper end
 
             Villager entityvillager = (Villager) other;
             // CraftBukkit start
