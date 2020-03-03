@@ -1632,6 +1632,13 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
     }
 
     public void internalTeleport(double d0, double d1, double d2, float f, float f1, Set<ClientboundPlayerPositionPacket.RelativeArgument> set, boolean flag) {
+        // Paper start
+        if (player.isRemoved()) {
+            LOGGER.info("Attempt to teleport removed player {} restricted", player.getScoreboardName());
+            if (server.isDebugging()) io.papermc.paper.util.TraceUtil.dumpTraceForThread("Attempt to teleport removed player");
+            return;
+        }
+        // Paper end
         // CraftBukkit start
         if (Float.isNaN(f)) {
             f = 0;
