@@ -475,9 +475,15 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
         PacketListener packetlistener = this.packetListener;
 
         if (packetlistener instanceof TickablePacketListener) {
+            // Paper start - detailed watchdog information
+            net.minecraft.network.protocol.PacketUtils.packetProcessing.push(this.packetListener);
+            try { // Paper end - detailed watchdog information
             TickablePacketListener tickablepacketlistener = (TickablePacketListener) packetlistener;
 
             tickablepacketlistener.tick();
+            } finally { // Paper start - detailed watchdog information
+                net.minecraft.network.protocol.PacketUtils.packetProcessing.pop();
+            } // Paper start - detailed watchdog information
         }
 
         if (!this.isConnected() && !this.disconnectionHandled) {
