@@ -668,7 +668,7 @@ public class ServerPlayer extends Player {
 
     public void doTick() {
         try {
-            if (!this.isSpectator() || !this.touchingUnloadedChunk()) {
+            if (valid && !this.isSpectator() || !this.touchingUnloadedChunk()) { // Paper - don't tick dead players that are not in the world currently (pending respawn)
                 super.tick();
             }
 
