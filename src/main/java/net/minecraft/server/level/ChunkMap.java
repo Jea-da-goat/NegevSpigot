@@ -1754,6 +1754,14 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
 
     public void addEntity(Entity entity) {
         org.spigotmc.AsyncCatcher.catchOp("entity track"); // Spigot
+        // Paper start - ignore and warn about illegal addEntity calls instead of crashing server
+        if (!entity.valid || entity.level != this.level || this.entityMap.containsKey(entity.getId())) {
+            new Throwable("[ERROR] Illegal PlayerChunkMap::addEntity for world " + this.level.getWorld().getName()
+                + ": " + entity  + (this.entityMap.containsKey(entity.getId()) ? " ALREADY CONTAINED (This would have crashed your server)" : ""))
+                .printStackTrace();
+            return;
+        }
+        // Paper end
         if (!(entity instanceof EnderDragonPart)) {
             EntityType<?> entitytypes = entity.getType();
             int i = entitytypes.clientTrackingRange() * 16;
