@@ -835,6 +835,7 @@ public class ServerChunkCache extends ChunkSource {
                 iterator1 = shuffled.iterator();
             }
 
+            int chunksTicked = 0; // Paper
             try {
             while (iterator1.hasNext()) {
                 LevelChunk chunk1 = iterator1.next();
@@ -852,6 +853,7 @@ public class ServerChunkCache extends ChunkSource {
 
                     if (this.level.shouldTickBlocksAt(chunkcoordintpair.toLong())) {
                         this.level.tickChunk(chunk1, k);
+                        if ((chunksTicked++ & 1) == 0) net.minecraft.server.MinecraftServer.getServer().executeMidTickTasks(); // Paper
                     }
                 }
                 // Paper start - optimise chunk tick iteration
