@@ -216,6 +216,8 @@ public abstract class PlayerList {
             worldserver1 = worldserver;
         }
 
+        if (nbttagcompound == null) player.fudgeSpawnLocation(worldserver1); // Paper - only move to spawn on first login, otherwise, stay where you are....
+
         player.setLevel(worldserver1);
         String s1 = "local";
 
