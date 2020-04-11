@@ -191,6 +191,7 @@ public class ServerPlayer extends Player {
     private int lastRecordedArmor = Integer.MIN_VALUE;
     private int lastRecordedLevel = Integer.MIN_VALUE;
     private int lastRecordedExperience = Integer.MIN_VALUE;
+    public boolean isRealPlayer; // Paper - chunk priority
     private float lastSentHealth = -1.0E8F;
     private int lastSentFood = -99999999;
     private boolean lastFoodSaturationZero = true;
@@ -318,6 +319,21 @@ public class ServerPlayer extends Player {
         this.bukkitPickUpLoot = true;
         this.maxHealthCache = this.getMaxHealth();
     }
+    // Paper start - Chunk priority
+    public BlockPos getPointInFront(double inFront) {
+        double rads = Math.toRadians(net.minecraft.server.MCUtil.normalizeYaw(this.yRot + 90)); // MC rotates yaw 90 for some odd reason
+        final double x = getX() + inFront * Math.cos(rads);
+        final double z = getZ() + inFront * Math.sin(rads);
+        return new BlockPos(x, getY(), z);
+    }
+
+    public ChunkPos getChunkInFront(double inFront) {
+        double rads = Math.toRadians(net.minecraft.server.MCUtil.normalizeYaw(this.yRot + 90)); // MC rotates yaw 90 for some odd reason
+        final double x = getX() + (inFront * 16) * Math.cos(rads);
+        final double z = getZ() + (inFront * 16) * Math.sin(rads);
+        return new ChunkPos(Mth.floor(x) >> 4, Mth.floor(z) >> 4);
+    }
+    // Paper end
 
     // Yes, this doesn't match Vanilla, but it's the best we can do for now.
     // If this is an issue, PRs are welcome

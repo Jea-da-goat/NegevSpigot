@@ -55,6 +55,19 @@ public final class ChunkSystem {
 
     static final TicketType<Long> CHUNK_LOAD = TicketType.create("chunk_load", Long::compareTo);
 
+    // Paper start - priority
+    private static int getPriorityBoost(final PrioritisedExecutor.Priority priority) {
+        if (priority.isLowerOrEqualPriority(PrioritisedExecutor.Priority.NORMAL)) {
+            return 0;
+        }
+
+        int dist = PrioritisedExecutor.Priority.BLOCKING.ordinal() - PrioritisedExecutor.Priority.NORMAL.ordinal();
+
+
+        return (net.minecraft.server.level.DistanceManager.URGENT_PRIORITY * (priority.ordinal() - PrioritisedExecutor.Priority.NORMAL.ordinal())) / dist;
+    }
+    // Paper end - priority
+
     private static long chunkLoadCounter = 0L;
     public static void scheduleChunkLoad(final ServerLevel level, final int chunkX, final int chunkZ, final ChunkStatus toStatus,
                                          final boolean addTicket, final PrioritisedExecutor.Priority priority, final Consumer<ChunkAccess> onComplete) {
@@ -68,11 +81,18 @@ public final class ChunkSystem {
         final int minLevel = 33 + ChunkStatus.getDistance(toStatus);
         final Long chunkReference = addTicket ? Long.valueOf(++chunkLoadCounter) : null;
         final ChunkPos chunkPos = new ChunkPos(chunkX, chunkZ);
+        final int priorityBoost = getPriorityBoost(priority);
 
         if (addTicket) {
             level.chunkSource.addTicketAtLevel(CHUNK_LOAD, chunkPos, minLevel, chunkReference);
         }
         level.chunkSource.runDistanceManagerUpdates();
+
+        if (priorityBoost == net.minecraft.server.level.DistanceManager.URGENT_PRIORITY) {
+            level.chunkSource.markUrgent(chunkPos);
+        } else if (priorityBoost != 0) {
+            level.chunkSource.markHighPriority(chunkPos, priorityBoost);
+        }
 
         final Consumer<ChunkAccess> loadCallback = (final ChunkAccess chunk) -> {
             try {
@@ -88,6 +108,11 @@ public final class ChunkSystem {
                 if (addTicket) {
                     level.chunkSource.addTicketAtLevel(TicketType.UNKNOWN, chunkPos, minLevel, chunkPos);
                     level.chunkSource.removeTicketAtLevel(CHUNK_LOAD, chunkPos, minLevel, chunkReference);
+                }
+                if (priorityBoost == net.minecraft.server.level.DistanceManager.URGENT_PRIORITY) {
+                    level.chunkSource.clearUrgent(chunkPos);
+                } else if (priorityBoost != 0) {
+                    level.chunkSource.clearPriorityTickets(chunkPos);
                 }
             }
         };
@@ -135,11 +160,16 @@ public final class ChunkSystem {
         final int radius = toStatus.ordinal() - 1;
         final Long chunkReference = addTicket ? Long.valueOf(++chunkLoadCounter) : null;
         final ChunkPos chunkPos = new ChunkPos(chunkX, chunkZ);
+        final int priorityBoost = getPriorityBoost(priority);
 
         if (addTicket) {
             level.chunkSource.addTicketAtLevel(CHUNK_LOAD, chunkPos, minLevel, chunkReference);
         }
         level.chunkSource.runDistanceManagerUpdates();
+
+        if (priorityBoost != 0) {
+            level.chunkSource.markAreaHighPriority(chunkPos, priorityBoost, radius);
+        }
 
         final Consumer<LevelChunk> loadCallback = (final LevelChunk chunk) -> {
             try {
@@ -155,6 +185,9 @@ public final class ChunkSystem {
                 if (addTicket) {
                     level.chunkSource.addTicketAtLevel(TicketType.UNKNOWN, chunkPos, minLevel, chunkPos);
                     level.chunkSource.removeTicketAtLevel(CHUNK_LOAD, chunkPos, minLevel, chunkReference);
+                }
+                if (priorityBoost != 0) {
+                    level.chunkSource.clearAreaPriorityTickets(chunkPos, radius);
                 }
             }
         };

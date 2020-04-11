@@ -134,7 +134,7 @@ public class LevelChunk extends ChunkAccess {
         return NEIGHBOUR_CACHE_RADIUS;
     }
 
-    boolean loadedTicketLevel;
+    boolean loadedTicketLevel; public final boolean wasLoadCallbackInvoked() { return this.loadedTicketLevel; } // Paper - public accessor
     private long neighbourChunksLoadedBitset;
     private final LevelChunk[] loadedNeighbourChunks = new LevelChunk[(NEIGHBOUR_CACHE_RADIUS * 2 + 1) * (NEIGHBOUR_CACHE_RADIUS * 2 + 1)];
 
@@ -653,6 +653,7 @@ public class LevelChunk extends ChunkAccess {
 
     // CraftBukkit start
     public void loadCallback() {
+        if (this.loadedTicketLevel) { LOGGER.error("Double calling chunk load!", new Throwable()); } // Paper
         // Paper start - neighbour cache
         int chunkX = this.chunkPos.x;
         int chunkZ = this.chunkPos.z;
@@ -707,6 +708,7 @@ public class LevelChunk extends ChunkAccess {
     }
 
     public void unloadCallback() {
+        if (!this.loadedTicketLevel) { LOGGER.error("Double calling chunk unload!", new Throwable()); } // Paper
         org.bukkit.Server server = this.level.getCraftServer();
         org.bukkit.event.world.ChunkUnloadEvent unloadEvent = new org.bukkit.event.world.ChunkUnloadEvent(this.bukkitChunk, this.isUnsaved());
         server.getPluginManager().callEvent(unloadEvent);

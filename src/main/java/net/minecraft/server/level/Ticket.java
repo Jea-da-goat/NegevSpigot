@@ -8,6 +8,7 @@ public final class Ticket<T> implements Comparable<Ticket<?>> {
     public final T key;
     public long createdTick;
     public long delayUnloadBy; // Paper
+    public int priority; // Paper - Chunk priority
 
     protected Ticket(TicketType<T> type, int level, T argument) {
         this.type = type;

@@ -107,7 +107,7 @@ public final class ChunkTaskManager {
     }
 
     static void dumpChunkInfo(Set<ChunkHolder> seenChunks, ChunkHolder chunkHolder, int x, int z) {
-        dumpChunkInfo(seenChunks, chunkHolder, x, z, 0, 1);
+        dumpChunkInfo(seenChunks, chunkHolder, x, z, 0, 4); // Paper - 1->4
     }
 
     static void dumpChunkInfo(Set<ChunkHolder> seenChunks, ChunkHolder chunkHolder, int x, int z, int indent, int maxDepth) {
@@ -128,6 +128,31 @@ public final class ChunkTaskManager {
             PaperFileIOThread.LOGGER.error(indentStr + "Chunk Status - " + ((chunk == null) ? "null chunk" : chunk.getStatus().toString()));
             PaperFileIOThread.LOGGER.error(indentStr + "Chunk Ticket Status - "  + ChunkHolder.getStatus(chunkHolder.getTicketLevel()));
             PaperFileIOThread.LOGGER.error(indentStr + "Chunk Holder Status - " + ((holderStatus == null) ? "null" : holderStatus.toString()));
+            // Paper start
+            PaperFileIOThread.LOGGER.error(indentStr + "Chunk Holder Priority - " + chunkHolder.queueLevel);
+
+            if (!chunkHolder.neighbors.isEmpty()) {
+                if (indent >= maxDepth) {
+                    PaperFileIOThread.LOGGER.error(indentStr + "Chunk Neighbors: (Can't show, too deeply nested)");
+                    return;
+                }
+                PaperFileIOThread.LOGGER.error(indentStr + "Chunk Neighbors: ");
+                for (ChunkHolder neighbor : chunkHolder.neighbors.keySet()) {
+                    ChunkStatus status = neighbor.getChunkHolderStatus();
+                    if (status != null && status.isOrAfter(ChunkHolder.getStatus(neighbor.getTicketLevel()))) {
+                        continue;
+                    }
+                    int nx = neighbor.pos.x;
+                    int nz = neighbor.pos.z;
+                    if (seenChunks.contains(neighbor)) {
+                        PaperFileIOThread.LOGGER.error(indentStr + "  " + nx + "," + nz + " in " + chunkHolder.getWorld().getWorld().getName() + " (CIRCULAR)");
+                        continue;
+                    }
+                    PaperFileIOThread.LOGGER.error(indentStr + "  " + nx + "," + nz + " in " + chunkHolder.getWorld().getWorld().getName() + ":");
+                    dumpChunkInfo(seenChunks, neighbor, nx, nz, indent + 1, maxDepth);
+                }
+            }
+            // Paper end
         }
     }
 

@@ -409,6 +409,30 @@ public class ServerChunkCache extends ChunkSource {
 
         return ret;
     }
+
+    public boolean markUrgent(ChunkPos coords) {
+        return this.distanceManager.markUrgent(coords);
+    }
+
+    public boolean markHighPriority(ChunkPos coords, int priority) {
+        return this.distanceManager.markHighPriority(coords, priority);
+    }
+
+    public void markAreaHighPriority(ChunkPos center, int priority, int radius) {
+        this.distanceManager.markAreaHighPriority(center, priority, radius);
+    }
+
+    public void clearAreaPriorityTickets(ChunkPos center, int radius) {
+        this.distanceManager.clearAreaPriorityTickets(center, radius);
+    }
+
+    public void clearPriorityTickets(ChunkPos coords) {
+        this.distanceManager.clearPriorityTickets(coords);
+    }
+
+    public void clearUrgent(ChunkPos coords) {
+        this.distanceManager.clearUrgent(coords);
+    }
     // Paper end - async chunk io
 
     @Nullable
@@ -443,6 +467,8 @@ public class ServerChunkCache extends ChunkSource {
             Objects.requireNonNull(completablefuture);
             if (!completablefuture.isDone()) { // Paper
                 // Paper start - async chunk io/loading
+                ChunkPos pair = new ChunkPos(x1, z1); // Paper - Chunk priority
+                this.distanceManager.markUrgent(pair); // Paper - Chunk priority
                 this.level.asyncChunkTaskManager.raisePriority(x1, z1, com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY);
                 com.destroystokyo.paper.io.chunk.ChunkTaskManager.pushChunkWait(this.level, x1, z1);
                 // Paper end
@@ -450,6 +476,8 @@ public class ServerChunkCache extends ChunkSource {
             chunkproviderserver_b.managedBlock(completablefuture::isDone);
                 com.destroystokyo.paper.io.chunk.ChunkTaskManager.popChunkWait(); // Paper - async chunk debug
                 this.level.timings.syncChunkLoad.stopTiming(); // Paper
+                this.distanceManager.clearPriorityTickets(pair); // Paper - Chunk priority
+                this.distanceManager.clearUrgent(pair); // Paper - Chunk priority
             } // Paper
             ichunkaccess = (ChunkAccess) ((Either) completablefuture.join()).map((ichunkaccess1) -> {
                 return ichunkaccess1;
@@ -555,10 +583,12 @@ public class ServerChunkCache extends ChunkSource {
         if (create && !currentlyUnloading) {
             // CraftBukkit end
             this.distanceManager.addTicket(TicketType.UNKNOWN, chunkcoordintpair, l, chunkcoordintpair);
+            if (isUrgent) this.distanceManager.markUrgent(chunkcoordintpair); // Paper - Chunk priority
             if (this.chunkAbsent(playerchunk, l)) {
                 ProfilerFiller gameprofilerfiller = this.level.getProfiler();
 
                 gameprofilerfiller.push("chunkLoad");
+                distanceManager.delayDistanceManagerTick = false; // Paper - Chunk priority - ensure this is never false
                 this.runDistanceManagerUpdates();
                 playerchunk = this.getVisibleChunkIfPresent(k);
                 gameprofilerfiller.pop();
@@ -568,7 +598,13 @@ public class ServerChunkCache extends ChunkSource {
             }
         }
 
-        return this.chunkAbsent(playerchunk, l) ? ChunkHolder.UNLOADED_CHUNK_FUTURE : playerchunk.getOrScheduleFuture(leastStatus, this.chunkMap);
+        // Paper start - Chunk priority
+        CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = this.chunkAbsent(playerchunk, l) ? ChunkHolder.UNLOADED_CHUNK_FUTURE : playerchunk.getOrScheduleFuture(leastStatus, this.chunkMap);
+        if (isUrgent) {
+            future.thenAccept(either -> this.distanceManager.clearUrgent(chunkcoordintpair));
+        }
+        return future;
+        // Paper end
     }
 
     private boolean chunkAbsent(@Nullable ChunkHolder holder, int maxLevel) {
@@ -620,6 +656,7 @@ public class ServerChunkCache extends ChunkSource {
     }
 
     public boolean runDistanceManagerUpdates() {
+        if (distanceManager.delayDistanceManagerTick) return false; // Paper - Chunk priority
         boolean flag = this.distanceManager.runAllUpdates(this.chunkMap);
         boolean flag1 = this.chunkMap.promoteChunkMap();
 

@@ -212,7 +212,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
     private BlockPos blockPosition;
     private ChunkPos chunkPosition;
     private Vec3 deltaMovement;
-    private float yRot;
+    public float yRot; // Paper - private->public
     private float xRot;
     public float yRotO;
     public float xRotO;

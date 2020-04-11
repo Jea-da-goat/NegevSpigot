@@ -114,6 +114,7 @@ public abstract class DistanceManager {
     }
 
     private static int getTicketLevelAt(SortedArraySet<Ticket<?>> tickets) {
+        org.spigotmc.AsyncCatcher.catchOp("ChunkMapDistance::getTicketLevelAt"); // Paper
         return !tickets.isEmpty() ? ((Ticket) tickets.first()).getTicketLevel() : ChunkMap.MAX_CHUNK_DISTANCE + 1;
     }
 
@@ -128,6 +129,7 @@ public abstract class DistanceManager {
     public boolean runAllUpdates(ChunkMap chunkStorage) {
         this.naturalSpawnChunkCounter.runAllUpdates();
         this.tickingTicketsTracker.runAllUpdates();
+        org.spigotmc.AsyncCatcher.catchOp("DistanceManagerTick"); // Paper
         this.playerTicketManager.runAllUpdates();
         int i = Integer.MAX_VALUE - this.ticketTracker.runDistanceUpdates(Integer.MAX_VALUE);
         boolean flag = i != 0;
@@ -138,11 +140,13 @@ public abstract class DistanceManager {
 
         // Paper start
         if (!this.pendingChunkUpdates.isEmpty()) {
+            this.pollingPendingChunkUpdates = true; try { // Paper - Chunk priority
             while(!this.pendingChunkUpdates.isEmpty()) {
                 ChunkHolder remove = this.pendingChunkUpdates.remove();
                 remove.isUpdateQueued = false;
                 remove.updateFutures(chunkStorage, this.mainThreadExecutor);
             }
+            } finally { this.pollingPendingChunkUpdates = false; } // Paper - Chunk priority
             // Paper end
             return true;
         } else {
@@ -178,8 +182,10 @@ public abstract class DistanceManager {
             return flag;
         }
     }
+    boolean pollingPendingChunkUpdates = false; // Paper - Chunk priority
 
     boolean addTicket(long i, Ticket<?> ticket) { // CraftBukkit - void -> boolean
+        org.spigotmc.AsyncCatcher.catchOp("ChunkMapDistance::addTicket"); // Paper
         SortedArraySet<Ticket<?>> arraysetsorted = this.getTickets(i);
         int j = DistanceManager.getTicketLevelAt(arraysetsorted);
         Ticket<?> ticket1 = (Ticket) arraysetsorted.addOrGet(ticket);
@@ -193,7 +199,9 @@ public abstract class DistanceManager {
     }
 
     boolean removeTicket(long i, Ticket<?> ticket) { // CraftBukkit - void -> boolean
+        org.spigotmc.AsyncCatcher.catchOp("ChunkMapDistance::removeTicket"); // Paper
         SortedArraySet<Ticket<?>> arraysetsorted = this.getTickets(i);
+        int oldLevel = getTicketLevelAt(arraysetsorted); // Paper
 
         boolean removed = false; // CraftBukkit
         if (arraysetsorted.remove(ticket)) {
@@ -225,7 +233,12 @@ public abstract class DistanceManager {
             this.tickets.remove(i);
         }
 
-        this.ticketTracker.update(i, DistanceManager.getTicketLevelAt(arraysetsorted), false);
+        // Paper start - Chunk priority
+        int newLevel = getTicketLevelAt(arraysetsorted);
+        if (newLevel > oldLevel) {
+            this.ticketTracker.update(i, newLevel, false);
+        }
+        // Paper end
         return removed; // CraftBukkit
     }
 
@@ -274,6 +287,112 @@ public abstract class DistanceManager {
             return SortedArraySet.create(4);
         });
     }
+
+    // Paper start - Chunk priority
+    public static final int PRIORITY_TICKET_LEVEL = ChunkMap.MAX_CHUNK_DISTANCE;
+    public static final int URGENT_PRIORITY = 29;
+    public boolean delayDistanceManagerTick = false;
+    public boolean markUrgent(ChunkPos coords) {
+        return addPriorityTicket(coords, TicketType.URGENT, URGENT_PRIORITY);
+    }
+    public boolean markHighPriority(ChunkPos coords, int priority) {
+        priority = Math.min(URGENT_PRIORITY - 1, Math.max(1, priority));
+        return addPriorityTicket(coords, TicketType.PRIORITY, priority);
+    }
+
+    public void markAreaHighPriority(ChunkPos center, int priority, int radius) {
+        delayDistanceManagerTick = true;
+        priority = Math.min(URGENT_PRIORITY - 1, Math.max(1, priority));
+        int finalPriority = priority;
+        net.minecraft.server.MCUtil.getSpiralOutChunks(center.getWorldPosition(), radius).forEach(coords -> {
+            addPriorityTicket(coords, TicketType.PRIORITY, finalPriority);
+        });
+        delayDistanceManagerTick = false;
+        chunkMap.level.getChunkSource().runDistanceManagerUpdates();
+    }
+
+    public void clearAreaPriorityTickets(ChunkPos center, int radius) {
+        delayDistanceManagerTick = true;
+        net.minecraft.server.MCUtil.getSpiralOutChunks(center.getWorldPosition(), radius).forEach(coords -> {
+            this.removeTicket(coords.toLong(), new Ticket<ChunkPos>(TicketType.PRIORITY, PRIORITY_TICKET_LEVEL, coords));
+        });
+        delayDistanceManagerTick = false;
+        chunkMap.level.getChunkSource().runDistanceManagerUpdates();
+    }
+
+    private boolean addPriorityTicket(ChunkPos coords, TicketType<ChunkPos> ticketType, int priority) {
+        org.spigotmc.AsyncCatcher.catchOp("ChunkMapDistance::addPriorityTicket");
+        long pair = coords.toLong();
+        ChunkHolder chunk = chunkMap.getUpdatingChunkIfPresent(pair);
+        if ((chunk != null && chunk.isFullChunkReady())) {
+            return false;
+        }
+
+        boolean success;
+        if (!(success = updatePriorityTicket(coords, ticketType, priority))) {
+            Ticket<ChunkPos> ticket = new Ticket<ChunkPos>(ticketType, PRIORITY_TICKET_LEVEL, coords);
+            ticket.priority = priority;
+            success = this.addTicket(pair, ticket);
+        } else {
+            if (chunk == null) {
+                chunk = chunkMap.getUpdatingChunkIfPresent(pair);
+            }
+            chunkMap.queueHolderUpdate(chunk);
+        }
+
+        //chunkMap.world.getWorld().spawnParticle(priority <= 15 ? org.bukkit.Particle.EXPLOSION_HUGE : org.bukkit.Particle.EXPLOSION_NORMAL, chunkMap.world.getWorld().getPlayers(), null, coords.x << 4, 70, coords.z << 4, 2, 0, 0, 0, 1, null, true);
+
+        chunkMap.level.getChunkSource().runDistanceManagerUpdates();
+
+        return success;
+    }
+
+    private boolean updatePriorityTicket(ChunkPos coords, TicketType<ChunkPos> type, int priority) {
+        SortedArraySet<Ticket<?>> tickets = this.tickets.get(coords.toLong());
+        if (tickets == null) {
+            return false;
+        }
+        for (Ticket<?> ticket : tickets) {
+            if (ticket.getType() == type) {
+                // We only support increasing, not decreasing, too complicated
+                ticket.setCreatedTick(this.ticketTickCounter);
+                ticket.priority = Math.max(ticket.priority, priority);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public int getChunkPriority(ChunkPos coords) {
+        org.spigotmc.AsyncCatcher.catchOp("ChunkMapDistance::getChunkPriority");
+        SortedArraySet<Ticket<?>> tickets = this.tickets.get(coords.toLong());
+        if (tickets == null) {
+            return 0;
+        }
+        for (Ticket<?> ticket : tickets) {
+            if (ticket.getType() == TicketType.URGENT) {
+                return URGENT_PRIORITY;
+            }
+        }
+        for (Ticket<?> ticket : tickets) {
+            if (ticket.getType() == TicketType.PRIORITY && ticket.priority > 0) {
+                return ticket.priority;
+            }
+        }
+        return 0;
+    }
+
+    public void clearPriorityTickets(ChunkPos coords) {
+        org.spigotmc.AsyncCatcher.catchOp("ChunkMapDistance::clearPriority");
+        this.removeTicket(coords.toLong(), new Ticket<ChunkPos>(TicketType.PRIORITY, PRIORITY_TICKET_LEVEL, coords));
+    }
+
+    public void clearUrgent(ChunkPos coords) {
+        org.spigotmc.AsyncCatcher.catchOp("ChunkMapDistance::clearUrgent");
+        this.removeTicket(coords.toLong(), new Ticket<ChunkPos>(TicketType.URGENT, PRIORITY_TICKET_LEVEL, coords));
+    }
+    // Paper end
 
     protected void updateChunkForced(ChunkPos pos, boolean forced) {
         Ticket<ChunkPos> ticket = new Ticket<>(TicketType.FORCED, 31, pos);

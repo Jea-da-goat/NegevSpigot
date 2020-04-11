@@ -131,6 +131,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
     public final ServerLevel level;
     private final ThreadedLevelLightEngine lightEngine;
     private final BlockableEventLoop<Runnable> mainThreadExecutor;
+    final java.util.concurrent.Executor mainInvokingExecutor; // Paper
     public ChunkGenerator generator;
     private RandomState randomState;
     public final Supplier<DimensionDataStorage> overworldDataStorage;
@@ -267,6 +268,15 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
         }
 
         this.mainThreadExecutor = mainThreadExecutor;
+        // Paper start
+        this.mainInvokingExecutor = (run) -> {
+            if (MCUtil.isMainThread()) {
+                run.run();
+            } else {
+                mainThreadExecutor.execute(run);
+            }
+        };
+        // Paper end
         ProcessorMailbox<Runnable> threadedmailbox = ProcessorMailbox.create(executor, "worldgen");
 
         Objects.requireNonNull(mainThreadExecutor);
@@ -308,6 +318,37 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
             this.generator = chunkgenerator;
         });
     }
+
+    // Paper start - Chunk Prioritization
+    public void queueHolderUpdate(ChunkHolder playerchunk) {
+        Runnable runnable = () -> {
+            if (isUnloading(playerchunk)) {
+                return; // unloaded
+            }
+            distanceManager.pendingChunkUpdates.add(playerchunk);
+            if (!distanceManager.pollingPendingChunkUpdates) {
+                level.getChunkSource().runDistanceManagerUpdates();
+            }
+        };
+        if (MCUtil.isMainThread()) {
+            // We can't use executor here because it will not execute tasks if its currently in the middle of executing tasks...
+            runnable.run();
+        } else {
+            mainThreadExecutor.execute(runnable);
+        }
+    }
+
+    private boolean isUnloading(ChunkHolder playerchunk) {
+        return playerchunk == null || toDrop.contains(playerchunk.pos.toLong());
+    }
+
+    private void updateChunkPriorityMap(it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap map, long chunk, int level) {
+        int prev = map.getOrDefault(chunk, -1);
+        if (level > prev) {
+            map.put(chunk, level);
+        }
+    }
+    // Paper end
 
     private static double euclideanDistanceSquared(ChunkPos pos, Entity entity) {
         double d0 = (double) SectionPos.sectionToBlockCoord(pos.x, 8);
@@ -399,6 +440,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
         List<ChunkHolder> list1 = new ArrayList();
         int j = centerChunk.x;
         int k = centerChunk.z;
+        ChunkHolder requestingNeighbor = getUpdatingChunkIfPresent(centerChunk.toLong()); // Paper
 
         for (int l = -margin; l <= margin; ++l) {
             for (int i1 = -margin; i1 <= margin; ++i1) {
@@ -417,6 +459,14 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
 
                 ChunkStatus chunkstatus = (ChunkStatus) distanceToStatus.apply(j1);
                 CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> completablefuture = playerchunk.getOrScheduleFuture(chunkstatus, this);
+                // Paper start
+                if (requestingNeighbor != null && requestingNeighbor != playerchunk && !completablefuture.isDone()) {
+                    requestingNeighbor.onNeighborRequest(playerchunk, chunkstatus);
+                    completablefuture.thenAccept(either -> {
+                        requestingNeighbor.onNeighborDone(playerchunk, chunkstatus, either.left().orElse(null));
+                    });
+                }
+                // Paper end
 
                 list1.add(playerchunk);
                 list.add(completablefuture);
@@ -733,11 +783,19 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
         if (requiredStatus == ChunkStatus.EMPTY) {
             return this.scheduleChunkLoad(chunkcoordintpair);
         } else {
+            // Paper start - revert 1.17 chunk system changes
+            CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = holder.getOrScheduleFuture(requiredStatus.getParent(), this);
+        return future.thenComposeAsync((either) -> {
+            Optional<ChunkAccess> optional = either.left();
+            if (!optional.isPresent()) {
+                return CompletableFuture.completedFuture(either);
+            }
+            // Paper end - revert 1.17 chunk system changes
             if (requiredStatus == ChunkStatus.LIGHT) {
                 this.distanceManager.addTicket(TicketType.LIGHT, chunkcoordintpair, 33 + ChunkStatus.getDistance(ChunkStatus.LIGHT), chunkcoordintpair);
             }
 
-            Optional<ChunkAccess> optional = ((Either) holder.getOrScheduleFuture(requiredStatus.getParent(), this).getNow(ChunkHolder.UNLOADED_CHUNK)).left();
+            // Paper - revert 1.17 chunk system changes
 
             if (optional.isPresent() && ((ChunkAccess) optional.get()).getStatus().isOrAfter(requiredStatus)) {
                 CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> completablefuture = requiredStatus.load(this.level, this.structureTemplateManager, this.lightEngine, (ichunkaccess) -> {
@@ -749,6 +807,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
             } else {
                 return this.scheduleChunkGeneration(holder, requiredStatus);
             }
+        }, this.mainThreadExecutor).thenComposeAsync(CompletableFuture::completedFuture, this.mainThreadExecutor); // Paper - revert 1.17 chunk system changes
         }
     }
 
@@ -788,14 +847,24 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
         };
 
         CompletableFuture<CompoundTag> chunkSaveFuture = this.level.asyncChunkTaskManager.getChunkSaveFuture(pos.x, pos.z);
-        if (chunkSaveFuture != null) {
-            this.level.asyncChunkTaskManager.scheduleChunkLoad(pos.x, pos.z,
-                com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGH_PRIORITY, chunkHolderConsumer, false, chunkSaveFuture);
-            this.level.asyncChunkTaskManager.raisePriority(pos.x, pos.z, com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGH_PRIORITY);
-        } else {
-            this.level.asyncChunkTaskManager.scheduleChunkLoad(pos.x, pos.z,
-                com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY, chunkHolderConsumer, false);
+        // Paper start
+        ChunkHolder playerChunk = getUpdatingChunkIfPresent(pos.toLong());
+        int chunkPriority = playerChunk != null ? playerChunk.requestedPriority : 33;
+        int priority = com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY;
+
+        if (chunkPriority <= 10) {
+            priority = com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY;
+        } else if (chunkPriority <= 20) {
+            priority = com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGH_PRIORITY;
         }
+        boolean isHighestPriority = priority == com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY;
+        // Paper end
+        if (chunkSaveFuture != null) {
+            this.level.asyncChunkTaskManager.scheduleChunkLoad(pos.x, pos.z, priority, chunkHolderConsumer, isHighestPriority, chunkSaveFuture); // Paper
+        } else {
+            this.level.asyncChunkTaskManager.scheduleChunkLoad(pos.x, pos.z, priority, chunkHolderConsumer, isHighestPriority); // Paper
+        }
+        this.level.asyncChunkTaskManager.raisePriority(pos.x, pos.z, priority); // Paper
         return ret;
         // Paper end - Async chunk io
     }
@@ -874,7 +943,10 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                 this.releaseLightTicket(chunkcoordintpair);
                 return CompletableFuture.completedFuture(Either.right(playerchunk_failure));
             });
-        }, executor);
+        }, executor).thenComposeAsync((either) -> { // Paper start - force competion on the main thread
+            return CompletableFuture.completedFuture(either);
+        }, this.mainThreadExecutor); // use the main executor, we want to ensure only one chunk callback can be completed per runnable execute
+        // Paper end - force competion on the main thread
     }
 
     protected void releaseLightTicket(ChunkPos pos) {
@@ -957,7 +1029,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
             long i = chunkHolder.getPos().toLong();
 
             Objects.requireNonNull(chunkHolder);
-            mailbox.tell(ChunkTaskPriorityQueueSorter.message(runnable, i, chunkHolder::getTicketLevel));
+            mailbox.tell(ChunkTaskPriorityQueueSorter.message(runnable, i, () -> 1)); // Paper - final loads are always urgent!
         });
     }
 

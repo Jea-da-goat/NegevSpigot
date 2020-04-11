@@ -9,6 +9,8 @@ import net.minecraft.world.level.ChunkPos;
 public class TicketType<T> {
     public static final TicketType<Long> FUTURE_AWAIT = create("future_await", Long::compareTo); // Paper
     public static final TicketType<Long> ASYNC_LOAD = create("async_load", Long::compareTo); // Paper
+    public static final TicketType<ChunkPos> PRIORITY = create("priority", Comparator.comparingLong(ChunkPos::toLong), 300); // Paper
+    public static final TicketType<ChunkPos> URGENT = create("urgent", Comparator.comparingLong(ChunkPos::toLong), 300); // Paper
 
     private final String name;
     private final Comparator<T> comparator;
