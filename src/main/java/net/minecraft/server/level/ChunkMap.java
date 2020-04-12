@@ -667,6 +667,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
             MutableBoolean mutableboolean = new MutableBoolean();
 
             do {
+                boolean isShuttingDown = level.getServer().hasStopped(); // Paper
                 mutableboolean.setFalse();
                 list.stream().map((playerchunk) -> {
                     CompletableFuture completablefuture;
