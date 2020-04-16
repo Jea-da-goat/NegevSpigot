@@ -60,7 +60,7 @@ public class ChunkPos {
     }
 
     public static long asLong(BlockPos pos) {
-        return asLong(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()));
+        return (((long)pos.getX() >> 4) & 4294967295L) | ((((long)pos.getZ() >> 4) & 4294967295L) << 32); // Paper - inline
     }
 
     public static int getX(long pos) {

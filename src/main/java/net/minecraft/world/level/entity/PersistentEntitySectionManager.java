@@ -395,6 +395,11 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
     public LevelEntityGetter<T> getEntityGetter() {
         return this.entityGetter;
     }
+    // Paper start
+    public final boolean canPositionTick(long position) {
+        return this.chunkVisibility.get(position).isTicking();
+    }
+    // Paper end
 
     public boolean canPositionTick(BlockPos pos) {
         return ((Visibility) this.chunkVisibility.get(ChunkPos.asLong(pos))).isTicking();

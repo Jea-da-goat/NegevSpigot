@@ -2255,19 +2255,22 @@ public class ServerLevel extends Level implements WorldGenLevel {
     }
 
     private boolean isPositionTickingWithEntitiesLoaded(long chunkPos) {
-        return this.areEntitiesLoaded(chunkPos) && this.chunkSource.isPositionTicking(chunkPos);
+        // Paper start - optimize is ticking ready type functions
+        ChunkHolder chunkHolder = this.chunkSource.chunkMap.getVisibleChunkIfPresent(chunkPos);
+        return chunkHolder != null && this.chunkSource.isPositionTicking(chunkPos) && chunkHolder.isTickingReady() && this.areEntitiesLoaded(chunkPos);
+        // Paper end
     }
 
     public boolean isPositionEntityTicking(BlockPos pos) {
-        return this.entityManager.canPositionTick(pos) && this.chunkSource.chunkMap.getDistanceManager().inEntityTickingRange(ChunkPos.asLong(pos));
+        return this.entityManager.canPositionTick(ChunkPos.asLong(pos)) && this.chunkSource.chunkMap.getDistanceManager().inEntityTickingRange(ChunkPos.asLong(pos)); // Paper
     }
 
     public boolean isNaturalSpawningAllowed(BlockPos pos) {
-        return this.entityManager.canPositionTick(pos);
+        return this.entityManager.canPositionTick(ChunkPos.asLong(pos)); // Paper
     }
 
     public boolean isNaturalSpawningAllowed(ChunkPos pos) {
-        return this.entityManager.canPositionTick(pos);
+        return this.entityManager.canPositionTick(pos.toLong()); // Paper
     }
 
     private final class EntityCallbacks implements LevelCallback<Entity> {
