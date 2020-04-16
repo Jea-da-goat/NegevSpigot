@@ -3337,10 +3337,16 @@ public abstract class LivingEntity extends Entity {
     protected void serverAiStep() {}
 
     protected void pushEntities() {
+        // Paper start - don't run getEntities if we're not going to use its result
+        int i = this.level.getGameRules().getInt(GameRules.RULE_MAX_ENTITY_CRAMMING);
+        if (i <= 0 && level.paperConfig().collisions.maxEntityCollisions <= 0) {
+            return;
+        }
+        // Paper end - don't run getEntities if we're not going to use its result
         List<Entity> list = this.level.getEntities((Entity) this, this.getBoundingBox(), EntitySelector.pushableBy(this));
 
         if (!list.isEmpty()) {
-            int i = this.level.getGameRules().getInt(GameRules.RULE_MAX_ENTITY_CRAMMING);
+            // Paper - move up
             int j;
 
             if (i > 0 && list.size() > i - 1 && this.random.nextInt(4) == 0) {
