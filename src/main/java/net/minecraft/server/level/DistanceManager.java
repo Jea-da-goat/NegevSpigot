@@ -86,13 +86,27 @@ public abstract class DistanceManager {
     protected void purgeStaleTickets() {
         ++this.ticketTickCounter;
         ObjectIterator objectiterator = this.tickets.long2ObjectEntrySet().fastIterator();
+        // Paper start - use optimised removeIf
+        long[] currChunk = new long[1];
+        long ticketCounter = DistanceManager.this.ticketTickCounter;
+        java.util.function.Predicate<Ticket<?>> removeIf = (ticket) -> {
+            final boolean ret = ticket.timedOut(ticketCounter);
+            if (ret) {
+                this.tickingTicketsTracker.removeTicket(currChunk[0], ticket);
+            }
+            return ret;
+        };
+        // Paper end - use optimised removeIf
 
         while (objectiterator.hasNext()) {
             Entry<SortedArraySet<Ticket<?>>> entry = (Entry) objectiterator.next();
-            Iterator<Ticket<?>> iterator = ((SortedArraySet) entry.getValue()).iterator();
-            boolean flag = false;
+            // Paper start - use optimised removeIf
+            Iterator<Ticket<?>> iterator = null;
+            currChunk[0] = entry.getLongKey();
+            boolean flag = entry.getValue().removeIf(removeIf);
 
-            while (iterator.hasNext()) {
+            while (false && iterator.hasNext()) {
+                // Paper end - use optimised removeIf
                 Ticket<?> ticket = (Ticket) iterator.next();
 
                 if (ticket.timedOut(this.ticketTickCounter)) {
