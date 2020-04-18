@@ -994,6 +994,7 @@ public class ServerChunkCache extends ChunkSource {
                 return super.pollTask() || execChunkTask; // Paper
             }
         } finally {
+            chunkMap.chunkLoadConversionCallbackExecutor.run(); // Paper - Add chunk load conversion callback executor to prevent deadlock due to recursion in the chunk task queue sorter
             chunkMap.callbackExecutor.run();
         }
         // CraftBukkit end

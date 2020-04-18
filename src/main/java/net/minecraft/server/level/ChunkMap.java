@@ -193,6 +193,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
     };
     // CraftBukkit end
 
+    final CallbackExecutor chunkLoadConversionCallbackExecutor = new CallbackExecutor(); // Paper
     // Paper start - distance maps
     private final com.destroystokyo.paper.util.misc.PooledLinkedHashSets<ServerPlayer> pooledLinkedPlayerHashSets = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets<>();
 
@@ -1132,16 +1133,15 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
         });
         CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> completablefuture1 = completablefuture.thenApplyAsync((either) -> {
             return either.mapLeft((list) -> {
-                return (LevelChunk) list.get(list.size() / 2);
-            });
-        }, (runnable) -> {
-            this.mainThreadMailbox.tell(ChunkTaskPriorityQueueSorter.message(holder, runnable));
-        }).thenApplyAsync((either) -> {
-            return either.ifLeft((chunk) -> {
+                // Paper start - revert 1.18.2 diff
+                final LevelChunk chunk = (LevelChunk) list.get(list.size() / 2);
                 chunk.postProcessGeneration();
                 this.level.startTickingChunk(chunk);
+                return chunk;
             });
-        }, this.mainThreadExecutor);
+        }, (runnable) -> {
+            this.mainThreadMailbox.tell(ChunkTaskPriorityQueueSorter.message(holder, () -> ChunkMap.this.chunkLoadConversionCallbackExecutor.execute(runnable))); // Paper - delay running Chunk post processing until outside of the sorter to prevent a deadlock scenario when post processing causes another chunk request.
+        }); // Paper end - revert 1.18.2 diff
 
         completablefuture1.thenAcceptAsync((either) -> {
             either.ifLeft((chunk) -> {
