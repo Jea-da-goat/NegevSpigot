@@ -1762,6 +1762,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                 .printStackTrace();
             return;
         }
+        if (entity instanceof ServerPlayer && ((ServerPlayer) entity).supressTrackerForLogin) return; // Delay adding to tracker until after list packets
         // Paper end
         if (!(entity instanceof EnderDragonPart)) {
             EntityType<?> entitytypes = entity.getType();
