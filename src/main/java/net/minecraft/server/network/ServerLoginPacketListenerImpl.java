@@ -90,7 +90,7 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
             }
             // Paper end
         } else if (this.state == ServerLoginPacketListenerImpl.State.DELAY_ACCEPT) {
-            ServerPlayer entityplayer = this.server.getPlayerList().getPlayer(this.gameProfile.getId());
+            ServerPlayer entityplayer = this.server.getPlayerList().getActivePlayer(this.gameProfile.getId()); // Paper
 
             if (entityplayer == null) {
                 this.state = ServerLoginPacketListenerImpl.State.READY_TO_ACCEPT;
@@ -189,7 +189,7 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
             }
 
             this.connection.send(new ClientboundGameProfilePacket(this.gameProfile));
-            ServerPlayer entityplayer = this.server.getPlayerList().getPlayer(this.gameProfile.getId());
+            ServerPlayer entityplayer = this.server.getPlayerList().getActivePlayer(this.gameProfile.getId()); // Paper
 
             try {
                 ServerPlayer entityplayer1 = this.server.getPlayerList().getPlayerForLogin(this.gameProfile, s); // CraftBukkit - add player reference

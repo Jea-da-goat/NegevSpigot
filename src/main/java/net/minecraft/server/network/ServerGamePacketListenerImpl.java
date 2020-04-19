@@ -346,6 +346,10 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
 
     @Override
     public void tick() {
+        // Paper start - login async
+        // Don't tick if not valid (dead), otherwise we load chunks below
+        if (this.player.valid) {
+        // Paper end
         if (this.ackBlockChangesUpTo > -1) {
             this.send(new ClientboundBlockChangedAckPacket(this.ackBlockChangesUpTo));
             this.ackBlockChangesUpTo = -1;
@@ -392,7 +396,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
             this.lastVehicle = null;
             this.clientVehicleIsFloating = false;
             this.aboveGroundVehicleTickCount = 0;
-        }
+        }} // Paper - end if (valid)
 
         this.server.getProfiler().push("keepAlive");
         // Paper Start - give clients a longer time to respond to pings as per pre 1.12.2 timings

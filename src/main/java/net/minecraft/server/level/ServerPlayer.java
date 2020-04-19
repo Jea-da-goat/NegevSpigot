@@ -182,6 +182,7 @@ public class ServerPlayer extends Player {
     private static final int NEUTRAL_MOB_DEATH_NOTIFICATION_RADII_XZ = 32;
     private static final int NEUTRAL_MOB_DEATH_NOTIFICATION_RADII_Y = 10;
     public ServerGamePacketListenerImpl connection;
+    public net.minecraft.network.Connection networkManager; // Paper
     public final MinecraftServer server;
     public final ServerPlayerGameMode gameMode;
     private final PlayerAdvancements advancements;
@@ -256,6 +257,7 @@ public class ServerPlayer extends Player {
     public boolean joining = true;
     public boolean sentListPacket = false;
     public boolean supressTrackerForLogin = false; // Paper
+    public boolean didPlayerJoinEvent = false; // Paper
     public Integer clientViewDistance;
     public String kickLeaveMessage = null; // SPIGOT-3034: Forward leave message to PlayerQuitEvent
     // CraftBukkit end

@@ -139,6 +139,7 @@ public abstract class PlayerList {
     private final IpBanList ipBans;
     private final ServerOpList ops;
     private final UserWhiteList whitelist;
+    private final Map<UUID, ServerPlayer> pendingPlayers = Maps.newHashMap(); // Paper
     // CraftBukkit start
     // private final Map<UUID, ServerStatisticManager> stats;
     // private final Map<UUID, AdvancementDataPlayer> advancements;
@@ -180,6 +181,13 @@ public abstract class PlayerList {
     public void placeNewPlayer(Connection connection, ServerPlayer player) {
         player.isRealPlayer = true; // Paper - Chunk priority
         player.loginTime = System.currentTimeMillis(); // Paper
+        // Paper start
+        ServerPlayer prev = pendingPlayers.put(player.getUUID(), player);
+        if (prev != null) {
+            disconnectPendingPlayer(prev);
+        }
+        player.networkManager = connection;
+        // Paper end
         GameProfile gameprofile = player.getGameProfile();
         GameProfileCache usercache = this.server.getProfileCache();
         Optional<GameProfile> optional = usercache.get(gameprofile.getId());
@@ -192,7 +200,7 @@ public abstract class PlayerList {
         if (nbttagcompound != null && nbttagcompound.contains("bukkit")) {
             CompoundTag bukkit = nbttagcompound.getCompound("bukkit");
             s = bukkit.contains("lastKnownName", 8) ? bukkit.getString("lastKnownName") : s;
-        }
+        }String lastKnownName = s; // Paper
         // CraftBukkit end
 
         if (nbttagcompound != null) {
@@ -219,11 +227,15 @@ public abstract class PlayerList {
         if (nbttagcompound == null) player.fudgeSpawnLocation(worldserver1); // Paper - only move to spawn on first login, otherwise, stay where you are....
 
         player.setLevel(worldserver1);
-        String s1 = "local";
+        // Paper start - make s1 final
+        final String s1;
 
         if (connection.getRemoteAddress() != null) {
             s1 = connection.getRemoteAddress().toString();
+        } else {
+            s1 = "local";
         }
+        // Paper end
 
         // Spigot start - spawn location event
         Player spawnPlayer = player.getBukkitEntity();
@@ -265,6 +277,56 @@ public abstract class PlayerList {
         player.getRecipeBook().sendInitialRecipeBook(player);
         this.updateEntireScoreboard(worldserver1.getScoreboard(), player);
         this.server.invalidateStatus();
+        // Paper start - async load spawn in chunk
+        ServerLevel finalWorldserver = worldserver1;
+        finalWorldserver.pendingLogin.add(player);
+        int chunkX = loc.getBlockX() >> 4;
+        int chunkZ = loc.getBlockZ() >> 4;
+        final net.minecraft.world.level.ChunkPos pos = new net.minecraft.world.level.ChunkPos(chunkX, chunkZ);
+        net.minecraft.server.level.ChunkMap playerChunkMap = worldserver1.getChunkSource().chunkMap;
+        net.minecraft.server.level.DistanceManager distanceManager = playerChunkMap.distanceManager;
+        net.minecraft.server.ChunkSystem.scheduleTickingState(
+            worldserver1, chunkX, chunkZ, net.minecraft.server.level.ChunkHolder.FullChunkStatus.ENTITY_TICKING, true,
+            ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.HIGHEST,
+            (chunk) -> {
+                MinecraftServer.getServer().scheduleOnMain(() -> {
+                    try {
+                        if (!playerconnection.connection.isConnected()) {
+                            return;
+                        }
+                        PlayerList.this.postChunkLoadJoin(
+                            player, finalWorldserver, connection, playerconnection,
+                            nbttagcompound, s1, lastKnownName
+                        );
+                        distanceManager.addTicket(net.minecraft.server.level.TicketType.LOGIN, pos, 31, pos.toLong());
+                    } finally {
+                        finalWorldserver.pendingLogin.remove(player);
+                    }
+                });
+            }
+        );
+    }
+
+    public ServerPlayer getActivePlayer(UUID uuid) {
+        ServerPlayer player = this.playersByUUID.get(uuid);
+        return player != null ? player : pendingPlayers.get(uuid);
+    }
+
+    void disconnectPendingPlayer(ServerPlayer entityplayer) {
+        Component msg = Component.translatable("multiplayer.disconnect.duplicate_login");
+        entityplayer.networkManager.send(new net.minecraft.network.protocol.game.ClientboundDisconnectPacket(msg), net.minecraft.network.PacketSendListener.thenRun(() -> {
+            entityplayer.networkManager.disconnect(msg);
+            entityplayer.networkManager = null;
+        }));
+    }
+
+    private void postChunkLoadJoin(ServerPlayer player, ServerLevel worldserver1, Connection networkmanager, ServerGamePacketListenerImpl playerconnection, CompoundTag nbttagcompound, String s1, String s) {
+        pendingPlayers.remove(player.getUUID(), player);
+        if (!networkmanager.isConnected()) {
+            return;
+        }
+        player.didPlayerJoinEvent = true;
+        // Paper end
         MutableComponent ichatmutablecomponent;
 
         if (player.getGameProfile().getName().equalsIgnoreCase(s)) {
@@ -506,6 +568,7 @@ public abstract class PlayerList {
 
     protected void save(ServerPlayer player) {
         if (!player.getBukkitEntity().isPersistent()) return; // CraftBukkit
+        if (!player.didPlayerJoinEvent) return; // Paper - If we never fired PJE, we disconnected during login. Data has not changed, and additionally, our saved vehicle is not loaded! If we save now, we will lose our vehicle (CraftBukkit bug)
         this.playerIo.save(player);
         ServerStatsCounter serverstatisticmanager = (ServerStatsCounter) player.getStats(); // CraftBukkit
 
@@ -533,7 +596,7 @@ public abstract class PlayerList {
         }
 
         PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(entityplayer.getBukkitEntity(), net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, io.papermc.paper.configuration.GlobalConfiguration.get().messages.useDisplayNameInQuitMessage ? entityplayer.getBukkitEntity().displayName() : net.kyori.adventure.text.Component.text(entityplayer.getScoreboardName())));
-        this.cserver.getPluginManager().callEvent(playerQuitEvent);
+        if (entityplayer.didPlayerJoinEvent) this.cserver.getPluginManager().callEvent(playerQuitEvent); // Paper - if we disconnected before join ever fired, don't fire quit
         entityplayer.getBukkitEntity().disconnect(playerQuitEvent.getQuitMessage());
 
         if (server.isSameThread()) entityplayer.doTick(); // SPIGOT-924 // Paper - don't tick during emergency shutdowns (Watchdog)
@@ -578,6 +641,13 @@ public abstract class PlayerList {
             // this.advancements.remove(uuid);
             // CraftBukkit end
         }
+        // Paper start
+        entityplayer1 = pendingPlayers.get(uuid);
+        if (entityplayer1 == entityplayer) {
+            pendingPlayers.remove(uuid);
+        }
+        entityplayer.networkManager = null;
+        // Paper end
 
         // CraftBukkit start
         // this.broadcastAll(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.REMOVE_PLAYER, new EntityPlayer[]{entityplayer}));
@@ -595,7 +665,7 @@ public abstract class PlayerList {
         this.cserver.getScoreboardManager().removePlayer(entityplayer.getBukkitEntity());
         // CraftBukkit end
 
-        return playerQuitEvent.quitMessage(); // Paper - Adventure
+        return entityplayer.didPlayerJoinEvent ? playerQuitEvent.quitMessage() : null; // CraftBukkit // Paper - Adventure // Paper - don't print quit if we never printed join
     }
 
     // CraftBukkit start - Whole method, SocketAddress to LoginListener, added hostname to signature, return EntityPlayer
@@ -614,6 +684,13 @@ public abstract class PlayerList {
                 list.add(entityplayer);
             }
         }
+        // Paper start - check pending players too
+        entityplayer = pendingPlayers.get(uuid);
+        if (entityplayer != null) {
+            this.pendingPlayers.remove(uuid);
+            disconnectPendingPlayer(entityplayer);
+        }
+        // Paper end
 
         Iterator iterator = list.iterator();
 

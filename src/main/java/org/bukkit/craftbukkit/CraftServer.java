@@ -1219,7 +1219,7 @@ public final class CraftServer implements Server {
             return false;
         }
 
-        if (handle.players().size() > 0) {
+        if (handle.players().size() > 0 || handle.pendingLogin.size() > 0) { // Paper
             return false;
         }
 

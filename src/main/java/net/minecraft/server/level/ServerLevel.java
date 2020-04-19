@@ -170,6 +170,7 @@ import org.bukkit.event.world.GenericGameEvent;
 import org.bukkit.event.world.TimeSkipEvent;
 // CraftBukkit end
 import it.unimi.dsi.fastutil.ints.IntArrayList; // Paper
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet; // Paper
 
 public class ServerLevel extends Level implements WorldGenLevel {
 
@@ -406,6 +407,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
         return this.getServer().getPlayerList().getPlayer(uuid);
     }
     // Paper end
+    public final ReferenceOpenHashSet<ServerPlayer> pendingLogin = new ReferenceOpenHashSet<>(); // Paper
 
     // Add env and gen to constructor, IWorldDataServer -> WorldDataServer
     public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, PrimaryLevelData iworlddataserver, ResourceKey<Level> resourcekey, LevelStem worlddimension, ChunkProgressListener worldloadlistener, boolean flag, long i, List<CustomSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
