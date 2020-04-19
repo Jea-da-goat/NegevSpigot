@@ -39,7 +39,7 @@ import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import com.mojang.brigadier.tree.CommandNode; // CraftBukkit
 
-public class CommandSourceStack implements SharedSuggestionProvider {
+public class CommandSourceStack implements SharedSuggestionProvider, com.destroystokyo.paper.brigadier.BukkitBrigadierCommandSource { // Paper
 
     public static final SimpleCommandExceptionType ERROR_NOT_PLAYER = new SimpleCommandExceptionType(Component.translatable("permissions.requires.player"));
     public static final SimpleCommandExceptionType ERROR_NOT_ENTITY = new SimpleCommandExceptionType(Component.translatable("permissions.requires.entity"));
@@ -171,6 +171,26 @@ public class CommandSourceStack implements SharedSuggestionProvider {
     public ChatSender asChatSender() {
         return this.entity != null ? this.entity.asChatSender() : ChatSender.SYSTEM;
     }
+
+    // Paper start
+    @Override
+    public org.bukkit.entity.Entity getBukkitEntity() {
+        return getEntity() != null ? getEntity().getBukkitEntity() : null;
+    }
+
+    @Override
+    public org.bukkit.World getBukkitWorld() {
+        return getLevel() != null ? getLevel().getWorld() : null;
+    }
+
+    @Override
+    public org.bukkit.Location getBukkitLocation() {
+        Vec3 pos = getPosition();
+        org.bukkit.World world = getBukkitWorld();
+        Vec2 rot = getRotation();
+        return world != null && pos != null ? new org.bukkit.Location(world, pos.x, pos.y, pos.z, rot != null ? rot.x : 0, rot != null ? rot.y : 0) : null;
+    }
+    // Paper end
 
     @Override
     public boolean hasPermission(int level) {
