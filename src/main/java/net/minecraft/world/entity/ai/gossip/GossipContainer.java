@@ -27,7 +27,7 @@ import net.minecraft.util.VisibleForDebug;
 
 public class GossipContainer {
     public static final int DISCARD_THRESHOLD = 2;
-    private final Map<UUID, GossipContainer.EntityGossips> gossips = Maps.newHashMap();
+    private final Map<UUID, GossipContainer.EntityGossips> gossips = Maps.newHashMap(); public Map<UUID, GossipContainer.EntityGossips> getReputations() { return this.gossips; } // Paper - add getter for reputations
 
     @VisibleForDebug
     public Map<UUID, Object2IntMap<GossipType>> getGossipEntries() {
@@ -226,6 +226,28 @@ public class GossipContainer {
         public void remove(GossipType gossipType) {
             this.entries.removeInt(gossipType);
         }
+
+        // Paper start - Add villager reputation API
+        private static final com.destroystokyo.paper.entity.villager.ReputationType[] REPUTATION_TYPES = com.destroystokyo.paper.entity.villager.ReputationType.values();
+        public com.destroystokyo.paper.entity.villager.Reputation getPaperReputation() {
+            int[] reputation = new int[REPUTATION_TYPES.length];
+            reputation[com.destroystokyo.paper.entity.villager.ReputationType.MAJOR_NEGATIVE.ordinal()] = entries.getOrDefault(GossipType.MAJOR_NEGATIVE, 0);
+            reputation[com.destroystokyo.paper.entity.villager.ReputationType.MAJOR_POSITIVE.ordinal()] = entries.getOrDefault(GossipType.MAJOR_POSITIVE, 0);
+            reputation[com.destroystokyo.paper.entity.villager.ReputationType.MINOR_NEGATIVE.ordinal()] = entries.getOrDefault(GossipType.MINOR_NEGATIVE, 0);
+            reputation[com.destroystokyo.paper.entity.villager.ReputationType.MINOR_POSITIVE.ordinal()] = entries.getOrDefault(GossipType.MINOR_POSITIVE, 0);
+            reputation[com.destroystokyo.paper.entity.villager.ReputationType.TRADING.ordinal()] = entries.getOrDefault(GossipType.TRADING, 0);
+            return com.destroystokyo.paper.entity.villager.ReputationConstructor.construct(reputation);
+        }
+
+        public void assignFromPaperReputation(com.destroystokyo.paper.entity.villager.Reputation rep) {
+            int val;
+            if ((val = rep.getReputation(com.destroystokyo.paper.entity.villager.ReputationType.MAJOR_NEGATIVE)) != 0) this.entries.put(GossipType.MAJOR_NEGATIVE, val);
+            if ((val = rep.getReputation(com.destroystokyo.paper.entity.villager.ReputationType.MAJOR_POSITIVE)) != 0) this.entries.put(GossipType.MAJOR_POSITIVE, val);
+            if ((val = rep.getReputation(com.destroystokyo.paper.entity.villager.ReputationType.MINOR_NEGATIVE)) != 0) this.entries.put(GossipType.MINOR_NEGATIVE, val);
+            if ((val = rep.getReputation(com.destroystokyo.paper.entity.villager.ReputationType.MINOR_POSITIVE)) != 0) this.entries.put(GossipType.MINOR_POSITIVE, val);
+            if ((val = rep.getReputation(com.destroystokyo.paper.entity.villager.ReputationType.TRADING)) != 0) this.entries.put(GossipType.TRADING, val);
+        }
+        // Paper end
     }
 
     static class GossipEntry {
