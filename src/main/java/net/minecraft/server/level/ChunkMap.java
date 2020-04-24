@@ -157,17 +157,28 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
     public final CallbackExecutor callbackExecutor = new CallbackExecutor();
     public static final class CallbackExecutor implements java.util.concurrent.Executor, Runnable {
 
-        private final java.util.Queue<Runnable> queue = new java.util.ArrayDeque<>();
+        private Runnable queued; // Paper - revert CB changes
 
         @Override
         public void execute(Runnable runnable) {
-            this.queue.add(runnable);
+            // Paper start - revert CB changes
+            org.spigotmc.AsyncCatcher.catchOp("Callback Executor execute");
+            if (this.queued != null) {
+                LOGGER.error("Failed to schedule runnable", new IllegalStateException("Already queued"));
+                throw new IllegalStateException("Already queued");
+            }
+            this.queued = runnable;
+            // Paper end - revert CB changes
         }
 
         @Override
         public void run() {
-            Runnable task;
-            while ((task = this.queue.poll()) != null) {
+            // Paper start - revert CB changes
+            org.spigotmc.AsyncCatcher.catchOp("Callback Executor execute");
+            Runnable task = this.queued;
+            if (task != null) {
+                this.queued = null;
+                // Paper end - revert CB changes
                 task.run();
             }
         }
