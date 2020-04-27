@@ -5,7 +5,7 @@ import net.minecraft.world.phys.Vec3;
 
 public class VecDeltaCodec {
     private static final double TRUNCATION_STEPS = 4096.0D;
-    private Vec3 base = Vec3.ZERO;
+    public Vec3 base = Vec3.ZERO; // Paper
 
     private static long encode(double value) {
         return Mth.lfloor(value * 4096.0D);
