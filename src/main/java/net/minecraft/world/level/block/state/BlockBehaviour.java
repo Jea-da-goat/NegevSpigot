@@ -734,6 +734,13 @@ public abstract class BlockBehaviour {
             return this.conditionallyFullOpaque;
         }
         // Paper end
+        // Paper start
+        private long blockCollisionBehavior = io.papermc.paper.util.CollisionUtil.KNOWN_SPECIAL_BLOCK;
+
+        public final long getBlockCollisionBehavior() {
+            return this.blockCollisionBehavior;
+        }
+        // Paper end
 
         public void initCache() {
             this.fluid = this.getBlock().getFluidState(this.asState()); // Paper - moved from getFluid()
@@ -743,7 +750,35 @@ public abstract class BlockBehaviour {
             }
             this.shapeExceedsCube = this.cache == null || this.cache.largeCollisionShape; // Paper - moved from actual method to here
             this.opacityIfCached = this.cache == null || this.isConditionallyFullOpaque() ? -1 : this.cache.lightBlock; // Paper - cache opacity for light
-
+            // Paper start
+            if (io.papermc.paper.util.CollisionUtil.isSpecialCollidingBlock(this)) {
+                this.blockCollisionBehavior = io.papermc.paper.util.CollisionUtil.KNOWN_SPECIAL_BLOCK;
+            } else {
+                try {
+                    // There is NOTHING HACKY ABOUT THIS AT ALLLLLLLLLLLLLLL
+                    VoxelShape constantShape = this.getCollisionShape(null, null, null);
+                    if (constantShape == null) {
+                        this.blockCollisionBehavior = io.papermc.paper.util.CollisionUtil.KNOWN_UNKNOWN_BLOCK;
+                    } else {
+                        constantShape = constantShape.optimize();
+                        if (constantShape.isEmpty()) {
+                            this.blockCollisionBehavior = io.papermc.paper.util.CollisionUtil.KNOWN_EMPTY_BLOCK;
+                        } else {
+                            final List<net.minecraft.world.phys.AABB> boxes = constantShape.toAabbs();
+                            if (constantShape == net.minecraft.world.phys.shapes.Shapes.getFullUnoptimisedCube() || (boxes.size() == 1 && boxes.get(0).equals(net.minecraft.world.phys.shapes.Shapes.BLOCK_OPTIMISED.aabb))) {
+                                this.blockCollisionBehavior = io.papermc.paper.util.CollisionUtil.KNOWN_FULL_BLOCK;
+                            } else {
+                                this.blockCollisionBehavior = io.papermc.paper.util.CollisionUtil.KNOWN_UNKNOWN_BLOCK;
+                            }
+                        }
+                    }
+                } catch (final Error error) {
+                    throw error;
+                } catch (final Throwable throwable) {
+                    this.blockCollisionBehavior = io.papermc.paper.util.CollisionUtil.KNOWN_UNKNOWN_BLOCK;
+                }
+            }
+            // Paper end
         }
 
         public Block getBlock() {
