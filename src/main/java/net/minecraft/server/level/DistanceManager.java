@@ -49,7 +49,7 @@ public abstract class DistanceManager {
     final Long2ObjectMap<ObjectSet<ServerPlayer>> playersPerChunk = new Long2ObjectOpenHashMap();
     public final Long2ObjectOpenHashMap<SortedArraySet<Ticket<?>>> tickets = new Long2ObjectOpenHashMap();
     private final DistanceManager.ChunkTicketTracker ticketTracker = new DistanceManager.ChunkTicketTracker();
-    private final DistanceManager.FixedPlayerDistanceChunkTracker naturalSpawnChunkCounter = new DistanceManager.FixedPlayerDistanceChunkTracker(8);
+    public static final int MOB_SPAWN_RANGE = 8; // private final ChunkMapDistance.b f = new ChunkMapDistance.b(8); // Paper - no longer used
     private final TickingTracker tickingTicketsTracker = new TickingTracker();
     private final DistanceManager.PlayerTicketTracker playerTicketManager = new DistanceManager.PlayerTicketTracker(33);
     // Paper start use a queue, but still keep unique requirement
@@ -141,7 +141,7 @@ public abstract class DistanceManager {
     protected abstract ChunkHolder updateChunkScheduling(long pos, int level, @Nullable ChunkHolder holder, int k);
 
     public boolean runAllUpdates(ChunkMap chunkStorage) {
-        this.naturalSpawnChunkCounter.runAllUpdates();
+        //this.f.a(); // Paper - no longer used
         this.tickingTicketsTracker.runAllUpdates();
         org.spigotmc.AsyncCatcher.catchOp("DistanceManagerTick"); // Paper
         this.playerTicketManager.runAllUpdates();
@@ -429,7 +429,7 @@ public abstract class DistanceManager {
         ((ObjectSet) this.playersPerChunk.computeIfAbsent(i, (j) -> {
             return new ObjectOpenHashSet();
         })).add(player);
-        this.naturalSpawnChunkCounter.update(i, 0, true);
+        //this.f.update(i, 0, true); // Paper - no longer used
         this.playerTicketManager.update(i, 0, true);
         this.tickingTicketsTracker.addTicket(TicketType.PLAYER, chunkcoordintpair, this.getPlayerTicketLevel(), chunkcoordintpair);
     }
@@ -443,7 +443,7 @@ public abstract class DistanceManager {
         if (objectset != null) objectset.remove(player); // Paper - some state corruption happens here, don't crash, clean up gracefully.
         if (objectset == null || objectset.isEmpty()) { // Paper
             this.playersPerChunk.remove(i);
-            this.naturalSpawnChunkCounter.update(i, Integer.MAX_VALUE, false);
+            //this.f.update(i, Integer.MAX_VALUE, false); // Paper - no longer used
             this.playerTicketManager.update(i, Integer.MAX_VALUE, false);
             this.tickingTicketsTracker.removeTicket(TicketType.PLAYER, chunkcoordintpair, this.getPlayerTicketLevel(), chunkcoordintpair);
         }
@@ -487,13 +487,17 @@ public abstract class DistanceManager {
     // Paper end
 
     public int getNaturalSpawnChunkCount() {
-        this.naturalSpawnChunkCounter.runAllUpdates();
-        return this.naturalSpawnChunkCounter.chunks.size();
+        // Paper start - use distance map to implement
+        // note: this is the spawn chunk count
+        return this.chunkMap.playerChunkTickRangeMap.size();
+        // Paper end - use distance map to implement
     }
 
     public boolean hasPlayersNearby(long chunkPos) {
-        this.naturalSpawnChunkCounter.runAllUpdates();
-        return this.naturalSpawnChunkCounter.chunks.containsKey(chunkPos);
+        // Paper start - use distance map to implement
+        // note: this is the is spawn chunk method
+        return this.chunkMap.playerChunkTickRangeMap.getObjectsInRange(chunkPos) != null;
+        // Paper end - use distance map to implement
     }
 
     public String getDebugStatus() {

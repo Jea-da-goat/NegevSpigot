@@ -263,6 +263,7 @@ public class ServerPlayer extends Player {
     // CraftBukkit end
     public PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper
 
+    public double lastEntitySpawnRadiusSquared; // Paper - optimise isOutsideRange, this field is in blocks
     public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> cachedSingleHashSet; // Paper
 
     public ServerPlayer(MinecraftServer server, ServerLevel world, GameProfile profile, @Nullable ProfilePublicKey publicKey) {

@@ -79,13 +79,26 @@ public class ChunkHolder {
 
     // Paper start
     public void onChunkAdd() {
-
+        // Paper start - optimise anyPlayerCloseEnoughForSpawning
+        long key = net.minecraft.server.MCUtil.getCoordinateKey(this.pos);
+        this.playersInMobSpawnRange = this.chunkMap.playerMobSpawnMap.getObjectsInRange(key);
+        this.playersInChunkTickRange = this.chunkMap.playerChunkTickRangeMap.getObjectsInRange(key);
+        // Paper end - optimise anyPlayerCloseEnoughForSpawning
     }
 
     public void onChunkRemove() {
-
+        // Paper start - optimise anyPlayerCloseEnoughForSpawning
+        this.playersInMobSpawnRange = null;
+        this.playersInChunkTickRange = null;
+        // Paper end - optimise anyPlayerCloseEnoughForSpawning
     }
     // Paper end
+
+    // Paper start - optimise anyPlayerCloseEnoughForSpawning
+    // cached here to avoid a map lookup
+    com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> playersInMobSpawnRange;
+    com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> playersInChunkTickRange;
+    // Paper end - optimise anyPlayerCloseEnoughForSpawning
 
     public ChunkHolder(ChunkPos pos, int level, LevelHeightAccessor world, LevelLightEngine lightingProvider, ChunkHolder.LevelChangeListener levelUpdateListener, ChunkHolder.PlayerProvider playersWatchingChunkProvider) {
         this.futures = new AtomicReferenceArray(ChunkHolder.CHUNK_STATUSES.size());
