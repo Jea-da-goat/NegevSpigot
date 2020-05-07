@@ -84,6 +84,11 @@ public class ChunkHolder {
         this.playersInMobSpawnRange = this.chunkMap.playerMobSpawnMap.getObjectsInRange(key);
         this.playersInChunkTickRange = this.chunkMap.playerChunkTickRangeMap.getObjectsInRange(key);
         // Paper end - optimise anyPlayerCloseEnoughForSpawning
+        // Paper start - optimise chunk tick iteration
+        if (this.needsBroadcastChanges()) {
+            this.chunkMap.needsChangeBroadcasting.add(this);
+        }
+        // Paper end - optimise chunk tick iteration
     }
 
     public void onChunkRemove() {
@@ -91,6 +96,11 @@ public class ChunkHolder {
         this.playersInMobSpawnRange = null;
         this.playersInChunkTickRange = null;
         // Paper end - optimise anyPlayerCloseEnoughForSpawning
+        // Paper start - optimise chunk tick iteration
+        if (this.needsBroadcastChanges()) {
+            this.chunkMap.needsChangeBroadcasting.remove(this);
+        }
+        // Paper end - optimise chunk tick iteration
     }
     // Paper end
 
@@ -258,7 +268,7 @@ public class ChunkHolder {
 
             if (i < 0 || i >= this.changedBlocksPerSection.length) return; // CraftBukkit - SPIGOT-6086, SPIGOT-6296
             if (this.changedBlocksPerSection[i] == null) {
-                this.hasChangedSections = true;
+                this.hasChangedSections = true; this.addToBroadcastMap(); // Paper - optimise chunk tick iteration
                 this.changedBlocksPerSection[i] = new ShortOpenHashSet();
             }
 
@@ -281,6 +291,7 @@ public class ChunkHolder {
                     int k = this.lightEngine.getMaxLightSection();
 
                     if (y >= j && y <= k) {
+                    this.addToBroadcastMap(); // Paper - optimise chunk tick iteration
                         int l = y - j;
 
                         if (lightType == LightLayer.SKY) {
@@ -295,8 +306,19 @@ public class ChunkHolder {
         }
     }
 
+    // Paper start - optimise chunk tick iteration
+    public final boolean needsBroadcastChanges() {
+        return this.hasChangedSections || !this.skyChangedLightSectionFilter.isEmpty() || !this.blockChangedLightSectionFilter.isEmpty();
+    }
+
+    private void addToBroadcastMap() {
+        org.spigotmc.AsyncCatcher.catchOp("ChunkHolder update");
+        this.chunkMap.needsChangeBroadcasting.add(this);
+    }
+    // Paper end - optimise chunk tick iteration
+
     public void broadcastChanges(LevelChunk chunk) {
-        if (this.hasChangedSections || !this.skyChangedLightSectionFilter.isEmpty() || !this.blockChangedLightSectionFilter.isEmpty()) {
+        if (this.needsBroadcastChanges()) { // Paper - moved into above, other logic needs to call
             Level world = chunk.getLevel();
             int i = 0;
 

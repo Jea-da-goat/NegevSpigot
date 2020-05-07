@@ -162,6 +162,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
     private final Queue<Runnable> unloadQueue;
     int viewDistance;
     public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerMobDistanceMap; // Paper
+    public final ReferenceOpenHashSet<ChunkHolder> needsChangeBroadcasting = new ReferenceOpenHashSet<>();
 
     // CraftBukkit start - recursion-safe executor for Chunk loadCallback() and unloadCallback()
     public final CallbackExecutor callbackExecutor = new CallbackExecutor();
