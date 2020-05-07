@@ -141,6 +141,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
     private final ChunkTaskPriorityQueueSorter queueSorter;
     private final ProcessorHandle<ChunkTaskPriorityQueueSorter.Message<Runnable>> worldgenMailbox;
     public final ProcessorHandle<ChunkTaskPriorityQueueSorter.Message<Runnable>> mainThreadMailbox;
+    // Paper start
+    final ProcessorHandle<ChunkTaskPriorityQueueSorter.Message<Runnable>> mailboxLight;
+    public void addLightTask(ChunkHolder playerchunk, Runnable run) {
+        this.mailboxLight.tell(ChunkTaskPriorityQueueSorter.message(playerchunk, run));
+    }
+    // Paper end
     public final ChunkProgressListener progressListener;
     private final ChunkStatusUpdateListener chunkStatusListener;
     public final ChunkMap.ChunkDistanceManager distanceManager;
@@ -284,11 +290,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
 
         this.progressListener = worldGenerationProgressListener;
         this.chunkStatusListener = chunkStatusChangeListener;
-        ProcessorMailbox<Runnable> threadedmailbox1 = ProcessorMailbox.create(executor, "light");
+        ProcessorMailbox<Runnable> lightthreaded; ProcessorMailbox<Runnable> threadedmailbox1 = lightthreaded = ProcessorMailbox.create(executor, "light"); // Paper
 
         this.queueSorter = new ChunkTaskPriorityQueueSorter(ImmutableList.of(threadedmailbox, mailbox, threadedmailbox1), executor, Integer.MAX_VALUE);
         this.worldgenMailbox = this.queueSorter.getProcessor(threadedmailbox, false);
         this.mainThreadMailbox = this.queueSorter.getProcessor(mailbox, false);
+        this.mailboxLight = this.queueSorter.getProcessor(lightthreaded, false);// Paper
         this.lightEngine = new ThreadedLevelLightEngine(chunkProvider, this, this.level.dimensionType().hasSkyLight(), threadedmailbox1, this.queueSorter.getProcessor(threadedmailbox1, false));
         this.distanceManager = new ChunkMap.ChunkDistanceManager(executor, mainThreadExecutor);
         this.overworldDataStorage = persistentStateManagerFactory;
