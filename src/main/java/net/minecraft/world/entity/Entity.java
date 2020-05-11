@@ -662,8 +662,8 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
     }
 
     public void setPos(double x, double y, double z) {
-        this.setPosRaw(x, y, z);
-        this.setBoundingBox(this.makeBoundingBox());
+        this.setPosRaw(x, y, z, true); // Paper - force bounding box update
+        // this.setBoundingBox(this.makeBoundingBox()); // Paper - move into setPositionRaw
     }
 
     protected AABB makeBoundingBox() {
@@ -3884,6 +3884,11 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
     }
 
     public final void setPosRaw(double x, double y, double z) {
+        // Paper start
+        this.setPosRaw(x, y, z, false);
+    }
+    public final void setPosRaw(double x, double y, double z, boolean forceBoundingBoxUpdate) {
+        // Paper end
         if (this.position.x != x || this.position.y != y || this.position.z != z) {
             this.position = new Vec3(x, y, z);
             int i = Mth.floor(x);
@@ -3901,6 +3906,12 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
             this.levelCallback.onMove();
         }
 
+        // Paper start - never allow AABB to become desynced from position
+        // hanging has its own special logic
+        if (!(this instanceof net.minecraft.world.entity.decoration.HangingEntity) && (forceBoundingBoxUpdate || this.position.x != x || this.position.y != y || this.position.z != z)) {
+            this.setBoundingBox(this.makeBoundingBox());
+        }
+        // Paper end
     }
 
     public void checkDespawn() {}
