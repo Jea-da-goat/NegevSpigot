@@ -878,7 +878,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
         if (!this.server.isCommandBlockEnabled()) {
             this.player.sendSystemMessage(Component.translatable("advMode.notEnabled"));
-        } else if (!this.player.canUseGameMasterBlocks()) {
+        } else if (!this.player.canUseGameMasterBlocks() && (!this.player.isCreative() || !this.player.getBukkitEntity().hasPermission("minecraft.commandblock"))) { // Paper - command block permission
             this.player.sendSystemMessage(Component.translatable("advMode.notAllowed"));
         } else {
             BaseCommandBlock commandblocklistenerabstract = null;
@@ -945,7 +945,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
         if (!this.server.isCommandBlockEnabled()) {
             this.player.sendSystemMessage(Component.translatable("advMode.notEnabled"));
-        } else if (!this.player.canUseGameMasterBlocks()) {
+        } else if (!this.player.canUseGameMasterBlocks() && (!this.player.isCreative() || !this.player.getBukkitEntity().hasPermission("minecraft.commandblock"))) { // Paper - command block permission
             this.player.sendSystemMessage(Component.translatable("advMode.notAllowed"));
         } else {
             BaseCommandBlock commandblocklistenerabstract = packet.getCommandBlock(this.player.level);
