@@ -101,6 +101,13 @@ public class ChunkHolder {
     // Paper end - optimise anyPlayerCloseEnoughForSpawning
     long lastAutoSaveTime; // Paper - incremental autosave
     long inactiveTimeStart; // Paper - incremental autosave
+    // Paper start - optimize chunk status progression without jumping through thread pool
+    public boolean canAdvanceStatus() {
+        ChunkStatus status = getChunkHolderStatus();
+        ChunkAccess chunk = getAvailableChunkNow();
+        return chunk != null && (status == null || chunk.getStatus().isOrAfter(getNextStatus(status)));
+    }
+    // Paper end
 
     public ChunkHolder(ChunkPos pos, int level, LevelHeightAccessor world, LevelLightEngine lightingProvider, ChunkHolder.LevelChangeListener levelUpdateListener, ChunkHolder.PlayerProvider playersWatchingChunkProvider) {
         this.futures = new AtomicReferenceArray(ChunkHolder.CHUNK_STATUSES.size());

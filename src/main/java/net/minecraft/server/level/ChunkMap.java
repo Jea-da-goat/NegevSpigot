@@ -726,7 +726,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
             return either.mapLeft((list) -> {
                 return (LevelChunk) list.get(list.size() / 2);
             });
-        }, this.mainThreadExecutor);
+        }, this.mainInvokingExecutor); // Paper
     }
 
     @Nullable
@@ -1144,6 +1144,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
             return "chunkGenerate " + requiredStatus.getName();
         });
         Executor executor = (runnable) -> {
+            // Paper start - optimize chunk status progression without jumping through thread pool
+            if (holder.canAdvanceStatus()) {
+                this.mainInvokingExecutor.execute(runnable);
+                return;
+            }
+            // Paper end
             this.worldgenMailbox.tell(ChunkTaskPriorityQueueSorter.message(holder, runnable));
         };
 
