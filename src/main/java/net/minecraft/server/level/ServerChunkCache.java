@@ -537,6 +537,8 @@ public class ServerChunkCache extends ChunkSource {
         return completablefuture;
     }
 
+    private long syncLoadCounter; // Paper - prevent plugin unloads from removing our ticket
+
     private CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> getChunkFutureMainThread(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) {
         // Paper start - add isUrgent - old sig left in place for dirty nms plugins
         return getChunkFutureMainThread(chunkX, chunkZ, leastStatus, create, false);
@@ -555,9 +557,12 @@ public class ServerChunkCache extends ChunkSource {
             ChunkHolder.FullChunkStatus currentChunkState = ChunkHolder.getFullChunkStatus(playerchunk.getTicketLevel());
             currentlyUnloading = (oldChunkState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER) && !currentChunkState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER));
         }
+        final Long identifier; // Paper - prevent plugin unloads from removing our ticket
         if (create && !currentlyUnloading) {
             // CraftBukkit end
             this.distanceManager.addTicket(TicketType.UNKNOWN, chunkcoordintpair, l, chunkcoordintpair);
+            identifier = Long.valueOf(this.syncLoadCounter++); // Paper - prevent plugin unloads from removing our ticket
+            this.distanceManager.addTicket(TicketType.REQUIRED_LOAD, chunkcoordintpair, l, identifier); // Paper - prevent plugin unloads from removing our ticket
             if (isUrgent) this.distanceManager.markUrgent(chunkcoordintpair); // Paper - Chunk priority
             if (this.chunkAbsent(playerchunk, l)) {
                 ProfilerFiller gameprofilerfiller = this.level.getProfiler();
@@ -568,13 +573,21 @@ public class ServerChunkCache extends ChunkSource {
                 playerchunk = this.getVisibleChunkIfPresent(k);
                 gameprofilerfiller.pop();
                 if (this.chunkAbsent(playerchunk, l)) {
+                    this.distanceManager.removeTicket(TicketType.REQUIRED_LOAD, chunkcoordintpair, l, identifier); // Paper
                     throw (IllegalStateException) Util.pauseInIde(new IllegalStateException("No chunk holder after ticket has been added"));
                 }
             }
-        }
 
+        } else { identifier = null; } // Paper - prevent plugin unloads from removing our ticket
         // Paper start - Chunk priority
         CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = this.chunkAbsent(playerchunk, l) ? ChunkHolder.UNLOADED_CHUNK_FUTURE : playerchunk.getOrScheduleFuture(leastStatus, this.chunkMap);
+        // Paper start - prevent plugin unloads from removing our ticket
+        if (create && !currentlyUnloading) {
+            future.thenAcceptAsync((either) -> {
+                ServerChunkCache.this.distanceManager.removeTicket(TicketType.REQUIRED_LOAD, chunkcoordintpair, l, identifier);
+            }, ServerChunkCache.this.mainThreadProcessor);
+        }
+        // Paper end - prevent plugin unloads from removing our ticket
         if (isUrgent) {
             future.thenAccept(either -> this.distanceManager.clearUrgent(chunkcoordintpair));
         }

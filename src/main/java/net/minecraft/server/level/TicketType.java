@@ -31,6 +31,7 @@ public class TicketType<T> {
     public static final TicketType<Unit> PLUGIN = TicketType.create("plugin", (a, b) -> 0); // CraftBukkit
     public static final TicketType<org.bukkit.plugin.Plugin> PLUGIN_TICKET = TicketType.create("plugin_ticket", (plugin1, plugin2) -> plugin1.getClass().getName().compareTo(plugin2.getClass().getName())); // CraftBukkit
     public static final TicketType<Long> DELAY_UNLOAD = create("delay_unload", Long::compareTo, 300); // Paper
+    public static final TicketType<Long> REQUIRED_LOAD = create("required_load", Long::compareTo); // Paper - make sure getChunkAt does not fail
 
     public static <T> TicketType<T> create(String name, Comparator<T> argumentComparator) {
         return new TicketType<>(name, argumentComparator, 0L);
