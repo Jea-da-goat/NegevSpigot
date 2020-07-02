@@ -1271,5 +1271,29 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     public org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason getEntitySpawnReason() {
         return getHandle().spawnReason;
     }
+
+    public boolean isInRain() {
+        return getHandle().isInRain();
+    }
+
+    public boolean isInBubbleColumn() {
+        return getHandle().isInBubbleColumn();
+    }
+
+    public boolean isInWaterOrRain() {
+        return getHandle().isInWaterOrRain();
+    }
+
+    public boolean isInWaterOrBubbleColumn() {
+        return getHandle().isInWaterOrBubble();
+    }
+    
+    public boolean isInWaterOrRainOrBubbleColumn() {
+        return getHandle().isInWaterRainOrBubble();
+    }
+
+    public boolean isInLava() {
+        return getHandle().isInLava();
+    }
     // Paper end
 }
