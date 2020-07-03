@@ -78,6 +78,7 @@ public abstract class ItemCombinerMenu extends AbstractContainerMenu {
         super.slotsChanged(inventory);
         if (inventory == this.inputSlots) {
             this.createResult();
+            org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareResultEvent(this, RESULT_SLOT); // Paper
         }
 
     }
