@@ -16,7 +16,7 @@ public class GateBehavior<E extends LivingEntity> extends Behavior<E> {
     private final Set<MemoryModuleType<?>> exitErasedMemories;
     private final GateBehavior.OrderPolicy orderPolicy;
     private final GateBehavior.RunningPolicy runningPolicy;
-    private final ShufflingList<Behavior<? super E>> behaviors = new ShufflingList<>();
+    private final ShufflingList<Behavior<? super E>> behaviors = new ShufflingList<>(false); // Paper - don't use a clone
 
     public GateBehavior(Map<MemoryModuleType<?>, MemoryStatus> requiredMemoryState, Set<MemoryModuleType<?>> memoriesToForgetWhenStopped, GateBehavior.OrderPolicy order, GateBehavior.RunningPolicy runMode, List<Pair<Behavior<? super E>, Integer>> tasks) {
         super(requiredMemoryState);
