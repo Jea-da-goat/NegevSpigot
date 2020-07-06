@@ -30,11 +30,15 @@ public class PacketUtils {
                     try (co.aikar.timings.Timing ignored = timing.startTiming()) { // Paper - timings
                         packet.handle(listener);
                     } catch (Exception exception) {
-                        if (listener.shouldPropagateHandlingExceptions()) {
-                            throw exception;
+                        net.minecraft.network.Connection networkmanager = listener.getConnection();
+                        if (networkmanager.getPlayer() != null) {
+                            LOGGER.error("Error whilst processing packet {} for {}[{}]", packet, networkmanager.getPlayer().getScoreboardName(), networkmanager.getRemoteAddress(), exception);
+                        } else {
+                            LOGGER.error("Error whilst processing packet {} for connection from {}", packet, networkmanager.getRemoteAddress(), exception);
                         }
-
-                        PacketUtils.LOGGER.error("Failed to handle packet {}, suppressing error", packet, exception);
+                        net.minecraft.network.chat.Component error = net.minecraft.network.chat.Component.literal("Packet processing error");
+                        networkmanager.send(new net.minecraft.network.protocol.game.ClientboundDisconnectPacket(error), net.minecraft.network.PacketSendListener.thenRun(() -> networkmanager.disconnect(error)));
+                        networkmanager.setReadOnly();
                     }
                 } else {
                     PacketUtils.LOGGER.debug("Ignoring packet due to disconnection: {}", packet);
