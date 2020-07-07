@@ -19,9 +19,9 @@ public class Vec3i implements Comparable<Vec3i> {
         return IntStream.of(vec3i.getX(), vec3i.getY(), vec3i.getZ());
     });
     public static final Vec3i ZERO = new Vec3i(0, 0, 0);
-    private int x;
-    private int y;
-    private int z;
+    protected int x; // Paper - protected
+    protected int y; // Paper - protected
+    protected int z; // Paper - protected
 
     private static Function<Vec3i, DataResult<Vec3i>> checkOffsetAxes(int maxAbsValue) {
         return (vec) -> {
