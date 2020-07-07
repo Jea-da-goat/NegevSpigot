@@ -717,8 +717,14 @@ public abstract class BlockBehaviour {
             return this.shapeExceedsCube;
         }
         // Paper end
+        // Paper start
+        protected boolean isTicking;
+        protected FluidState fluid;
+        // Paper end
 
         public void initCache() {
+            this.fluid = this.getBlock().getFluidState(this.asState()); // Paper - moved from getFluid()
+            this.isTicking = this.getBlock().isRandomlyTicking(this.asState()); // Paper - moved from isTicking()
             if (!this.getBlock().hasDynamicShape()) {
                 this.cache = new BlockBehaviour.BlockStateBase.Cache(this.asState());
             }
@@ -768,15 +774,15 @@ public abstract class BlockBehaviour {
             return this.shapeExceedsCube; // Paper - moved into shape cache init
         }
 
-        public boolean useShapeForLightOcclusion() {
+        public final boolean useShapeForLightOcclusion() { // Paper
             return this.useShapeForLightOcclusion;
         }
 
-        public int getLightEmission() {
+        public final int getLightEmission() { // Paper
             return this.lightEmission;
         }
 
-        public boolean isAir() {
+        public final boolean isAir() { // Paper
             return this.isAir;
         }
 
@@ -850,7 +856,7 @@ public abstract class BlockBehaviour {
             }
         }
 
-        public boolean canOcclude() {
+        public final boolean canOcclude() { // Paper
             return this.canOcclude;
         }
 
@@ -1048,12 +1054,12 @@ public abstract class BlockBehaviour {
             return this.getBlock() == block;
         }
 
-        public FluidState getFluidState() {
-            return this.getBlock().getFluidState(this.asState());
+        public final FluidState getFluidState() { // Paper
+            return this.fluid; // Paper - moved into init
         }
 
-        public boolean isRandomlyTicking() {
-            return this.getBlock().isRandomlyTicking(this.asState());
+        public final boolean isRandomlyTicking() { // Paper
+            return this.isTicking; // Paper - moved into init
         }
 
         public long getSeed(BlockPos pos) {
