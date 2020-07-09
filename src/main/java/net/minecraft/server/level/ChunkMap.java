@@ -302,15 +302,81 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
     public final io.papermc.paper.chunk.SingleThreadChunkRegionManager dataRegionManager;
 
     public static final class DataRegionData implements io.papermc.paper.chunk.SingleThreadChunkRegionManager.RegionData {
+        // Paper start - optimise notify()
+        private io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet<Mob> navigators;
+
+        public io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet<Mob> getNavigators() {
+            return this.navigators;
+        }
+
+        public boolean addToNavigators(final Mob navigator) {
+            if (this.navigators == null) {
+                this.navigators = new io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet<>();
+            }
+            return this.navigators.add(navigator);
+        }
+
+        public boolean removeFromNavigators(final Mob navigator) {
+            if (this.navigators == null) {
+                return false;
+            }
+            return this.navigators.remove(navigator);
+        }
+        // Paper end - optimise notify()
     }
 
     public static final class DataRegionSectionData implements io.papermc.paper.chunk.SingleThreadChunkRegionManager.RegionSectionData {
+
+        // Paper start - optimise notify()
+        private io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet<Mob> navigators;
+
+        public io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet<Mob> getNavigators() {
+            return this.navigators;
+        }
+
+        public boolean addToNavigators(final io.papermc.paper.chunk.SingleThreadChunkRegionManager.RegionSection section, final Mob navigator) {
+            if (this.navigators == null) {
+                this.navigators = new io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet<>();
+            }
+            final boolean ret = this.navigators.add(navigator);
+            if (ret) {
+                final DataRegionData data = (DataRegionData)section.getRegion().regionData;
+                if (!data.addToNavigators(navigator)) {
+                    throw new IllegalStateException();
+                }
+            }
+            return ret;
+        }
+
+        public boolean removeFromNavigators(final io.papermc.paper.chunk.SingleThreadChunkRegionManager.RegionSection section, final Mob navigator) {
+            if (this.navigators == null) {
+                return false;
+            }
+            final boolean ret = this.navigators.remove(navigator);
+            if (ret) {
+                final DataRegionData data = (DataRegionData)section.getRegion().regionData;
+                if (!data.removeFromNavigators(navigator)) {
+                    throw new IllegalStateException();
+                }
+            }
+            return ret;
+        }
+        // Paper end - optimise notify()
 
         @Override
         public void removeFromRegion(final io.papermc.paper.chunk.SingleThreadChunkRegionManager.RegionSection section,
                                      final io.papermc.paper.chunk.SingleThreadChunkRegionManager.Region from) {
             final DataRegionSectionData sectionData = (DataRegionSectionData)section.sectionData;
             final DataRegionData fromData = (DataRegionData)from.regionData;
+            // Paper start - optimise notify()
+            if (sectionData.navigators != null) {
+                for (final Iterator<Mob> iterator = sectionData.navigators.unsafeIterator(io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet.ITERATOR_FLAG_SEE_ADDITIONS); iterator.hasNext();) {
+                    if (!fromData.removeFromNavigators(iterator.next())) {
+                        throw new IllegalStateException();
+                    }
+                }
+            }
+            // Paper end - optimise notify()
         }
 
         @Override
@@ -320,6 +386,15 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
             final DataRegionSectionData sectionData = (DataRegionSectionData)section.sectionData;
             final DataRegionData oldRegionData = oldRegion == null ? null : (DataRegionData)oldRegion.regionData;
             final DataRegionData newRegionData = (DataRegionData)newRegion.regionData;
+            // Paper start - optimise notify()
+            if (sectionData.navigators != null) {
+                for (final Iterator<Mob> iterator = sectionData.navigators.unsafeIterator(io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet.ITERATOR_FLAG_SEE_ADDITIONS); iterator.hasNext();) {
+                    if (!newRegionData.addToNavigators(iterator.next())) {
+                        throw new IllegalStateException();
+                    }
+                }
+            }
+            // Paper end - optimise notify()
         }
     }
 

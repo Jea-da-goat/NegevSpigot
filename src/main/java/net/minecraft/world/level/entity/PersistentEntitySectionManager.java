@@ -71,6 +71,65 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
     }
     // CraftBukkit end
 
+    // Paper start - optimise notify()
+    public final void removeNavigatorsFromData(Entity entity, final int chunkX, final int chunkZ) {
+        if (!(entity instanceof net.minecraft.world.entity.Mob)) {
+            return;
+        }
+        io.papermc.paper.chunk.SingleThreadChunkRegionManager.RegionSection section =
+            this.entitySliceManager.world.getChunkSource().chunkMap.dataRegionManager.getRegionSection(chunkX, chunkZ);
+        if (section != null) {
+            net.minecraft.server.level.ChunkMap.DataRegionSectionData sectionData = (net.minecraft.server.level.ChunkMap.DataRegionSectionData)section.sectionData;
+            sectionData.removeFromNavigators(section, ((net.minecraft.world.entity.Mob)entity));
+        }
+    }
+
+    public final void removeNavigatorsFromData(Entity entity) {
+        if (!(entity instanceof net.minecraft.world.entity.Mob)) {
+            return;
+        }
+        BlockPos entityPos = entity.blockPosition();
+        io.papermc.paper.chunk.SingleThreadChunkRegionManager.RegionSection section =
+            this.entitySliceManager.world.getChunkSource().chunkMap.dataRegionManager.getRegionSection(entityPos.getX() >> 4, entityPos.getZ() >> 4);
+        if (section != null) {
+            net.minecraft.server.level.ChunkMap.DataRegionSectionData sectionData = (net.minecraft.server.level.ChunkMap.DataRegionSectionData)section.sectionData;
+            sectionData.removeFromNavigators(section, ((net.minecraft.world.entity.Mob)entity));
+        }
+    }
+
+    public final void addNavigatorsIfPathingToRegion(Entity entity) {
+        if (!(entity instanceof net.minecraft.world.entity.Mob)) {
+            return;
+        }
+        BlockPos entityPos = entity.blockPosition();
+        io.papermc.paper.chunk.SingleThreadChunkRegionManager.RegionSection section =
+            this.entitySliceManager.world.getChunkSource().chunkMap.dataRegionManager.getRegionSection(entityPos.getX() >> 4, entityPos.getZ() >> 4);
+        if (section != null) {
+            net.minecraft.server.level.ChunkMap.DataRegionSectionData sectionData = (net.minecraft.server.level.ChunkMap.DataRegionSectionData)section.sectionData;
+            if (((net.minecraft.world.entity.Mob)entity).getNavigation().isViableForPathRecalculationChecking()) {
+                sectionData.addToNavigators(section, ((net.minecraft.world.entity.Mob)entity));
+            }
+        }
+    }
+
+    public final void updateNavigatorsInRegion(Entity entity) {
+        if (!(entity instanceof net.minecraft.world.entity.Mob)) {
+            return;
+        }
+        BlockPos entityPos = entity.blockPosition();
+        io.papermc.paper.chunk.SingleThreadChunkRegionManager.RegionSection section =
+            this.entitySliceManager.world.getChunkSource().chunkMap.dataRegionManager.getRegionSection(entityPos.getX() >> 4, entityPos.getZ() >> 4);
+        if (section != null) {
+            net.minecraft.server.level.ChunkMap.DataRegionSectionData sectionData = (net.minecraft.server.level.ChunkMap.DataRegionSectionData)section.sectionData;
+            if (((net.minecraft.world.entity.Mob)entity).getNavigation().isViableForPathRecalculationChecking()) {
+                sectionData.addToNavigators(section, ((net.minecraft.world.entity.Mob)entity));
+            } else {
+                sectionData.removeFromNavigators(section, ((net.minecraft.world.entity.Mob)entity));
+            }
+        }
+    }
+    // Paper end - optimise notify()
+
     void removeSectionIfEmpty(long sectionPos, EntitySection<T> section) {
         if (section.isEmpty()) {
             this.sectionStorage.remove(sectionPos);
@@ -468,11 +527,25 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
         @Override
         public void onMove() {
             BlockPos blockposition = this.entity.blockPosition();
-            long i = SectionPos.asLong(blockposition);
+            long i = SectionPos.asLong(blockposition); final long newSectionPos = i; // Paper - diff on change, new position section
 
             if (i != this.currentSectionKey) {
                 PersistentEntitySectionManager.this.entitySliceManager.moveEntity((Entity)this.entity); // Paper
-                Visibility visibility = this.currentSection.getStatus();
+                Visibility visibility = this.currentSection.getStatus(); final Visibility oldVisibility = visibility; // Paper - diff on change - this should be OLD section visibility
+                // Paper start
+                int shift = PersistentEntitySectionManager.this.entitySliceManager.world.getChunkSource().chunkMap.dataRegionManager.regionChunkShift;
+                int oldChunkX = io.papermc.paper.util.CoordinateUtils.getChunkSectionX(this.currentSectionKey);
+                int oldChunkZ = io.papermc.paper.util.CoordinateUtils.getChunkSectionZ(this.currentSectionKey);
+                int oldRegionX = oldChunkX >> shift;
+                int oldRegionZ = oldChunkZ >> shift;
+
+                int newRegionX = io.papermc.paper.util.CoordinateUtils.getChunkSectionX(newSectionPos) >> shift;
+                int newRegionZ = io.papermc.paper.util.CoordinateUtils.getChunkSectionZ(newSectionPos) >> shift;
+
+                if (oldRegionX != newRegionX || oldRegionZ != newRegionZ) {
+                    PersistentEntitySectionManager.this.removeNavigatorsFromData((Entity)this.entity, oldChunkX, oldChunkZ);
+                }
+                // Paper end
 
                 if (!this.currentSection.remove(this.entity)) {
                     PersistentEntitySectionManager.LOGGER.warn("Entity {} wasn't found in section {} (moving to {})", new Object[]{this.entity, SectionPos.of(this.currentSectionKey), i});
@@ -484,6 +557,11 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
                 entitysection.add(this.entity);
                 this.currentSection = entitysection;
                 this.currentSectionKey = i;
+                // Paper start
+                if ((oldRegionX != newRegionX || oldRegionZ != newRegionZ) && oldVisibility.isTicking() && entitysection.getStatus().isTicking()) {
+                    PersistentEntitySectionManager.this.addNavigatorsIfPathingToRegion((Entity)this.entity);
+                }
+                // Paper end
                 this.updateStatus(visibility, entitysection.getStatus());
             }
 

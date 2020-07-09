@@ -29,7 +29,7 @@ import net.minecraft.world.phys.Vec3;
 
 public abstract class PathNavigation {
     private static final int MAX_TIME_RECOMPUTE = 20;
-    protected final Mob mob;
+    protected final Mob mob; public final Mob getEntity() { return this.mob; } // Paper - public accessor
     protected final Level level;
     @Nullable
     protected Path path;
@@ -42,7 +42,7 @@ public abstract class PathNavigation {
     protected long lastTimeoutCheck;
     protected double timeoutLimit;
     protected float maxDistanceToWaypoint = 0.5F;
-    protected boolean hasDelayedRecomputation;
+    protected boolean hasDelayedRecomputation; protected final boolean needsPathRecalculation() { return this.hasDelayedRecomputation; } // Paper - public accessor
     protected long timeLastRecompute;
     protected NodeEvaluator nodeEvaluator;
     @Nullable
@@ -420,7 +420,7 @@ public abstract class PathNavigation {
     public boolean shouldRecomputePath(BlockPos pos) {
         if (this.hasDelayedRecomputation) {
             return false;
-        } else if (this.path != null && !this.path.isDone() && this.path.getNodeCount() != 0) {
+        } else if (this.path != null && !this.path.isDone() && this.path.getNodeCount() != 0) { // Paper - diff on change - needed for isViableForPathRecalculationChecking()
             Node node = this.path.getEndNode();
             Vec3 vec3 = new Vec3(((double)node.x + this.mob.getX()) / 2.0D, ((double)node.y + this.mob.getY()) / 2.0D, ((double)node.z + this.mob.getZ()) / 2.0D);
             return pos.closerToCenterThan(vec3, (double)(this.path.getNodeCount() - this.path.getNextNodeIndex()));
@@ -436,4 +436,11 @@ public abstract class PathNavigation {
     public boolean isStuck() {
         return this.isStuck;
     }
+
+    // Paper start
+    public boolean isViableForPathRecalculationChecking() {
+        return !this.needsPathRecalculation() &&
+            (this.path != null && !this.path.isDone() && this.path.getNodeCount() != 0);
+    }
+    // Paper end
 }

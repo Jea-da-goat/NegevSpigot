@@ -1122,6 +1122,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
     public void tickNonPassenger(Entity entity) {
         // Paper start - log detailed entity tick information
         io.papermc.paper.util.TickThread.ensureTickThread("Cannot tick an entity off-main");
+        if (!entity.isRemoved()) this.entityManager.updateNavigatorsInRegion(entity); // Paper - optimise notify
         try {
             if (currentlyTickingEntity.get() == null) {
                 currentlyTickingEntity.lazySet(entity);
@@ -1639,9 +1640,18 @@ public class ServerLevel extends Level implements WorldGenLevel {
 
         if (Shapes.joinIsNotEmpty(voxelshape, voxelshape1, BooleanOp.NOT_SAME)) {
             List<PathNavigation> list = new ObjectArrayList();
-            Iterator iterator = this.navigatingMobs.iterator();
+            // Paper start - optimise notify()
+            io.papermc.paper.chunk.SingleThreadChunkRegionManager.Region region = this.getChunkSource().chunkMap.dataRegionManager.getRegion(pos.getX() >> 4, pos.getZ() >> 4);
+            if (region == null) {
+                return;
+            }
+            io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet<Mob> navigatorsFromRegion = ((ChunkMap.DataRegionData)region.regionData).getNavigators();
+            if (navigatorsFromRegion == null) {
+                return;
+            }
+            io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet.Iterator<Mob> iterator = navigatorsFromRegion.iterator();
 
-            while (iterator.hasNext()) {
+            try { while (iterator.hasNext()) { // Paper end - optimise notify()
                 // CraftBukkit start - fix SPIGOT-6362
                 Mob entityinsentient;
                 try {
@@ -1663,16 +1673,23 @@ public class ServerLevel extends Level implements WorldGenLevel {
 
             try {
                 this.isUpdatingNavigations = true;
-                iterator = list.iterator();
+                // Paper start - optimise notify()
+                Iterator<PathNavigation> navigationIterator = list.iterator();
 
-                while (iterator.hasNext()) {
-                    PathNavigation navigationabstract1 = (PathNavigation) iterator.next();
+                while (navigationIterator.hasNext()) {
+                    PathNavigation navigationabstract1 = navigationIterator.next();
+                    // Paper end - optimise notify()
 
                     navigationabstract1.recomputePath();
                 }
             } finally {
                 this.isUpdatingNavigations = false;
             }
+            // Paper start - optimise notify()
+            } finally {
+                iterator.finishedIterating();
+            }
+            // Paper end - optimise notify()
 
         }
         } // Paper
@@ -2470,10 +2487,12 @@ public class ServerLevel extends Level implements WorldGenLevel {
 
         public void onTickingStart(Entity entity) {
             ServerLevel.this.entityTickList.add(entity);
+            ServerLevel.this.entityManager.addNavigatorsIfPathingToRegion(entity); // Paper - optimise notify
         }
 
         public void onTickingEnd(Entity entity) {
             ServerLevel.this.entityTickList.remove(entity);
+            ServerLevel.this.entityManager.removeNavigatorsFromData(entity); // Paper - optimise notify
             // Paper start - Reset pearls when they stop being ticked
             if (paperConfig().fixes.disableUnloadedChunkEnderpearlExploit && entity instanceof net.minecraft.world.entity.projectile.ThrownEnderpearl pearl) {
                 pearl.cachedOwner = null;
