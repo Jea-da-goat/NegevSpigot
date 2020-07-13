@@ -68,6 +68,8 @@ public class PlayerAdvancements {
     private Advancement lastSelectedTab;
     private boolean isFirstPacket = true;
 
+    public final Map<net.minecraft.advancements.critereon.SimpleCriterionTrigger, Set<CriterionTrigger.Listener>> criterionData = Maps.newIdentityHashMap(); // Paper - fix advancement data player leakage
+
     public PlayerAdvancements(DataFixer dataFixer, PlayerList playerManager, ServerAdvancementManager advancementLoader, File advancementFile, ServerPlayer owner) {
         this.dataFixer = dataFixer;
         this.playerList = playerManager;
