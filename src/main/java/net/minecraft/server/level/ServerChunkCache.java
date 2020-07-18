@@ -647,6 +647,7 @@ public class ServerChunkCache extends ChunkSource {
     public boolean runDistanceManagerUpdates() {
         if (distanceManager.delayDistanceManagerTick) return false; // Paper - Chunk priority
         if (this.chunkMap.unloadingPlayerChunk) { LOGGER.error("Cannot tick distance manager while unloading playerchunks", new Throwable()); throw new IllegalStateException("Cannot tick distance manager while unloading playerchunks"); } // Paper
+        co.aikar.timings.MinecraftTimings.distanceManagerTick.startTiming(); try { // Paper - add timings for distance manager
         boolean flag = this.distanceManager.runAllUpdates(this.chunkMap);
         boolean flag1 = this.chunkMap.promoteChunkMap();
 
@@ -656,6 +657,7 @@ public class ServerChunkCache extends ChunkSource {
             this.clearCache();
             return true;
         }
+        } finally { co.aikar.timings.MinecraftTimings.distanceManagerTick.stopTiming(); } // Paper - add timings for distance manager
     }
 
     // Paper start
