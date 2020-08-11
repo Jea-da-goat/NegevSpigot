@@ -478,6 +478,30 @@ public final class CraftMagicNumbers implements UnsafeValues {
         Preconditions.checkArgument(dataVersion <= getDataVersion(), "Newer version! Server downgrades are not supported!");
         return compound;
     }
+
+    @Override
+    public String getTranslationKey(Material mat) {
+        if (mat.isBlock()) {
+            return getBlock(mat).getDescriptionId();
+        }
+        return getItem(mat).getDescriptionId();
+    }
+
+    @Override
+    public String getTranslationKey(org.bukkit.block.Block block) {
+        return ((org.bukkit.craftbukkit.block.CraftBlock)block).getNMS().getBlock().getDescriptionId();
+    }
+
+    @Override
+    public String getTranslationKey(org.bukkit.entity.EntityType type) {
+        return net.minecraft.world.entity.EntityType.byString(type.getName()).map(net.minecraft.world.entity.EntityType::getDescriptionId).orElse(null);
+    }
+
+    @Override
+    public String getTranslationKey(org.bukkit.inventory.ItemStack itemStack) {
+        net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
+        return nmsItemStack.getItem().getDescriptionId(nmsItemStack);
+    }
     // Paper end
 
     /**
