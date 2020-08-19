@@ -396,8 +396,23 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
     }
     // Paper end
 
+    private static final int MAX_PER_TICK = io.papermc.paper.configuration.GlobalConfiguration.get().misc.maxJoinsPerTick; // Paper
+    private static int joinAttemptsThisTick; // Paper
+    private static int currTick; // Paper
     public void tick() {
         this.flushQueue();
+        // Paper start
+        if (currTick != net.minecraft.server.MinecraftServer.currentTick) {
+            currTick = net.minecraft.server.MinecraftServer.currentTick;
+            joinAttemptsThisTick = 0;
+        }
+        // Paper end
+        if (this.packetListener instanceof net.minecraft.server.network.ServerLoginPacketListenerImpl) {
+            if ( ((net.minecraft.server.network.ServerLoginPacketListenerImpl) this.packetListener).state != net.minecraft.server.network.ServerLoginPacketListenerImpl.State.READY_TO_ACCEPT // Paper
+                || (joinAttemptsThisTick++ < MAX_PER_TICK)) { // Paper - limit the number of joins which can be processed each tick
+                ((net.minecraft.server.network.ServerLoginPacketListenerImpl) this.packetListener).tick();
+            } // Paper
+        }
         PacketListener packetlistener = this.packetListener;
 
         if (packetlistener instanceof TickablePacketListener) {
