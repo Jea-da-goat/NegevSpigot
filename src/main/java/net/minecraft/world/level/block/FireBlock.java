@@ -12,6 +12,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
@@ -356,9 +357,11 @@ public class FireBlock extends BaseFireBlock {
     }
 
     @Override
-    public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
-        super.onPlace(state, world, pos, oldState, notify);
-        world.scheduleTick(pos, (Block) this, FireBlock.getFireTickDelay(world.random));
+    // Paper start - ItemActionContext param
+    public void onPlace(BlockState iblockdata, Level world, BlockPos blockposition, BlockState iblockdata1, boolean flag, UseOnContext itemActionContext) {
+        super.onPlace(iblockdata, world, blockposition, iblockdata1, flag, itemActionContext);
+        // Paper end
+        world.scheduleTick(blockposition, this, getFireTickDelay(world.random));
     }
 
     private static int getFireTickDelay(RandomSource random) {
