@@ -147,7 +147,7 @@ public abstract class PlayerList {
     public final PlayerDataStorage playerIo;
     private boolean doWhiteList;
     private final RegistryAccess.Frozen registryHolder;
-    protected final int maxPlayers;
+    protected int maxPlayers; public final void setMaxPlayers(int maxPlayers) { this.maxPlayers = maxPlayers; } // Paper - remove final and add setter
     private int viewDistance;
     private int simulationDistance;
     private boolean allowCheatsForAllPlayers;
