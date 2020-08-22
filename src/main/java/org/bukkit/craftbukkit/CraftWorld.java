@@ -263,11 +263,13 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     public boolean setSpawnLocation(int x, int y, int z, float angle) {
         try {
             Location previousLocation = this.getSpawnLocation();
-            world.levelData.setSpawn(new BlockPos(x, y, z), angle);
+            world.setDefaultSpawnPos(new BlockPos(x, y, z), angle); // Paper - use WorldServer#setSpawn
 
+            // Paper start - move to nms.World
             // Notify anyone who's listening.
-            SpawnChangeEvent event = new SpawnChangeEvent(this, previousLocation);
-            this.server.getPluginManager().callEvent(event);
+            // SpawnChangeEvent event = new SpawnChangeEvent(this, previousLocation);
+            // server.getPluginManager().callEvent(event);
+            // Paper end
 
             return true;
         } catch (Exception e) {
