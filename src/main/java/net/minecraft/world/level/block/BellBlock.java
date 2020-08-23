@@ -3,6 +3,7 @@ package net.minecraft.world.level.block;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.MCUtil;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
@@ -131,6 +132,7 @@ public class BellBlock extends BaseEntityBlock {
                 direction = world.getBlockState(pos).getValue(FACING);
             }
 
+            if (!new io.papermc.paper.event.block.BellRingEvent(world.getWorld().getBlockAt(MCUtil.toLocation(world, pos)), entity == null ? null : entity.getBukkitEntity()).callEvent()) return false; // Paper - BellRingEvent
             ((BellBlockEntity)blockEntity).onHit(direction);
             world.playSound((Player)null, pos, SoundEvents.BELL_BLOCK, SoundSource.BLOCKS, 2.0F, 1.0F);
             world.gameEvent(entity, GameEvent.BLOCK_CHANGE, pos);
