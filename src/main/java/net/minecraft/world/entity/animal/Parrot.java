@@ -382,8 +382,8 @@ public class Parrot extends ShoulderRidingEntity implements FlyingAnimal {
     }
 
     @Override
-    public boolean isPushable() {
-        return super.isPushable(); // CraftBukkit - collidable API
+    public boolean isCollidable(boolean ignoreClimbing) { // Paper
+        return super.isCollidable(ignoreClimbing); // CraftBukkit - collidable API // Paper
     }
 
     @Override

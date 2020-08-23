@@ -157,7 +157,7 @@ public class Boat extends Entity {
     }
 
     @Override
-    public boolean isPushable() {
+    public boolean isCollidable(boolean ignoreClimbing) { // Paper
         return true;
     }
 
