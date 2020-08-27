@@ -89,6 +89,12 @@ public class ChunkHolder {
             this.chunkMap.needsChangeBroadcasting.add(this);
         }
         // Paper end - optimise chunk tick iteration
+        // Paper start - optimise checkDespawn
+        LevelChunk chunk = this.getFullChunkNowUnchecked();
+        if (chunk != null) {
+            chunk.updateGeneralAreaCache();
+        }
+        // Paper end - optimise checkDespawn
     }
 
     public void onChunkRemove() {
@@ -101,6 +107,12 @@ public class ChunkHolder {
             this.chunkMap.needsChangeBroadcasting.remove(this);
         }
         // Paper end - optimise chunk tick iteration
+        // Paper start - optimise checkDespawn
+        LevelChunk chunk = this.getFullChunkNowUnchecked();
+        if (chunk != null) {
+            chunk.removeGeneralAreaCache();
+        }
+        // Paper end - optimise checkDespawn
     }
     // Paper end
 
