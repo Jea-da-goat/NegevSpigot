@@ -502,6 +502,10 @@ public final class CraftMagicNumbers implements UnsafeValues {
         net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
         return nmsItemStack.getItem().getDescriptionId(nmsItemStack);
     }
+
+    public int nextEntityId() {
+        return net.minecraft.world.entity.Entity.nextEntityId();
+    }
     // Paper end
 
     /**
