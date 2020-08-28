@@ -30,11 +30,19 @@ public class GateBehavior<E extends LivingEntity> extends Behavior<E> {
 
     @Override
     protected boolean canStillUse(ServerLevel world, E entity, long time) {
-        return this.behaviors.stream().filter((task) -> {
-            return task.getStatus() == Behavior.Status.RUNNING;
-        }).anyMatch((task) -> {
-            return task.canStillUse(world, entity, time);
-        });
+        // Paper start - remove streams
+        List<ShufflingList.WeightedEntry<Behavior<? super E>>> entries = this.behaviors.entries;
+        for (int i = 0; i < entries.size(); i++) {
+            ShufflingList.WeightedEntry<Behavior<? super E>> entry = entries.get(i);
+            Behavior<? super E> behavior = entry.getData();
+            if (behavior.getStatus() == Status.RUNNING) {
+                if (behavior.canStillUse(world, entity, time)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+        // Paper end - remove streams
     }
 
     @Override
@@ -45,25 +53,35 @@ public class GateBehavior<E extends LivingEntity> extends Behavior<E> {
     @Override
     protected void start(ServerLevel world, E entity, long time) {
         this.orderPolicy.apply(this.behaviors);
-        this.runningPolicy.apply(this.behaviors.stream(), world, entity, time);
+        this.runningPolicy.apply(this.behaviors.entries, world, entity, time); // Paper - remove streams
     }
 
     @Override
     protected void tick(ServerLevel world, E entity, long time) {
-        this.behaviors.stream().filter((task) -> {
-            return task.getStatus() == Behavior.Status.RUNNING;
-        }).forEach((task) -> {
-            task.tickOrStop(world, entity, time);
-        });
+        // Paper start - remove streams
+        List<ShufflingList.WeightedEntry<Behavior<? super E>>> entries = this.behaviors.entries;
+        for (int i = 0; i < entries.size(); i++) {
+            ShufflingList.WeightedEntry<Behavior<? super E>> entry = entries.get(i);
+            Behavior<? super E> behavior = entry.getData();
+            if (behavior.getStatus() == Status.RUNNING) {
+                behavior.tickOrStop(world, entity, time);
+            }
+        }
+        // Paper end - remove streams
     }
 
     @Override
     protected void stop(ServerLevel world, E entity, long time) {
-        this.behaviors.stream().filter((task) -> {
-            return task.getStatus() == Behavior.Status.RUNNING;
-        }).forEach((task) -> {
-            task.doStop(world, entity, time);
-        });
+        // Paper start - remove streams
+        List<ShufflingList.WeightedEntry<Behavior<? super E>>> entries = this.behaviors.entries;
+        for (int i = 0; i < entries.size(); i++) {
+            ShufflingList.WeightedEntry<Behavior<? super E>> entry = entries.get(i);
+            Behavior<? super E> behavior = entry.getData();
+            if (behavior.getStatus() == Status.RUNNING) {
+                behavior.doStop(world, entity, time);
+            }
+        }
+        // Paper end - remove streams
         this.exitErasedMemories.forEach(entity.getBrain()::eraseMemory);
     }
 
@@ -94,25 +112,33 @@ public class GateBehavior<E extends LivingEntity> extends Behavior<E> {
     public static enum RunningPolicy {
         RUN_ONE {
             @Override
-            public <E extends LivingEntity> void apply(Stream<Behavior<? super E>> tasks, ServerLevel world, E entity, long time) {
-                tasks.filter((task) -> {
-                    return task.getStatus() == Behavior.Status.STOPPED;
-                }).filter((task) -> {
-                    return task.tryStart(world, entity, time);
-                }).findFirst();
+            // Paper start - remove streams
+            public <E extends LivingEntity> void apply(List<ShufflingList.WeightedEntry<Behavior<? super E>>> tasks, ServerLevel world, E entity, long time) {
+                for (int i = 0; i < tasks.size(); i++) {
+                    ShufflingList.WeightedEntry<Behavior<? super E>> task = tasks.get(i);
+                    Behavior<? super E> behavior = task.getData();
+                    if (behavior.getStatus() == Status.STOPPED && behavior.tryStart(world, entity, time)) {
+                        break;
+                    }
+                }
+                // Paper end - remove streams
             }
         },
         TRY_ALL {
             @Override
-            public <E extends LivingEntity> void apply(Stream<Behavior<? super E>> tasks, ServerLevel world, E entity, long time) {
-                tasks.filter((task) -> {
-                    return task.getStatus() == Behavior.Status.STOPPED;
-                }).forEach((task) -> {
-                    task.tryStart(world, entity, time);
-                });
+            // Paper start - remove streams
+            public <E extends LivingEntity> void apply(List<ShufflingList.WeightedEntry<Behavior<? super E>>> tasks, ServerLevel world, E entity, long time) {
+                for (int i = 0; i < tasks.size(); i++) {
+                    ShufflingList.WeightedEntry<Behavior<? super E>> task = tasks.get(i);
+                    Behavior<? super E> behavior = task.getData();
+                    if (behavior.getStatus() == Status.STOPPED) {
+                        behavior.tryStart(world, entity, time);
+                    }
+                }
+                // Paper end - remove streams
             }
         };
 
-        public abstract <E extends LivingEntity> void apply(Stream<Behavior<? super E>> tasks, ServerLevel world, E entity, long time);
+        public abstract <E extends LivingEntity> void apply(List<ShufflingList.WeightedEntry<Behavior<? super E>>> tasks, ServerLevel world, E entity, long time); // Paper - remove streams
     }
 }
