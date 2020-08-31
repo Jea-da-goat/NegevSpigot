@@ -1,5 +1,6 @@
 package net.minecraft.world.entity.ai.village.poi;
 
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap; // Paper
 import com.mojang.datafixers.DataFixer;
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.longs.Long2ByteMap;
@@ -38,15 +39,144 @@ import net.minecraft.world.level.chunk.storage.SectionStorage;
 public class PoiManager extends SectionStorage<PoiSection> {
     public static final int MAX_VILLAGE_DISTANCE = 6;
     public static final int VILLAGE_SECTION_SIZE = 1;
-    private final PoiManager.DistanceTracker distanceTracker;
+    // Paper start - unload poi data
+    // the vanilla tracker needs to be replaced because it does not support level removes
+    private final io.papermc.paper.util.misc.Delayed26WayDistancePropagator3D villageDistanceTracker = new io.papermc.paper.util.misc.Delayed26WayDistancePropagator3D();
+    static final int POI_DATA_SOURCE = 7;
+    public static int convertBetweenLevels(final int level) {
+        return POI_DATA_SOURCE - level;
+    }
+
+    protected void updateDistanceTracking(long section) {
+        if (this.isVillageCenter(section)) {
+            this.villageDistanceTracker.setSource(section, POI_DATA_SOURCE);
+        } else {
+            this.villageDistanceTracker.removeSource(section);
+        }
+    }
+    // Paper end - unload poi data
     private final LongSet loadedChunks = new LongOpenHashSet();
     public final net.minecraft.server.level.ServerLevel world; // Paper // Paper public
 
     public PoiManager(Path path, DataFixer dataFixer, boolean dsync, RegistryAccess registryManager, LevelHeightAccessor world) {
         super(path, PoiSection::codec, PoiSection::new, dataFixer, DataFixTypes.POI_CHUNK, dsync, registryManager, world);
+        if (world == null) { throw new IllegalStateException("world must be non-null"); } // Paper - require non-null
         this.world = (net.minecraft.server.level.ServerLevel)world; // Paper
-        this.distanceTracker = new PoiManager.DistanceTracker();
     }
+
+    // Paper start - actually unload POI data
+    private final java.util.TreeSet<QueuedUnload> queuedUnloads = new java.util.TreeSet<>();
+    private final Long2ObjectOpenHashMap<QueuedUnload> queuedUnloadsByCoordinate = new Long2ObjectOpenHashMap<>();
+
+    static final class QueuedUnload implements Comparable<QueuedUnload> {
+
+        private final long unloadTick;
+        private final long coordinate;
+
+        public QueuedUnload(long unloadTick, long coordinate) {
+            this.unloadTick = unloadTick;
+            this.coordinate = coordinate;
+        }
+
+        @Override
+        public int compareTo(QueuedUnload other) {
+            if (other.unloadTick == this.unloadTick) {
+                return Long.compare(this.coordinate, other.coordinate);
+            } else {
+                return Long.compare(this.unloadTick, other.unloadTick);
+            }
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 1;
+            hash = hash * 31 + Long.hashCode(this.unloadTick);
+            hash = hash * 31 + Long.hashCode(this.coordinate);
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == null || obj.getClass() != QueuedUnload.class) {
+                return false;
+            }
+            QueuedUnload other = (QueuedUnload)obj;
+            return other.unloadTick == this.unloadTick && other.coordinate == this.coordinate;
+        }
+    }
+
+    long determineDelay(long coordinate) {
+        if (this.isEmpty(coordinate)) {
+            return 5 * 60 * 20;
+        } else {
+            return 60 * 20;
+        }
+    }
+
+    public void queueUnload(long coordinate, long minTarget) {
+        io.papermc.paper.util.TickThread.softEnsureTickThread("async poi unload queue");
+        QueuedUnload unload = new QueuedUnload(minTarget + this.determineDelay(coordinate), coordinate);
+        QueuedUnload existing = this.queuedUnloadsByCoordinate.put(coordinate, unload);
+        if (existing != null) {
+            this.queuedUnloads.remove(existing);
+        }
+        this.queuedUnloads.add(unload);
+    }
+
+    public void dequeueUnload(long coordinate) {
+        io.papermc.paper.util.TickThread.softEnsureTickThread("async poi unload dequeue");
+        QueuedUnload unload = this.queuedUnloadsByCoordinate.remove(coordinate);
+        if (unload != null) {
+            this.queuedUnloads.remove(unload);
+        }
+    }
+
+    public void pollUnloads(BooleanSupplier canSleepForTick) {
+        io.papermc.paper.util.TickThread.softEnsureTickThread("async poi unload");
+        long currentTick = net.minecraft.server.MinecraftServer.currentTickLong;
+        net.minecraft.server.level.ServerChunkCache chunkProvider = this.world.getChunkSource();
+        net.minecraft.server.level.ChunkMap playerChunkMap = chunkProvider.chunkMap;
+        // copied target determination from PlayerChunkMap
+
+        java.util.Iterator<QueuedUnload> iterator = this.queuedUnloads.iterator();
+        for (int i = 0; iterator.hasNext() && (i < 200 || this.queuedUnloads.size() > 2000 || canSleepForTick.getAsBoolean()); i++) {
+            QueuedUnload unload = iterator.next();
+            if (unload.unloadTick > currentTick) {
+                break;
+            }
+
+            long coordinate = unload.coordinate;
+
+            iterator.remove();
+            this.queuedUnloadsByCoordinate.remove(coordinate);
+
+            if (playerChunkMap.getUnloadingChunkHolder(net.minecraft.server.MCUtil.getCoordinateX(coordinate), net.minecraft.server.MCUtil.getCoordinateZ(coordinate)) != null
+                || playerChunkMap.getUpdatingChunkIfPresent(coordinate) != null) {
+                continue;
+            }
+
+            this.unloadData(coordinate);
+        }
+    }
+
+    @Override
+    public void unloadData(long coordinate) {
+        io.papermc.paper.util.TickThread.softEnsureTickThread("async unloading poi data");
+        super.unloadData(coordinate);
+    }
+
+    @Override
+    protected void onUnload(long coordinate) {
+        io.papermc.paper.util.TickThread.softEnsureTickThread("async poi unload callback");
+        this.loadedChunks.remove(coordinate);
+        int chunkX = net.minecraft.server.MCUtil.getCoordinateX(coordinate);
+        int chunkZ = net.minecraft.server.MCUtil.getCoordinateZ(coordinate);
+        for (int section = this.levelHeightAccessor.getMinSection(); section < this.levelHeightAccessor.getMaxSection(); ++section) {
+            long sectionPos = SectionPos.asLong(chunkX, section, chunkZ);
+            this.updateDistanceTracking(sectionPos);
+        }
+    }
+    // Paper end - actually unload POI data
 
     public void add(BlockPos pos, Holder<PoiType> type) {
         this.getOrCreate(SectionPos.asLong(pos)).add(pos, type);
@@ -201,8 +331,8 @@ public class PoiManager extends SectionStorage<PoiSection> {
     }
 
     public int sectionsToVillage(SectionPos pos) {
-        this.distanceTracker.runAllUpdates();
-        return this.distanceTracker.getLevel(pos.asLong());
+        this.villageDistanceTracker.propagateUpdates(); // Paper - replace distance tracking util
+        return convertBetweenLevels(this.villageDistanceTracker.getLevel(io.papermc.paper.util.CoordinateUtils.getChunkSectionKey(pos))); // Paper - replace distance tracking util
     }
 
     boolean isVillageCenter(long pos) {
@@ -217,7 +347,7 @@ public class PoiManager extends SectionStorage<PoiSection> {
     @Override
     public void tick(BooleanSupplier shouldKeepTicking) {
         // Paper start - async chunk io
-        while (!this.dirty.isEmpty() && shouldKeepTicking.getAsBoolean()) {
+        while (!this.dirty.isEmpty() && shouldKeepTicking.getAsBoolean() && !this.world.noSave()) { // Paper - unload POI data - don't write to disk if saving is disabled
             ChunkPos chunkcoordintpair = SectionPos.of(this.dirty.firstLong()).chunk();
 
             net.minecraft.nbt.CompoundTag data;
@@ -227,19 +357,24 @@ public class PoiManager extends SectionStorage<PoiSection> {
             com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.scheduleSave(this.world,
                 chunkcoordintpair.x, chunkcoordintpair.z, data, null, com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY);
         }
+        // Paper start - unload POI data
+        if (!this.world.noSave()) { // don't write to disk if saving is disabled
+            this.pollUnloads(shouldKeepTicking);
+        }
+        // Paper end - unload POI data
         // Paper end
-        this.distanceTracker.runAllUpdates();
+        this.villageDistanceTracker.propagateUpdates(); // Paper - replace distance tracking until
     }
 
     @Override
     protected void setDirty(long pos) {
         super.setDirty(pos);
-        this.distanceTracker.update(pos, this.distanceTracker.getLevelFromSource(pos), false);
+        this.updateDistanceTracking(pos); // Paper - move to new distance tracking util
     }
 
     @Override
     protected void onSectionLoad(long pos) {
-        this.distanceTracker.update(pos, this.distanceTracker.getLevelFromSource(pos), false);
+        this.updateDistanceTracking(pos); // Paper - move to new distance tracking util
     }
 
     public void checkConsistencyWithBlocks(ChunkPos chunkPos, LevelChunkSection chunkSection) {
@@ -297,7 +432,7 @@ public class PoiManager extends SectionStorage<PoiSection> {
 
         @Override
         protected int getLevelFromSource(long id) {
-            return PoiManager.this.isVillageCenter(id) ? 0 : 7;
+            return PoiManager.this.isVillageCenter(id) ? 0 : 7; // Paper - unload poi data - diff on change, this specifies the source level to use for distance tracking
         }
 
         @Override

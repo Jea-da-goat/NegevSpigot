@@ -1016,7 +1016,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
 
     private void processUnloads(BooleanSupplier shouldKeepTicking) {
         LongIterator longiterator = this.toDrop.iterator();
-        for (int i = 0; longiterator.hasNext() && (shouldKeepTicking.getAsBoolean() || i < 200 || this.toDrop.size() > 2000); longiterator.remove()) {
+        for (int i = 0; longiterator.hasNext() && (shouldKeepTicking.getAsBoolean() || i < 200 || this.toDrop.size() > 2000); longiterator.remove()) { // Paper - diff on change
             long j = longiterator.nextLong();
             ChunkHolder playerchunk = this.updatingChunks.queueRemove(j); // Paper - Don't copy
 
@@ -1164,6 +1164,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                 }
                 this.poiManager.loadInData(pos, chunkHolder.poiData);
                 chunkHolder.tasks.forEach(Runnable::run);
+                this.getPoiManager().dequeueUnload(pos.longKey); // Paper
 
                 if (chunkHolder.protoChunk != null) {
                     ProtoChunk protochunk = chunkHolder.protoChunk;

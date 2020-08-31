@@ -58,6 +58,40 @@ public class SectionStorage<R> extends RegionFileStorage implements AutoCloseabl
         // Paper - remove mojang I/O thread
     }
 
+    // Paper start - actually unload POI data
+    public void unloadData(long coordinate) {
+        ChunkPos chunkPos = new ChunkPos(coordinate);
+        this.flush(chunkPos);
+
+        Long2ObjectMap<Optional<R>> data = this.storage;
+        int before = data.size();
+
+        for (int section = this.levelHeightAccessor.getMinSection(); section < this.levelHeightAccessor.getMaxSection(); ++section) {
+            data.remove(SectionPos.asLong(chunkPos.x, section, chunkPos.z));
+        }
+
+        if (before != data.size()) {
+            this.onUnload(coordinate);
+        }
+    }
+
+    protected void onUnload(long coordinate) {}
+
+    public boolean isEmpty(long coordinate) {
+        Long2ObjectMap<Optional<R>> data = this.storage;
+        int x = net.minecraft.server.MCUtil.getCoordinateX(coordinate);
+        int z = net.minecraft.server.MCUtil.getCoordinateZ(coordinate);
+        for (int section = this.levelHeightAccessor.getMinSection(); section < this.levelHeightAccessor.getMaxSection(); ++section) {
+            Optional<R> optional = data.get(SectionPos.asLong(x, section, z));
+            if (optional != null && optional.orElse(null) != null) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+    // Paper end - actually unload POI data
+
     protected void tick(BooleanSupplier shouldKeepTicking) {
         while(this.hasWork() && shouldKeepTicking.getAsBoolean()) {
             ChunkPos chunkPos = SectionPos.of(this.dirty.firstLong()).chunk();
@@ -175,6 +209,7 @@ public class SectionStorage<R> extends RegionFileStorage implements AutoCloseabl
                 });
             }
         }
+        if (this instanceof net.minecraft.world.entity.ai.village.poi.PoiManager) { ((net.minecraft.world.entity.ai.village.poi.PoiManager)this).queueUnload(pos.longKey, net.minecraft.server.MinecraftServer.currentTickLong + 1); } // Paper - unload POI data
 
     }
 

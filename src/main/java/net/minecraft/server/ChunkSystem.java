@@ -270,6 +270,7 @@ public final class ChunkSystem {
         for (int index = 0, len = chunkMap.regionManagers.size(); index < len; ++index) {
             chunkMap.regionManagers.get(index).addChunk(holder.pos.x, holder.pos.z);
         }
+        chunkMap.getPoiManager().dequeueUnload(holder.pos.longKey); // Paper - unload POI data
     }
 
     public static void onChunkHolderDelete(final ServerLevel level, final ChunkHolder holder) {
@@ -277,6 +278,7 @@ public final class ChunkSystem {
         for (int index = 0, len = chunkMap.regionManagers.size(); index < len; ++index) {
             chunkMap.regionManagers.get(index).removeChunk(holder.pos.x, holder.pos.z);
         }
+        chunkMap.getPoiManager().queueUnload(holder.pos.longKey, MinecraftServer.currentTickLong + 1); // Paper - unload POI data
     }
 
     public static void onChunkBorder(LevelChunk chunk, ChunkHolder holder) {
