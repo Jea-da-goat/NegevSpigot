@@ -41,6 +41,7 @@ public abstract class Structure {
     public static final Codec<Structure> DIRECT_CODEC = Registry.STRUCTURE_TYPES.byNameCodec().dispatch(Structure::type, StructureType::codec);
     public static final Codec<Holder<Structure>> CODEC = RegistryFileCodec.create(Registry.STRUCTURE_REGISTRY, DIRECT_CODEC);
     protected final Structure.StructureSettings settings;
+    static { io.papermc.paper.world.structure.PaperConfiguredStructure.init(); } // Paper
 
     public static <S extends Structure> RecordCodecBuilder<S, Structure.StructureSettings> settingsCodec(RecordCodecBuilder.Instance<S> instance) {
         return Structure.StructureSettings.CODEC.forGetter((feature) -> {
