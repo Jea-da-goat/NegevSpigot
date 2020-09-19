@@ -632,6 +632,7 @@ public class ServerChunkCache extends ChunkSource {
 
     public boolean runDistanceManagerUpdates() {
         if (distanceManager.delayDistanceManagerTick) return false; // Paper - Chunk priority
+        if (this.chunkMap.unloadingPlayerChunk) { LOGGER.error("Cannot tick distance manager while unloading playerchunks", new Throwable()); throw new IllegalStateException("Cannot tick distance manager while unloading playerchunks"); } // Paper
         boolean flag = this.distanceManager.runAllUpdates(this.chunkMap);
         boolean flag1 = this.chunkMap.promoteChunkMap();
 
