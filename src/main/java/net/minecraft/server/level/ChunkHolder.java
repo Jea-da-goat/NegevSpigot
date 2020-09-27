@@ -250,6 +250,7 @@ public class ChunkHolder {
     }
 
     public void blockChanged(BlockPos pos) {
+        if (!pos.isInsideBuildHeightAndWorldBoundsHorizontal(levelHeightAccessor)) return; // Paper - SPIGOT-6086 for all invalid locations; avoid acquiring locks
         LevelChunk chunk = this.getTickingChunk();
 
         if (chunk != null) {
