@@ -59,6 +59,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MCUtil;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.TicketType;
@@ -4092,6 +4093,10 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
     // Paper start
     public static int nextEntityId() {
         return ENTITY_COUNTER.incrementAndGet();
+    }
+
+    public boolean isTicking() {
+        return ((ServerChunkCache) level.getChunkSource()).isPositionTicking(this);
     }
     // Paper end
 }
