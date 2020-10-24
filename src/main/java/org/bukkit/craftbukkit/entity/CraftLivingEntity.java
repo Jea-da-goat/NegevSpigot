@@ -688,6 +688,13 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         return this.getHandle().craftAttributes.getAttribute(attribute);
     }
 
+    // Paper start
+    @Override
+    public void registerAttribute(Attribute attribute) {
+        getHandle().craftAttributes.registerAttribute(attribute);
+    }
+    // Paper end
+
     @Override
     public void setAI(boolean ai) {
         if (this.getHandle() instanceof Mob) {

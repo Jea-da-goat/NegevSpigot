@@ -38,6 +38,14 @@ public class CraftAttributeMap implements Attributable {
         return (nms == null) ? null : new CraftAttributeInstance(nms, attribute);
     }
 
+    // Paper start
+    @Override
+    public void registerAttribute(Attribute attribute) {
+        Preconditions.checkArgument(attribute != null, "attribute");
+        handle.registerAttribute(CraftAttributeMap.toMinecraft(attribute));
+    }
+    // Paper end
+
     public static net.minecraft.world.entity.ai.attributes.Attribute toMinecraft(Attribute attribute) {
         return net.minecraft.core.Registry.ATTRIBUTE.get(CraftNamespacedKey.toMinecraft(attribute.getKey()));
     }
