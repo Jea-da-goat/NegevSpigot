@@ -21,6 +21,38 @@ public class EmptyLevelChunk extends LevelChunk {
         this.biome = holder;
     }
 
+    @Override
+    public ca.spottedleaf.starlight.common.light.SWMRNibbleArray[] getBlockNibbles() {
+        return ca.spottedleaf.starlight.common.light.StarLightEngine.getFilledEmptyLight(this.getLevel());
+    }
+
+    @Override
+    public void setBlockNibbles(final ca.spottedleaf.starlight.common.light.SWMRNibbleArray[] nibbles) {}
+
+    @Override
+    public ca.spottedleaf.starlight.common.light.SWMRNibbleArray[] getSkyNibbles() {
+        return ca.spottedleaf.starlight.common.light.StarLightEngine.getFilledEmptyLight(this.getLevel());
+    }
+
+    @Override
+    public void setSkyNibbles(final ca.spottedleaf.starlight.common.light.SWMRNibbleArray[] nibbles) {}
+
+    @Override
+    public boolean[] getSkyEmptinessMap() {
+        return null;
+    }
+
+    @Override
+    public void setSkyEmptinessMap(final boolean[] emptinessMap) {}
+
+    @Override
+    public boolean[] getBlockEmptinessMap() {
+        return null;
+    }
+
+    @Override
+    public void setBlockEmptinessMap(final boolean[] emptinessMap) {}
+
     // Paper start
     @Override
     public BlockState getBlockState(int x, int y, int z) {

@@ -701,6 +701,7 @@ public abstract class BlockBehaviour {
             this.hasPostProcess = blockbase_info.hasPostProcess;
             this.emissiveRendering = blockbase_info.emissiveRendering;
             this.offsetType = (BlockBehaviour.OffsetType) blockbase_info.offsetType.apply(this.asState());
+            this.conditionallyFullOpaque = this.isOpaque() & this.isTransparentOnSomeFaces(); // Paper
         }
         // Paper start - impl cached craft block data, lazy load to fix issue with loading at the wrong time
         private org.bukkit.craftbukkit.block.data.CraftBlockData cachedCraftBlockData;
@@ -721,6 +722,18 @@ public abstract class BlockBehaviour {
         protected boolean isTicking;
         protected FluidState fluid;
         // Paper end
+        // Paper start
+        protected int opacityIfCached = -1;
+        // ret -1 if opacity is dynamic, or -1 if the block is conditionally full opaque, else return opacity in [0, 15]
+        public final int getOpacityIfCached() {
+            return this.opacityIfCached;
+        }
+
+        protected final boolean conditionallyFullOpaque;
+        public final boolean isConditionallyFullOpaque() {
+            return this.conditionallyFullOpaque;
+        }
+        // Paper end
 
         public void initCache() {
             this.fluid = this.getBlock().getFluidState(this.asState()); // Paper - moved from getFluid()
@@ -729,6 +742,7 @@ public abstract class BlockBehaviour {
                 this.cache = new BlockBehaviour.BlockStateBase.Cache(this.asState());
             }
             this.shapeExceedsCube = this.cache == null || this.cache.largeCollisionShape; // Paper - moved from actual method to here
+            this.opacityIfCached = this.cache == null || this.isConditionallyFullOpaque() ? -1 : this.cache.lightBlock; // Paper - cache opacity for light
 
         }
 
