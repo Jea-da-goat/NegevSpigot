@@ -266,6 +266,7 @@ public class ServerPlayer extends Player {
 
     public double lastEntitySpawnRadiusSquared; // Paper - optimise isOutsideRange, this field is in blocks
     public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> cachedSingleHashSet; // Paper
+    public org.bukkit.event.player.PlayerQuitEvent.QuitReason quitReason = null; // Paper - there are a lot of changes to do if we change all methods leading to the event
 
     public ServerPlayer(MinecraftServer server, ServerLevel world, GameProfile profile, @Nullable ProfilePublicKey publicKey) {
         super(world, world.getSharedSpawnPos(), world.getSharedSpawnAngle(), profile, publicKey);
