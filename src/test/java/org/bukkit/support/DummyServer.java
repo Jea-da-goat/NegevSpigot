@@ -106,7 +106,21 @@ public final class DummyServer implements InvocationHandler {
                         }
                     }
             );
-            Bukkit.setServer(Proxy.getProxyClass(Server.class.getClassLoader(), Server.class).asSubclass(Server.class).getConstructor(InvocationHandler.class).newInstance(new DummyServer()));
+            // Paper start - modeled off of TestServer in the API tests module
+            methods.put(
+                Server.class.getMethod("getPluginManager"),
+                new MethodHandler() {
+                    @Override
+                    public Object handle(DummyServer server, Object[] args) {
+                        return server.pluginManager;
+                    }
+                }
+            );
+            DummyServer server = new DummyServer();
+            Server instance = Proxy.getProxyClass(Server.class.getClassLoader(), Server.class).asSubclass(Server.class).getConstructor(InvocationHandler.class).newInstance(server);
+            Bukkit.setServer(instance);
+            server.pluginManager = new org.bukkit.plugin.SimplePluginManager(instance, new org.bukkit.command.SimpleCommandMap(instance));
+            // Paper end
         } catch (Throwable t) {
             throw new Error(t);
         }
@@ -116,6 +130,7 @@ public final class DummyServer implements InvocationHandler {
 
     private DummyServer() {};
 
+    private org.bukkit.plugin.PluginManager pluginManager; // Paper
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) {
         MethodHandler handler = DummyServer.methods.get(method);
