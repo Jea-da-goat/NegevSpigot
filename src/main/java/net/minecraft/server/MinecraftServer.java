@@ -1994,7 +1994,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
         return this.functionManager;
     }
 
+    // Paper start - add cause
+    @Deprecated
     public CompletableFuture<Void> reloadResources(Collection<String> dataPacks) {
+        return this.reloadResources(dataPacks, io.papermc.paper.event.server.ServerResourcesReloadedEvent.Cause.PLUGIN);
+    }
+    public CompletableFuture<Void> reloadResources(Collection<String> dataPacks, io.papermc.paper.event.server.ServerResourcesReloadedEvent.Cause cause) {
+        // Paper end
         RegistryAccess.Frozen iregistrycustom_dimension = this.registryAccess();
         CompletableFuture<Void> completablefuture = CompletableFuture.supplyAsync(() -> {
             Stream<String> stream = dataPacks.stream(); // CraftBukkit - decompile error
@@ -2020,6 +2026,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
             this.packRepository.setSelected(dataPacks);
             this.worldData.setDataPackConfig(MinecraftServer.getSelectedPacks(this.packRepository));
             this.resources.managers.updateRegistryTags(this.registryAccess());
+            new io.papermc.paper.event.server.ServerResourcesReloadedEvent(cause).callEvent(); // Paper
             // Paper start
             if (Thread.currentThread() != this.serverThread) {
                 return;
