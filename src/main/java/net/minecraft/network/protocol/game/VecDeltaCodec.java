@@ -8,11 +8,11 @@ public class VecDeltaCodec {
     public Vec3 base = Vec3.ZERO; // Paper
 
     private static long encode(double value) {
-        return Mth.lfloor(value * 4096.0D);
+        return Mth.lfloor(value * 4096.0D); // Paper - check ItemEntity#setPosRaw on update
     }
 
     private static double decode(long value) {
-        return (double)value / 4096.0D;
+        return (double)value / 4096.0D; // Paper - check ItemEntity#setPosRaw on update
     }
 
     public Vec3 decode(long x, long y, long z) {
