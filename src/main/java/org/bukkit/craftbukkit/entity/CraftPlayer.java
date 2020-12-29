@@ -606,6 +606,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             ? (org.bukkit.entity.Firework) entity.getBukkitEntity()
             : null;
     }
+
+    @Override
+    public void sendOpLevel(byte level) {
+        Preconditions.checkArgument(level >= 0 && level <= 4, "Level must be within [0, 4]");
+
+        this.getHandle().getServer().getPlayerList().sendPlayerPermissionLevel(this.getHandle(), level, false);
+    }
     // Paper end
 
     @Override
