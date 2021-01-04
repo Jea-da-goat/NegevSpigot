@@ -63,6 +63,13 @@ public abstract class WaterFluid extends FlowingFluid {
         return true;
     }
 
+    // Paper start
+    @Override
+    protected void beforeDestroyingBlock(LevelAccessor world, BlockPos pos, BlockState state,  BlockPos source) {
+        BlockEntity tileentity = state.hasBlockEntity() ? world.getBlockEntity(pos) : null;
+        Block.dropResources(state, world, pos, tileentity, source);
+    }
+    // Paper end
     @Override
     protected void beforeDestroyingBlock(LevelAccessor world, BlockPos pos, BlockState state) {
         BlockEntity blockEntity = state.hasBlockEntity() ? world.getBlockEntity(pos) : null;
