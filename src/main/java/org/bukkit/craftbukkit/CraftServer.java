@@ -2575,6 +2575,15 @@ public final class CraftServer implements Server {
                     return (org.bukkit.Tag<T>) new CraftEntityTag(net.minecraft.core.Registry.ENTITY_TYPE, entityTagKey);
                 }
             }
+            // Paper start
+            case org.bukkit.Tag.REGISTRY_GAME_EVENTS -> {
+                Preconditions.checkArgument(clazz == org.bukkit.GameEvent.class, "Game Event namespace must have GameEvent type");
+                TagKey<net.minecraft.world.level.gameevent.GameEvent> gameEventTagKey = TagKey.create(net.minecraft.core.Registry.GAME_EVENT_REGISTRY, key);
+                if (net.minecraft.core.Registry.GAME_EVENT.isKnownTagName(gameEventTagKey)) {
+                    return (org.bukkit.Tag<T>) new io.papermc.paper.CraftGameEventTag(net.minecraft.core.Registry.GAME_EVENT, gameEventTagKey);
+                }
+            }
+            // Paper end
             default -> throw new IllegalArgumentException();
         }
 
@@ -2606,6 +2615,13 @@ public final class CraftServer implements Server {
                 Preconditions.checkArgument(clazz == org.bukkit.entity.EntityType.class, "Entity type namespace must have entity type");
                 net.minecraft.core.Registry<EntityType<?>> entityTags = net.minecraft.core.Registry.ENTITY_TYPE;
                 return entityTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftEntityTag(entityTags, pair.getFirst())).collect(ImmutableList.toImmutableList());
+            }
+            // Paper start
+            case org.bukkit.Tag.REGISTRY_GAME_EVENTS -> {
+                Preconditions.checkArgument(clazz == org.bukkit.GameEvent.class);
+                net.minecraft.core.Registry<net.minecraft.world.level.gameevent.GameEvent> gameEvents = net.minecraft.core.Registry.GAME_EVENT;
+                return gameEvents.getTags().map(pair -> (org.bukkit.Tag<T>) new io.papermc.paper.CraftGameEventTag(gameEvents, pair.getFirst())).collect(ImmutableList.toImmutableList());
+            // Paper end
             }
             default -> throw new IllegalArgumentException();
         }
