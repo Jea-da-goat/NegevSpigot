@@ -517,6 +517,11 @@ public final class CraftMagicNumbers implements UnsafeValues {
     public <T extends org.bukkit.Keyed> Registry<T> registryFor(Class<T> classOfT) {
         return io.papermc.paper.registry.PaperRegistry.getRegistry(classOfT);
     }
+
+    @Override
+    public String getMainLevelName() {
+        return ((net.minecraft.server.dedicated.DedicatedServer) net.minecraft.server.MinecraftServer.getServer()).getProperties().levelName;
+    }
     // Paper end
 
     /**
