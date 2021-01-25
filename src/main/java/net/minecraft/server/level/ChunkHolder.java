@@ -76,6 +76,17 @@ public class ChunkHolder {
     public ServerLevel getWorld() { return chunkMap.level; } // Paper
     boolean isUpdateQueued = false; // Paper
     private final ChunkMap chunkMap; // Paper
+    // Paper start - no-tick view distance
+    public final LevelChunk getSendingChunk() {
+        // it's important that we use getChunkAtIfLoadedImmediately to mirror the chunk sending logic used
+        // in Chunk's neighbour callback
+        LevelChunk ret = this.chunkMap.level.getChunkSource().getChunkAtIfLoadedImmediately(this.pos.x, this.pos.z);
+        if (ret != null && ret.areNeighboursLoaded(1)) {
+            return ret;
+        }
+        return null;
+    }
+    // Paper end - no-tick view distance
 
     // Paper start
     public void onChunkAdd() {
@@ -273,7 +284,7 @@ public class ChunkHolder {
 
     public void blockChanged(BlockPos pos) {
         if (!pos.isInsideBuildHeightAndWorldBoundsHorizontal(levelHeightAccessor)) return; // Paper - SPIGOT-6086 for all invalid locations; avoid acquiring locks
-        LevelChunk chunk = this.getTickingChunk();
+        LevelChunk chunk = this.getSendingChunk(); // Paper - no-tick view distance
 
         if (chunk != null) {
             int i = this.levelHeightAccessor.getSectionIndex(pos.getY());
@@ -289,14 +300,15 @@ public class ChunkHolder {
     }
 
     public void sectionLightChanged(LightLayer lightType, int y) {
-        Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure> either = (Either) this.getFutureIfPresent(ChunkStatus.FEATURES).getNow(null); // CraftBukkit - decompile error
+        // Paper start - no-tick view distance
 
-        if (either != null) {
-            ChunkAccess ichunkaccess = (ChunkAccess) either.left().orElse(null); // CraftBukkit - decompile error
+        if (true) {
+            ChunkAccess ichunkaccess = this.getAvailableChunkNow();
 
             if (ichunkaccess != null) {
                 ichunkaccess.setUnsaved(true);
-                LevelChunk chunk = this.getTickingChunk();
+                LevelChunk chunk = this.getSendingChunk();
+                // Paper end - no-tick view distance
 
                 if (chunk != null) {
                     int j = this.lightEngine.getMinLightSection();
@@ -399,9 +411,28 @@ public class ChunkHolder {
     }
 
     public void broadcast(Packet<?> packet, boolean onlyOnWatchDistanceEdge) {
-        this.playerProvider.getPlayers(this.pos, onlyOnWatchDistanceEdge).forEach((entityplayer) -> {
-            entityplayer.connection.send(packet);
-        });
+        // Paper start - per player view distance
+        // there can be potential desync with player's last mapped section and the view distance map, so use the
+        // view distance map here.
+        com.destroystokyo.paper.util.misc.PlayerAreaMap viewDistanceMap = this.chunkMap.playerChunkManager.broadcastMap; // Paper - replace old player chunk manager
+        com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> players = viewDistanceMap.getObjectsInRange(this.pos);
+        if (players == null) {
+            return;
+        }
+
+        Object[] backingSet = players.getBackingSet();
+        for (int i = 0, len = backingSet.length; i < len; ++i) {
+            Object temp = backingSet[i];
+            if (!(temp instanceof ServerPlayer)) {
+                continue;
+            }
+            ServerPlayer player = (ServerPlayer)temp;
+            if (!this.chunkMap.playerChunkManager.isChunkSent(player, this.pos.x, this.pos.z, onlyOnWatchDistanceEdge)) {
+                continue;
+            }
+            player.connection.send(packet);
+        }
+        // Paper end - per player view distance
     }
 
     public CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> getOrScheduleFuture(ChunkStatus targetStatus, ChunkMap chunkStorage) {

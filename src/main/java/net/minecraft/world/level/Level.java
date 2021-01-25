@@ -627,6 +627,11 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
 
             if ((i & 2) != 0 && (!this.isClientSide || (i & 4) == 0) && (this.isClientSide || chunk == null || (chunk.getFullStatus() != null && chunk.getFullStatus().isOrAfter(ChunkHolder.FullChunkStatus.TICKING)))) { // allow chunk to be null here as chunk.isReady() is false when we send our notification during block placement
                 this.sendBlockUpdated(blockposition, iblockdata1, iblockdata, i);
+                // Paper start - per player view distance - allow block updates for non-ticking chunks in player view distance
+                // if copied from above
+            } else if ((i & 2) != 0 && (!this.isClientSide || (i & 4) == 0) && (this.isClientSide || chunk == null || ((ServerLevel)this).getChunkSource().chunkMap.playerChunkManager.broadcastMap.getObjectsInRange(MCUtil.getCoordinateKey(blockposition)) != null)) { // Paper - replace old player chunk management
+                ((ServerLevel)this).getChunkSource().blockChanged(blockposition);
+                // Paper end - per player view distance
             }
 
             if ((i & 1) != 0) {

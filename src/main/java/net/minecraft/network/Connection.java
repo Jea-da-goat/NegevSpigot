@@ -100,6 +100,28 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
     public boolean queueImmunity = false;
     public ConnectionProtocol protocol;
     // Paper end
+    // Paper start - add pending task queue
+    private final Queue<Runnable> pendingTasks = new java.util.concurrent.ConcurrentLinkedQueue<>();
+    public void execute(final Runnable run) {
+        if (this.channel == null || !this.channel.isRegistered()) {
+            run.run();
+            return;
+        }
+        final boolean queue = !this.queue.isEmpty();
+        if (!queue) {
+            this.channel.eventLoop().execute(run);
+        } else {
+            this.pendingTasks.add(run);
+            if (this.queue.isEmpty()) {
+                // something flushed async, dump tasks now
+                Runnable r;
+                while ((r = this.pendingTasks.poll()) != null) {
+                    this.channel.eventLoop().execute(r);
+                }
+            }
+        }
+    }
+    // Paper end - add pending task queue
 
     // Paper start - allow controlled flushing
     volatile boolean canFlush = true;
@@ -488,6 +510,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
         return false;
     }
     private boolean processQueue() {
+        try { // Paper - add pending task queue
         if (this.queue.isEmpty()) return true;
         // Paper start - make only one flush call per sendPacketQueue() call
         final boolean needsFlush = this.canFlush;
@@ -519,6 +542,12 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
             }
         }
         return true;
+        } finally { // Paper start - add pending task queue
+            Runnable r;
+            while ((r = this.pendingTasks.poll()) != null) {
+                this.channel.eventLoop().execute(r);
+            }
+        } // Paper end - add pending task queue
     }
     // Paper end
 

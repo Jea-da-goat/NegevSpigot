@@ -483,10 +483,14 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         ChunkHolder playerChunk = this.world.getChunkSource().chunkMap.getVisibleChunkIfPresent(ChunkPos.asLong(x, z));
         if (playerChunk == null) return false;
 
-        playerChunk.getTickingChunkFuture().thenAccept(either -> {
-            either.left().ifPresent(chunk -> {
+        // Paper start - rewrite player chunk loader
+        net.minecraft.world.level.chunk.LevelChunk chunk = playerChunk.getSendingChunk();
+        if (chunk == null) {
+            return false;
+        }
+        // Paper end - rewrite player chunk loader
                 List<ServerPlayer> playersInRange = playerChunk.playerProvider.getPlayers(playerChunk.getPos(), false);
-                if (playersInRange.isEmpty()) return;
+                if (playersInRange.isEmpty()) return true; // Paper - rewrite player chunk loader
 
                 // Paper start - Anti-Xray - Bypass
                 Map<Object, ClientboundLevelChunkWithLightPacket> refreshPackets = new HashMap<>();
@@ -499,8 +503,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
                     }));
                     // Paper end
                 }
-            });
-        });
+        // Paper - rewrite player chunk loader
 
         return true;
     }
@@ -2234,43 +2237,56 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     // Spigot start
     @Override
     public int getViewDistance() {
-        return world.spigotConfig.viewDistance;
+        return getHandle().getChunkSource().chunkMap.playerChunkManager.getTargetNoTickViewDistance(); // Paper - replace old player chunk management
     }
 
     @Override
     public int getSimulationDistance() {
-        return world.spigotConfig.simulationDistance;
+        return getHandle().getChunkSource().chunkMap.playerChunkManager.getTargetTickViewDistance(); // Paper - replace old player chunk management
     }
     // Spigot end
     // Paper start - view distance api
     @Override
     public void setViewDistance(int viewDistance) {
-        throw new UnsupportedOperationException(); //TODO
+        // Paper start - replace old player chunk management
+        if (viewDistance < 2 || viewDistance > 32) {
+            throw new IllegalArgumentException("View distance " + viewDistance + " is out of range of [2, 32]");
+        }
+        net.minecraft.server.level.ChunkMap chunkMap = getHandle().getChunkSource().chunkMap;
+        chunkMap.setViewDistance(viewDistance);
+        // Paper end - replace old player chunk management
     }
 
+    // Paper start - replace old player chunk management
     @Override
     public void setSimulationDistance(int simulationDistance) {
-        throw new UnsupportedOperationException(); //TODO
+        // Paper start - replace old player chunk management
+        if (simulationDistance < 2 || simulationDistance > 32) {
+            throw new IllegalArgumentException("Simulation distance " + simulationDistance + " is out of range of [2, 32]");
+        }
+        net.minecraft.server.level.ChunkMap chunkMap = getHandle().getChunkSource().chunkMap;
+        chunkMap.setTickViewDistance(simulationDistance);
     }
+    // Paper end - replace old player chunk management
 
     @Override
     public int getNoTickViewDistance() {
-        throw new UnsupportedOperationException(); //TODO
+        return this.getViewDistance(); // Paper - replace old player chunk management
     }
 
     @Override
     public void setNoTickViewDistance(int viewDistance) {
-        throw new UnsupportedOperationException(); //TODO
+        this.setViewDistance(viewDistance); // Paper - replace old player chunk management
     }
 
     @Override
     public int getSendViewDistance() {
-        throw new UnsupportedOperationException(); //TODO
+        return getHandle().getChunkSource().chunkMap.playerChunkManager.getTargetSendDistance(); // Paper - replace old player chunk management
     }
 
     @Override
     public void setSendViewDistance(int viewDistance) {
-        throw new UnsupportedOperationException(); //TODO
+        getHandle().getChunkSource().chunkMap.playerChunkManager.setSendDistance(viewDistance); // Paper - replace old player chunk management
     }
     // Paper end - view distance api
 

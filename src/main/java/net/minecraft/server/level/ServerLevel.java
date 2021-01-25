@@ -682,7 +682,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
                         gameprofilerfiller.push("checkDespawn");
                         entity.checkDespawn();
                         gameprofilerfiller.pop();
-                        if (this.chunkSource.chunkMap.getDistanceManager().inEntityTickingRange(entity.chunkPosition().toLong())) {
+                        if (true || this.chunkSource.chunkMap.getDistanceManager().inEntityTickingRange(entity.chunkPosition().toLong())) { // Paper - now always true if in the ticking list
                             Entity entity1 = entity.getVehicle();
 
                             if (entity1 != null) {
@@ -715,7 +715,10 @@ public class ServerLevel extends Level implements WorldGenLevel {
 
     @Override
     public boolean shouldTickBlocksAt(long chunkPos) {
-        return this.chunkSource.chunkMap.getDistanceManager().inBlockTickingRange(chunkPos);
+        // Paper start - replace player chunk loader system
+        ChunkHolder holder = this.chunkSource.chunkMap.getVisibleChunkIfPresent(chunkPos);
+        return holder != null && holder.isTickingReady();
+        // Paper end - replace player chunk loader system
     }
 
     protected void tickTime() {
@@ -2459,7 +2462,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
     private boolean isPositionTickingWithEntitiesLoaded(long chunkPos) {
         // Paper start - optimize is ticking ready type functions
         ChunkHolder chunkHolder = this.chunkSource.chunkMap.getVisibleChunkIfPresent(chunkPos);
-        return chunkHolder != null && this.chunkSource.isPositionTicking(chunkPos) && chunkHolder.isTickingReady() && this.areEntitiesLoaded(chunkPos);
+        return chunkHolder != null && chunkHolder.isTickingReady() && this.areEntitiesLoaded(chunkPos); // Paper - no longer need to check with chunk source
         // Paper end
     }
 

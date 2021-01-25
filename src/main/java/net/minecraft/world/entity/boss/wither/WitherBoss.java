@@ -278,7 +278,7 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
                     // this.world.globalLevelEvent(1023, new BlockPosition(this), 0);
                     //int viewDistance = ((ServerLevel) this.level).getCraftServer().getViewDistance() * 16; // Paper - updated to use worlds actual view distance incase we have to uncomment this due to removal of player view distance API
                     for (ServerPlayer player : (List<ServerPlayer>)this.level.players()) { // Paper
-                        final int viewDistance = player.getViewDistance(); // TODO apply view distance api patch
+                        final int viewDistance = io.papermc.paper.chunk.PlayerChunkLoader.getSendViewDistance(player); // Paper - route to player chunk loader
                         double deltaX = this.getX() - player.getX();
                         double deltaZ = this.getZ() - player.getZ();
                         double distanceSquared = deltaX * deltaX + deltaZ * deltaZ;

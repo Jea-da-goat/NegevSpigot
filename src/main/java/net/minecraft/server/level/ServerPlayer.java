@@ -2475,5 +2475,5 @@ public class ServerPlayer extends Player {
     }
     // CraftBukkit end
 
-    public final int getViewDistance() { return this.getLevel().getChunkSource().chunkMap.viewDistance - 1; } // Paper - placeholder
+    public final int getViewDistance() { throw new UnsupportedOperationException("Use PlayerChunkLoader"); } // Paper - placeholder
 }

@@ -636,7 +636,8 @@ public final class MCUtil {
             });
 
             worldData.addProperty("name", world.getWorld().getName());
-            worldData.addProperty("view-distance", world.spigotConfig.viewDistance);
+            worldData.addProperty("view-distance", world.getChunkSource().chunkMap.playerChunkManager.getTargetNoTickViewDistance()); // Paper - replace chunk loader system
+            worldData.addProperty("tick-view-distance", world.getChunkSource().chunkMap.playerChunkManager.getTargetTickViewDistance()); // Paper - replace chunk loader system
             worldData.addProperty("keep-spawn-loaded", world.keepSpawnInMemory);
             worldData.addProperty("keep-spawn-loaded-range", world.paperConfig().spawn.keepSpawnLoadedRange * 16);
             worldData.addProperty("visible-chunk-count", allChunks.size());

@@ -62,9 +62,10 @@ public class EnderEyeItem extends Item {
 
                     // CraftBukkit start - Use relative location for far away sounds
                     // world.b(1038, blockposition1.c(1, 0, 1), 0);
-                    int viewDistance = world.getCraftServer().getViewDistance() * 16;
+                    //int viewDistance = world.getCraftServer().getViewDistance() * 16; // Paper - apply view distance patch
                     BlockPos soundPos = blockposition1.offset(1, 0, 1);
                     for (ServerPlayer player : world.getServer().getPlayerList().players) {
+                        final int viewDistance = io.papermc.paper.chunk.PlayerChunkLoader.getSendViewDistance(player); // Paper - apply view distance patch
                         double deltaX = soundPos.getX() - player.getX();
                         double deltaZ = soundPos.getZ() - player.getZ();
                         double distanceSquared = deltaX * deltaX + deltaZ * deltaZ;

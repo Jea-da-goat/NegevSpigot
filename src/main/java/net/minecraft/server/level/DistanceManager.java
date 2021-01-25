@@ -51,8 +51,8 @@ public abstract class DistanceManager {
     public final Long2ObjectOpenHashMap<SortedArraySet<Ticket<?>>> tickets = new Long2ObjectOpenHashMap();
     //private final DistanceManager.ChunkTicketTracker ticketTracker = new DistanceManager.ChunkTicketTracker(); // Paper - replace ticket level propagator
     public static final int MOB_SPAWN_RANGE = 8; // private final ChunkMapDistance.b f = new ChunkMapDistance.b(8); // Paper - no longer used
-    private final TickingTracker tickingTicketsTracker = new TickingTracker();
-    private final DistanceManager.PlayerTicketTracker playerTicketManager = new DistanceManager.PlayerTicketTracker(33);
+    //private final TickingTracker tickingTicketsTracker = new TickingTracker(); // Paper - no longer used
+    //private final DistanceManager.PlayerTicketTracker playerTicketManager = new DistanceManager.PlayerTicketTracker(33); // Paper - no longer used
     // Paper start use a queue, but still keep unique requirement
     public final java.util.Queue<ChunkHolder> pendingChunkUpdates = new java.util.ArrayDeque<ChunkHolder>() {
         @Override
@@ -133,7 +133,7 @@ public abstract class DistanceManager {
         java.util.function.Predicate<Ticket<?>> removeIf = (ticket) -> {
             final boolean ret = ticket.timedOut(ticketCounter);
             if (ret) {
-                this.tickingTicketsTracker.removeTicket(currChunk[0], ticket);
+                //this.tickingTicketsTracker.removeTicket(currChunk[0], ticket); // Paper - no longer used
             }
             return ret;
         };
@@ -153,7 +153,7 @@ public abstract class DistanceManager {
                 if (ticket.timedOut(this.ticketTickCounter)) {
                     iterator.remove();
                     flag = true;
-                    this.tickingTicketsTracker.removeTicket(entry.getLongKey(), ticket);
+                    //this.tickingTicketsTracker.removeTicket(entry.getLongKey(), ticket); // Paper - no longer used
                 }
             }
 
@@ -184,9 +184,9 @@ public abstract class DistanceManager {
     protected long ticketLevelUpdateCount; // Paper - replace ticket level propagator
     public boolean runAllUpdates(ChunkMap chunkStorage) {
         //this.f.a(); // Paper - no longer used
-        this.tickingTicketsTracker.runAllUpdates();
+        //this.tickingTicketsTracker.runAllUpdates(); // Paper - no longer used
         org.spigotmc.AsyncCatcher.catchOp("DistanceManagerTick"); // Paper
-        this.playerTicketManager.runAllUpdates();
+        // this.playerTicketManager.runAllUpdates(); // Paper - no longer used
         boolean flag = this.ticketLevelPropagator.propagateUpdates(); // Paper - replace ticket level propagator
 
         if (flag) {
@@ -351,7 +351,7 @@ public abstract class DistanceManager {
         long j = chunkcoordintpair.toLong();
 
         boolean added = this.addTicket(j, ticket); // CraftBukkit
-        this.tickingTicketsTracker.addTicket(j, ticket);
+        //this.tickingTicketsTracker.addTicket(j, ticket); // Paper - no longer used
         return added; // CraftBukkit
     }
 
@@ -366,7 +366,7 @@ public abstract class DistanceManager {
         long j = chunkcoordintpair.toLong();
 
         boolean removed = this.removeTicket(j, ticket); // CraftBukkit
-        this.tickingTicketsTracker.removeTicket(j, ticket);
+        //this.tickingTicketsTracker.removeTicket(j, ticket); // Paper - no longer used
         return removed; // CraftBukkit
     }
 
@@ -488,10 +488,10 @@ public abstract class DistanceManager {
 
         if (forced) {
             this.addTicket(i, ticket);
-            this.tickingTicketsTracker.addTicket(i, ticket);
+            //this.tickingTicketsTracker.addTicket(i, ticket); // Paper - no longer used
         } else {
             this.removeTicket(i, ticket);
-            this.tickingTicketsTracker.removeTicket(i, ticket);
+            //this.tickingTicketsTracker.removeTicket(i, ticket); // Paper - no longer used
         }
 
     }
@@ -504,8 +504,8 @@ public abstract class DistanceManager {
             return new ObjectOpenHashSet();
         })).add(player);
         //this.f.update(i, 0, true); // Paper - no longer used
-        this.playerTicketManager.update(i, 0, true);
-        this.tickingTicketsTracker.addTicket(TicketType.PLAYER, chunkcoordintpair, this.getPlayerTicketLevel(), chunkcoordintpair);
+        //this.playerTicketManager.update(i, 0, true); // Paper - no longer used
+        //this.tickingTicketsTracker.addTicket(TicketType.PLAYER, chunkcoordintpair, this.getPlayerTicketLevel(), chunkcoordintpair); // Paper - no longer used
     }
 
     public void removePlayer(SectionPos pos, ServerPlayer player) {
@@ -518,8 +518,8 @@ public abstract class DistanceManager {
         if (objectset == null || objectset.isEmpty()) { // Paper
             this.playersPerChunk.remove(i);
             //this.f.update(i, Integer.MAX_VALUE, false); // Paper - no longer used
-            this.playerTicketManager.update(i, Integer.MAX_VALUE, false);
-            this.tickingTicketsTracker.removeTicket(TicketType.PLAYER, chunkcoordintpair, this.getPlayerTicketLevel(), chunkcoordintpair);
+            //this.playerTicketManager.update(i, Integer.MAX_VALUE, false); // Paper - no longer used
+            //this.tickingTicketsTracker.removeTicket(TicketType.PLAYER, chunkcoordintpair, this.getPlayerTicketLevel(), chunkcoordintpair); // Paper - no longer used
         }
 
     }
@@ -529,11 +529,17 @@ public abstract class DistanceManager {
     }
 
     public boolean inEntityTickingRange(long chunkPos) {
-        return this.tickingTicketsTracker.getLevel(chunkPos) < 32;
+        // Paper start - replace player chunk loader system
+        ChunkHolder holder = this.chunkMap.getVisibleChunkIfPresent(chunkPos);
+        return holder != null && holder.isEntityTickingReady();
+        // Paper end - replace player chunk loader system
     }
 
     public boolean inBlockTickingRange(long chunkPos) {
-        return this.tickingTicketsTracker.getLevel(chunkPos) < 33;
+        // Paper start - replace player chunk loader system
+        ChunkHolder holder = this.chunkMap.getVisibleChunkIfPresent(chunkPos);
+        return holder != null && holder.isTickingReady();
+        // Paper end - replace player chunk loader system
     }
 
     protected String getTicketDebugString(long pos) {
@@ -543,20 +549,16 @@ public abstract class DistanceManager {
     }
 
     protected void updatePlayerTickets(int viewDistance) {
-        this.playerTicketManager.updateViewDistance(viewDistance);
+        this.chunkMap.playerChunkManager.setTargetNoTickViewDistance(viewDistance); // Paper - route to player chunk manager
     }
 
     public void updateSimulationDistance(int simulationDistance) {
-        if (simulationDistance != this.simulationDistance) {
-            this.simulationDistance = simulationDistance;
-            this.tickingTicketsTracker.replacePlayerTicketsLevel(this.getPlayerTicketLevel());
-        }
-
+        this.chunkMap.playerChunkManager.setTargetTickViewDistance(simulationDistance); // Paper - route to player chunk manager
     }
 
     // Paper start
     public int getSimulationDistance() {
-        return this.simulationDistance;
+        return this.chunkMap.playerChunkManager.getTargetTickViewDistance(); // Paper - route to player chunk manager
     }
     // Paper end
 
@@ -613,10 +615,7 @@ public abstract class DistanceManager {
 
     }
 
-    @VisibleForTesting
-    TickingTracker tickingTracker() {
-        return this.tickingTicketsTracker;
-    }
+    // Paper - replace player chunk loader
 
     public void removeTicketsOnClosing() {
         ImmutableSet<TicketType<?>> immutableset = ImmutableSet.of(TicketType.UNKNOWN, TicketType.POST_TELEPORT, TicketType.LIGHT, TicketType.FUTURE_AWAIT, TicketType.ASYNC_LOAD, TicketType.REQUIRED_LOAD, TicketType.CHUNK_RELIGHT, ca.spottedleaf.starlight.common.light.StarLightInterface.CHUNK_WORK_TICKET); // Paper - add additional tickets to preserve
@@ -633,7 +632,7 @@ public abstract class DistanceManager {
                 if (!immutableset.contains(ticket.getType())) {
                     iterator.remove();
                     flag = true;
-                    this.tickingTicketsTracker.removeTicket(entry.getLongKey(), ticket);
+                    // this.tickingTicketsTracker.removeTicket(entry.getLongKey(), ticket); // Paper - no longer used
                 }
             }
 
@@ -672,6 +671,7 @@ public abstract class DistanceManager {
     }
     // CraftBukkit end
 
+    /* Paper - replace old loader system
     private class ChunkTicketTracker extends ChunkTracker {
 
         public ChunkTicketTracker() {
@@ -890,4 +890,5 @@ public abstract class DistanceManager {
             return distance <= this.viewDistance - 2;
         }
     }
+     */ // Paper - replace old loader system
 }

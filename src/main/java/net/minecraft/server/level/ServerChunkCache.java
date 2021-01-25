@@ -667,17 +667,10 @@ public class ServerChunkCache extends ChunkSource {
     // Paper end
 
     public boolean isPositionTicking(long pos) {
-        ChunkHolder playerchunk = this.getVisibleChunkIfPresent(pos);
-
-        if (playerchunk == null) {
-            return false;
-        } else if (!this.level.shouldTickBlocksAt(pos)) {
-            return false;
-        } else {
-            Either<LevelChunk, ChunkHolder.ChunkLoadingFailure> either = (Either) playerchunk.getTickingChunkFuture().getNow(null); // CraftBukkit - decompile error
-
-            return either != null && either.left().isPresent();
-        }
+        // Paper start - replace player chunk loader system
+        ChunkHolder holder = this.chunkMap.getVisibleChunkIfPresent(pos);
+        return holder != null && holder.isTickingReady();
+        // Paper end - replace player chunk loader system
     }
 
     public void save(boolean flush) {
@@ -734,6 +727,7 @@ public class ServerChunkCache extends ChunkSource {
         this.level.getProfiler().popPush("chunks");
         if (tickChunks) {
             this.level.timings.chunks.startTiming(); // Paper - timings
+            this.chunkMap.playerChunkManager.tick(); // Paper - this is mostly is to account for view distance changes
             this.tickChunks();
             this.level.timings.chunks.stopTiming(); // Paper - timings
         }
@@ -847,13 +841,13 @@ public class ServerChunkCache extends ChunkSource {
                 // Paper end - optimise chunk tick iteration
                 ChunkPos chunkcoordintpair = chunk1.getPos();
 
-                if (this.level.isNaturalSpawningAllowed(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(holder, chunkcoordintpair, false)) { // Paper - optimise anyPlayerCloseEnoughForSpawning
+                if ((true || this.level.isNaturalSpawningAllowed(chunkcoordintpair)) && this.chunkMap.anyPlayerCloseEnoughForSpawning(holder, chunkcoordintpair, false)) { // Paper - optimise anyPlayerCloseEnoughForSpawning // Paper - replace player chunk loader system
                     chunk1.incrementInhabitedTime(j);
                     if (flag2 && (this.spawnEnemies || this.spawnFriendlies) && this.level.getWorldBorder().isWithinBounds(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(holder, chunkcoordintpair, true)) { // Spigot // Paper - optimise anyPlayerCloseEnoughForSpawning & optimise chunk tick iteration
                         NaturalSpawner.spawnForChunk(this.level, chunk1, spawnercreature_d, this.spawnFriendlies, this.spawnEnemies, flag1);
                     }
 
-                    if (this.level.shouldTickBlocksAt(chunkcoordintpair.toLong())) {
+                    if (true || this.level.shouldTickBlocksAt(chunkcoordintpair.toLong())) { // Paper - replace player chunk loader system
                         this.level.tickChunk(chunk1, k);
                         if ((chunksTicked++ & 1) == 0) net.minecraft.server.MinecraftServer.getServer().executeMidTickTasks(); // Paper
                     }
@@ -1082,6 +1076,7 @@ public class ServerChunkCache extends ChunkSource {
         public boolean pollTask() {
         try {
             boolean execChunkTask = com.destroystokyo.paper.io.chunk.ChunkTaskManager.pollChunkWaitQueue() || ServerChunkCache.this.level.asyncChunkTaskManager.pollNextChunkTask(); // Paper
+            ServerChunkCache.this.chunkMap.playerChunkManager.tickMidTick(); // Paper
             if (ServerChunkCache.this.runDistanceManagerUpdates()) {
                 return true;
             } else {

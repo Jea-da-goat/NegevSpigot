@@ -191,6 +191,43 @@ public class LevelChunk extends ChunkAccess {
 
     protected void onNeighbourChange(final long bitsetBefore, final long bitsetAfter) {
 
+        // Paper start - no-tick view distance
+        ServerChunkCache chunkProviderServer = ((ServerLevel)this.level).getChunkSource();
+        net.minecraft.server.level.ChunkMap chunkMap = chunkProviderServer.chunkMap;
+        // this code handles the addition of ticking tickets - the distance map handles the removal
+        if (!areNeighboursLoaded(bitsetBefore, 2) && areNeighboursLoaded(bitsetAfter, 2)) {
+            if (chunkMap.playerChunkManager.tickMap.getObjectsInRange(this.coordinateKey) != null) { // Paper - replace old player chunk loading system
+                // now we're ready for entity ticking
+                chunkProviderServer.mainThreadProcessor.execute(() -> {
+                    // double check that this condition still holds.
+                    if (LevelChunk.this.areNeighboursLoaded(2) && chunkMap.playerChunkManager.tickMap.getObjectsInRange(LevelChunk.this.coordinateKey) != null) { // Paper - replace old player chunk loading system
+                        chunkMap.playerChunkManager.onChunkPlayerTickReady(this.chunkPos.x, this.chunkPos.z); // Paper - replace old player chunk
+                        chunkProviderServer.addTicketAtLevel(net.minecraft.server.level.TicketType.PLAYER, LevelChunk.this.chunkPos, 31, LevelChunk.this.chunkPos); // 31 -> entity ticking, TODO check on update
+                    }
+                });
+            }
+        }
+
+        // this code handles the chunk sending
+        if (!areNeighboursLoaded(bitsetBefore, 1) && areNeighboursLoaded(bitsetAfter, 1)) {
+            // Paper start - replace old player chunk loading system
+            if (chunkMap.playerChunkManager.isChunkNearPlayers(this.chunkPos.x, this.chunkPos.z)) {
+                // the post processing is expensive, so we don't want to run it unless we're actually near
+                // a player.
+                chunkProviderServer.mainThreadProcessor.execute(() -> {
+                    if (!LevelChunk.this.areNeighboursLoaded(1)) {
+                        return;
+                    }
+                    LevelChunk.this.postProcessGeneration();
+                    if (!LevelChunk.this.areNeighboursLoaded(1)) {
+                        return;
+                    }
+                    chunkMap.playerChunkManager.onChunkSendReady(this.chunkPos.x, this.chunkPos.z);
+                });
+            }
+            // Paper end - replace old player chunk loading system
+        }
+        // Paper end - no-tick view distance
     }
 
     public final boolean isAnyNeighborsLoaded() {
@@ -815,6 +852,7 @@ public class LevelChunk extends ChunkAccess {
         // Paper end - neighbour cache
         org.bukkit.Server server = this.level.getCraftServer();
         this.level.getChunkSource().addLoadedChunk(this); // Paper
+        ((ServerLevel)this.level).getChunkSource().chunkMap.playerChunkManager.onChunkLoad(this.chunkPos.x, this.chunkPos.z); // Paper - rewrite player chunk management
         if (server != null) {
             /*
              * If it's a new world, the first few chunks are generated inside
@@ -939,7 +977,10 @@ public class LevelChunk extends ChunkAccess {
         });
     }
 
+    public boolean isPostProcessingDone; // Paper - replace chunk loader system
+
     public void postProcessGeneration() {
+        try { // Paper - replace chunk loader system
         ChunkPos chunkcoordintpair = this.getPos();
 
         for (int i = 0; i < this.postProcessing.length; ++i) {
@@ -977,6 +1018,11 @@ public class LevelChunk extends ChunkAccess {
 
         this.pendingBlockEntities.clear();
         this.upgradeData.upgrade(this);
+        } finally { // Paper start - replace chunk loader system
+            this.isPostProcessingDone = true;
+            this.level.getChunkSource().chunkMap.playerChunkManager.onChunkPostProcessing(this.chunkPos.x, this.chunkPos.z);
+        }
+        // Paper end - replace chunk loader system
     }
 
     @Nullable
