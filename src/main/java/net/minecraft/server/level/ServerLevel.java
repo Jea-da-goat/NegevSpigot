@@ -1494,6 +1494,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
         }
 
         this.getChunkSource().blockChanged(pos);
+        if(this.paperConfig().misc.updatePathfindingOnBlockUpdate) { // Paper - option to disable pathfinding updates
         VoxelShape voxelshape = oldState.getCollisionShape(this, pos);
         VoxelShape voxelshape1 = newState.getCollisionShape(this, pos);
 
@@ -1535,6 +1536,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
             }
 
         }
+        } // Paper
     }
 
     @Override
