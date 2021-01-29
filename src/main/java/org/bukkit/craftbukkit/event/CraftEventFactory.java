@@ -1527,8 +1527,10 @@ public class CraftEventFactory {
         return itemInHand;
     }
 
-    public static PlayerUnleashEntityEvent callPlayerUnleashEntityEvent(Mob entity, net.minecraft.world.entity.player.Player player) {
-        PlayerUnleashEntityEvent event = new PlayerUnleashEntityEvent(entity.getBukkitEntity(), (Player) player.getBukkitEntity());
+    // Paper start - drop leash variable
+    public static PlayerUnleashEntityEvent callPlayerUnleashEntityEvent(Mob entity, net.minecraft.world.entity.player.Player player, boolean dropLeash) {
+        PlayerUnleashEntityEvent event = new PlayerUnleashEntityEvent(entity.getBukkitEntity(), (Player) player.getBukkitEntity(), dropLeash);
+        // Paper end
         entity.level.getCraftServer().getPluginManager().callEvent(event);
         return event;
     }

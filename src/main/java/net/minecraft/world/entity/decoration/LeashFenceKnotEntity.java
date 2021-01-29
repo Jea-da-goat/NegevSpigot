@@ -122,11 +122,14 @@ public class LeashFenceKnotEntity extends HangingEntity {
                         entityinsentient = (Mob) iterator.next();
                         if (entityinsentient.isLeashed() && entityinsentient.getLeashHolder() == this) {
                             // CraftBukkit start
-                            if (CraftEventFactory.callPlayerUnleashEntityEvent(entityinsentient, player).isCancelled()) {
+                            // Paper start - drop leash variable
+                            org.bukkit.event.player.PlayerUnleashEntityEvent event = CraftEventFactory.callPlayerUnleashEntityEvent(entityinsentient, player, !player.getAbilities().instabuild);
+                            if (event.isCancelled()) {
+                                // Paper end
                                 die = false;
                                 continue;
                             }
-                            entityinsentient.dropLeash(true, !player.getAbilities().instabuild); // false -> survival mode boolean
+                            entityinsentient.dropLeash(true, event.isDropLeash()); // false -> survival mode boolean // Paper - drop leash variable
                             // CraftBukkit end
                         }
                     }
