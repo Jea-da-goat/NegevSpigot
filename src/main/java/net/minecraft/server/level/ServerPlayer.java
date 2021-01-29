@@ -154,6 +154,7 @@ import net.minecraft.world.scores.Score;
 import net.minecraft.world.scores.Scoreboard;
 import net.minecraft.world.scores.Team;
 import net.minecraft.world.scores.criteria.ObjectiveCriteria;
+import io.papermc.paper.adventure.PaperAdventure; // Paper
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.WeatherType;
@@ -230,6 +231,7 @@ public class ServerPlayer extends Player {
 
     // CraftBukkit start
     public String displayName;
+    public net.kyori.adventure.text.Component adventure$displayName; // Paper
     public Component listName;
     public org.bukkit.Location compassTarget;
     public int newExp = 0;
@@ -312,6 +314,7 @@ public class ServerPlayer extends Player {
 
         // CraftBukkit start
         this.displayName = this.getScoreboardName();
+        this.adventure$displayName = net.kyori.adventure.text.Component.text(this.getScoreboardName()); // Paper
         this.bukkitPickUpLoot = true;
         this.maxHealthCache = this.getMaxHealth();
     }
@@ -788,22 +791,17 @@ public class ServerPlayer extends Player {
 
         String deathmessage = defaultMessage.getString();
         this.keepLevel = keepInventory; // SPIGOT-2222: pre-set keepLevel
-        org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, deathmessage, keepInventory);
+        org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, PaperAdventure.asAdventure(defaultMessage), defaultMessage.getString(), keepInventory); // Paper - Adventure
 
         // SPIGOT-943 - only call if they have an inventory open
         if (this.containerMenu != this.inventoryMenu) {
             this.closeContainer();
         }
 
-        String deathMessage = event.getDeathMessage();
+        net.kyori.adventure.text.Component deathMessage = event.deathMessage() != null ? event.deathMessage() : net.kyori.adventure.text.Component.empty(); // Paper - Adventure
 
-        if (deathMessage != null && deathMessage.length() > 0 && flag) { // TODO: allow plugins to override?
-            Component ichatbasecomponent;
-            if (deathMessage.equals(deathmessage)) {
-                ichatbasecomponent = this.getCombatTracker().getDeathMessage();
-            } else {
-                ichatbasecomponent = org.bukkit.craftbukkit.util.CraftChatMessage.fromStringOrNull(deathMessage);
-            }
+        if (deathMessage != null && deathMessage != net.kyori.adventure.text.Component.empty() && flag) { // Paper - Adventure // TODO: allow plugins to override?
+            Component ichatbasecomponent = PaperAdventure.asVanilla(deathMessage); // Paper - Adventure
 
             this.connection.send(new ClientboundPlayerCombatKillPacket(this.getCombatTracker(), ichatbasecomponent), PacketSendListener.exceptionallySend(() -> {
                 boolean flag1 = true;
@@ -1729,8 +1727,13 @@ public class ServerPlayer extends Player {
     }
 
     public void sendChatMessage(OutgoingPlayerChatMessage message, boolean filterMaskEnabled, ChatType.Bound params) {
+        // Paper start
+        this.sendChatMessage(message, filterMaskEnabled, params, null);
+    }
+    public void sendChatMessage(OutgoingPlayerChatMessage message, boolean filterMaskEnabled, ChatType.Bound params, @Nullable Component unsigned) {
+        // Paper end
         if (this.acceptsChatMessages()) {
-            message.sendToPlayer(this, filterMaskEnabled, params);
+            message.sendToPlayer(this, filterMaskEnabled, params, unsigned); // Paper
         }
 
     }
@@ -1751,6 +1754,7 @@ public class ServerPlayer extends Player {
     }
 
     public String locale = "en_us"; // CraftBukkit - add, lowercase
+    public java.util.Locale adventure$locale = java.util.Locale.US; // Paper
     public void updateOptions(ServerboundClientInformationPacket packet) {
         // CraftBukkit start
         if (getMainArm() != packet.mainHand()) {
@@ -1762,6 +1766,10 @@ public class ServerPlayer extends Player {
             this.server.server.getPluginManager().callEvent(event);
         }
         this.locale = packet.language;
+        // Paper start
+        this.adventure$locale = net.kyori.adventure.translation.Translator.parseLocale(this.locale);
+        this.connection.connection.channel.attr(PaperAdventure.LOCALE_ATTRIBUTE).set(this.adventure$locale);
+        // Paper end
         this.clientViewDistance = packet.viewDistance;
         // CraftBukkit end
         this.chatVisibility = packet.chatVisibility();

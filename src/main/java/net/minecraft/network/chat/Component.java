@@ -1,6 +1,7 @@
 package net.minecraft.network.chat;
 
 import com.google.common.collect.Lists;
+import io.papermc.paper.adventure.AdventureComponent; // Paper
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -216,6 +217,7 @@ public interface Component extends Message, FormattedText, Iterable<Component> {
             GsonBuilder gsonbuilder = new GsonBuilder();
 
             gsonbuilder.disableHtmlEscaping();
+            gsonbuilder.registerTypeAdapter(AdventureComponent.class, new AdventureComponent.Serializer()); // Paper
             gsonbuilder.registerTypeHierarchyAdapter(Component.class, new Component.Serializer());
             gsonbuilder.registerTypeHierarchyAdapter(Style.class, new Style.Serializer());
             gsonbuilder.registerTypeAdapterFactory(new LowerCaseEnumTypeAdapterFactory());
@@ -391,6 +393,7 @@ public interface Component extends Message, FormattedText, Iterable<Component> {
         }
 
         public JsonElement serialize(Component ichatbasecomponent, Type type, JsonSerializationContext jsonserializationcontext) {
+            if (ichatbasecomponent instanceof AdventureComponent) return jsonserializationcontext.serialize(ichatbasecomponent); // Paper
             JsonObject jsonobject = new JsonObject();
 
             if (!ichatbasecomponent.getStyle().isEmpty()) {

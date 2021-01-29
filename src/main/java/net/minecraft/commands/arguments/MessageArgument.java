@@ -88,7 +88,7 @@ public class MessageArgument implements SignedArgument<MessageArgument.Message> 
             MinecraftServer minecraftServer = source.getServer();
             source.getChatMessageChainer().append(() -> {
                 CompletableFuture<FilteredText> completableFuture = this.filterPlainText(source, this.signedArgument.signedContent().plain());
-                CompletableFuture<PlayerChatMessage> completableFuture2 = minecraftServer.getChatDecorator().decorate(source.getPlayer(), this.signedArgument);
+                CompletableFuture<PlayerChatMessage> completableFuture2 = minecraftServer.getChatDecorator().decorate(source.getPlayer(), source,this.signedArgument); // Paper
                 return CompletableFuture.allOf(completableFuture, completableFuture2).thenAcceptAsync((void_) -> {
                     PlayerChatMessage playerChatMessage = completableFuture2.join().filter(completableFuture.join().mask());
                     callback.accept(playerChatMessage);
@@ -131,7 +131,7 @@ public class MessageArgument implements SignedArgument<MessageArgument.Message> 
 
         CompletableFuture<Component> resolveDecoratedComponent(CommandSourceStack source) throws CommandSyntaxException {
             Component component = this.resolveComponent(source);
-            CompletableFuture<Component> completableFuture = source.getServer().getChatDecorator().decorate(source.getPlayer(), component);
+            CompletableFuture<Component> completableFuture = source.getServer().getChatDecorator().decorate(source.getPlayer(), source, component, true).thenApply(net.minecraft.network.chat.ChatDecorator.Result::component); // Paper
             MessageArgument.logResolutionFailure(source, completableFuture);
             return completableFuture;
         }

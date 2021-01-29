@@ -14,6 +14,12 @@ public interface OutgoingPlayerChatMessage {
 
     void sendToPlayer(ServerPlayer sender, boolean filterMaskEnabled, ChatType.Bound params);
 
+    // Paper start
+    default void sendToPlayer(ServerPlayer sender, boolean filterMaskEnabled, ChatType.Bound params, @javax.annotation.Nullable Component unsigned) {
+        this.sendToPlayer(sender, filterMaskEnabled, params);
+    }
+    // Paper end
+
     void sendHeadersToRemainingPlayers(PlayerList playerManager);
 
     static OutgoingPlayerChatMessage create(PlayerChatMessage message) {
@@ -34,7 +40,15 @@ public interface OutgoingPlayerChatMessage {
 
         @Override
         public void sendToPlayer(ServerPlayer sender, boolean filterMaskEnabled, ChatType.Bound params) {
+            // Paper start
+            this.sendToPlayer(sender, filterMaskEnabled, params, null);
+        }
+
+        @Override
+        public void sendToPlayer(ServerPlayer sender, boolean filterMaskEnabled, ChatType.Bound params, @javax.annotation.Nullable Component unsigned) {
+            // Paper end
             PlayerChatMessage playerChatMessage = this.message.filter(filterMaskEnabled);
+            playerChatMessage = unsigned != null ? playerChatMessage.withUnsignedContent(unsigned) : playerChatMessage; // Paper
             if (!playerChatMessage.isFullyFiltered()) {
                 RegistryAccess registryAccess = sender.level.registryAccess();
                 ChatType.BoundNetwork boundNetwork = params.toNetwork(registryAccess);
@@ -64,7 +78,15 @@ public interface OutgoingPlayerChatMessage {
 
         @Override
         public void sendToPlayer(ServerPlayer sender, boolean filterMaskEnabled, ChatType.Bound params) {
+            // Paper start
+            this.sendToPlayer(sender, filterMaskEnabled, params, null);
+        }
+
+        @Override
+        public void sendToPlayer(ServerPlayer sender, boolean filterMaskEnabled, ChatType.Bound params, @javax.annotation.Nullable Component unsigned) {
+            // Paper end
             PlayerChatMessage playerChatMessage = this.message.filter(filterMaskEnabled);
+            playerChatMessage = unsigned != null ? playerChatMessage.withUnsignedContent(unsigned) : playerChatMessage; // Paper
             if (!playerChatMessage.isFullyFiltered()) {
                 this.playersWithFullMessage.add(sender);
                 RegistryAccess registryAccess = sender.level.registryAccess();

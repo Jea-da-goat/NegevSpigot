@@ -8,6 +8,7 @@ import com.mojang.logging.LogUtils;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.Dynamic;
 import io.netty.buffer.Unpooled;
+import io.papermc.paper.adventure.PaperAdventure;
 import java.io.File;
 import java.net.SocketAddress;
 import java.nio.file.Path;
@@ -264,7 +265,7 @@ public abstract class PlayerList {
         }
         // CraftBukkit start
         ichatmutablecomponent.withStyle(ChatFormatting.YELLOW);
-        String joinMessage = CraftChatMessage.fromComponent(ichatmutablecomponent);
+        Component joinMessage = ichatmutablecomponent; // Paper - Adventure
 
         playerconnection.teleport(player.getX(), player.getY(), player.getZ(), player.getYRot(), player.getXRot());
         this.players.add(player);
@@ -278,19 +279,18 @@ public abstract class PlayerList {
         // Ensure that player inventory is populated with its viewer
         player.containerMenu.transferTo(player.containerMenu, bukkitPlayer);
 
-        PlayerJoinEvent playerJoinEvent = new PlayerJoinEvent(bukkitPlayer, joinMessage);
+        PlayerJoinEvent playerJoinEvent = new PlayerJoinEvent(bukkitPlayer, PaperAdventure.asAdventure(ichatmutablecomponent)); // Paper - Adventure
         this.cserver.getPluginManager().callEvent(playerJoinEvent);
 
         if (!player.connection.connection.isConnected()) {
             return;
         }
 
-        joinMessage = playerJoinEvent.getJoinMessage();
+        final net.kyori.adventure.text.Component jm = playerJoinEvent.joinMessage();
 
-        if (joinMessage != null && joinMessage.length() > 0) {
-            for (Component line : org.bukkit.craftbukkit.util.CraftChatMessage.fromString(joinMessage)) {
-                this.server.getPlayerList().broadcastSystemMessage(line, false);
-            }
+        if (jm != null && !jm.equals(net.kyori.adventure.text.Component.empty())) { // Paper - Adventure
+            joinMessage = PaperAdventure.asVanilla(jm); // Paper - Adventure
+            this.server.getPlayerList().broadcastSystemMessage(joinMessage, false); // Paper - Adventure
         }
         // CraftBukkit end
 
@@ -487,7 +487,7 @@ public abstract class PlayerList {
 
     }
 
-    public String remove(ServerPlayer entityplayer) { // CraftBukkit - return string
+    public net.kyori.adventure.text.Component remove(ServerPlayer entityplayer) { // Paper - return Component
         ServerLevel worldserver = entityplayer.getLevel();
 
         entityplayer.awardStat(Stats.LEAVE_GAME);
@@ -498,7 +498,7 @@ public abstract class PlayerList {
             entityplayer.closeContainer();
         }
 
-        PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(entityplayer.getBukkitEntity(), entityplayer.kickLeaveMessage != null ? entityplayer.kickLeaveMessage : "\u00A7e" + entityplayer.getScoreboardName() + " left the game");
+        PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(entityplayer.getBukkitEntity(), net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, io.papermc.paper.configuration.GlobalConfiguration.get().messages.useDisplayNameInQuitMessage ? entityplayer.getBukkitEntity().displayName() : net.kyori.adventure.text.Component.text(entityplayer.getScoreboardName())));
         this.cserver.getPluginManager().callEvent(playerQuitEvent);
         entityplayer.getBukkitEntity().disconnect(playerQuitEvent.getQuitMessage());
 
@@ -551,7 +551,7 @@ public abstract class PlayerList {
         this.cserver.getScoreboardManager().removePlayer(entityplayer.getBukkitEntity());
         // CraftBukkit end
 
-        return playerQuitEvent.getQuitMessage(); // CraftBukkit
+        return playerQuitEvent.quitMessage(); // Paper - Adventure
     }
 
     // CraftBukkit start - Whole method, SocketAddress to LoginListener, added hostname to signature, return EntityPlayer
@@ -597,10 +597,10 @@ public abstract class PlayerList {
             }
 
             // return chatmessage;
-            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, CraftChatMessage.fromComponent(ichatmutablecomponent));
+            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, PaperAdventure.asAdventure(ichatmutablecomponent)); // Paper - Adventure
         } else if (!this.isWhiteListed(gameprofile)) {
             ichatmutablecomponent = Component.translatable("multiplayer.disconnect.not_whitelisted");
-            event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, org.spigotmc.SpigotConfig.whitelistMessage); // Spigot
+            event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(org.spigotmc.SpigotConfig.whitelistMessage)); // Spigot // Paper - Adventure
         } else if (this.getIpBans().isBanned(socketaddress) && !this.getIpBans().get(socketaddress).hasExpired()) {
             IpBanListEntry ipbanentry = this.ipBans.get(socketaddress);
 
@@ -610,17 +610,17 @@ public abstract class PlayerList {
             }
 
             // return chatmessage;
-            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, CraftChatMessage.fromComponent(ichatmutablecomponent));
+            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, PaperAdventure.asAdventure(ichatmutablecomponent)); // Paper - Adventure
         } else {
             // return this.players.size() >= this.maxPlayers && !this.canBypassPlayerLimit(gameprofile) ? IChatBaseComponent.translatable("multiplayer.disconnect.server_full") : null;
             if (this.players.size() >= this.maxPlayers && !this.canBypassPlayerLimit(gameprofile)) {
-                event.disallow(PlayerLoginEvent.Result.KICK_FULL, org.spigotmc.SpigotConfig.serverFullMessage); // Spigot
+                event.disallow(PlayerLoginEvent.Result.KICK_FULL, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(org.spigotmc.SpigotConfig.serverFullMessage)); // Spigot // Paper - Adventure
             }
         }
 
         this.cserver.getPluginManager().callEvent(event);
         if (event.getResult() != PlayerLoginEvent.Result.ALLOWED) {
-            loginlistener.disconnect(event.getKickMessage());
+            loginlistener.disconnect(PaperAdventure.asVanilla(event.kickMessage())); // Paper - Adventure
             return null;
         }
         return entity;
@@ -1128,7 +1128,7 @@ public abstract class PlayerList {
     public void removeAll() {
         // CraftBukkit start - disconnect safely
         for (ServerPlayer player : this.players) {
-            player.connection.disconnect(this.server.server.getShutdownMessage()); // CraftBukkit - add custom shutdown message
+            player.connection.disconnect(this.server.server.shutdownMessage()); // CraftBukkit - add custom shutdown message // Paper - Adventure
         }
         // CraftBukkit end
 
@@ -1169,14 +1169,25 @@ public abstract class PlayerList {
     }
 
     public void broadcastChatMessage(PlayerChatMessage message, ServerPlayer sender, ChatType.Bound params) {
+        // Paper start
+        this.broadcastChatMessage(message, sender, params, null);
+    }
+    public void broadcastChatMessage(PlayerChatMessage message, ServerPlayer sender, ChatType.Bound params, @Nullable Function<net.kyori.adventure.audience.Audience, Component> unsignedFunction) {
+        // Paper end
         Objects.requireNonNull(sender);
-        this.broadcastChatMessage(message, sender::shouldFilterMessageTo, sender, sender.asChatSender(), params);
+        this.broadcastChatMessage(message, sender::shouldFilterMessageTo, sender, sender.asChatSender(), params, unsignedFunction); // Paper
     }
 
     private void broadcastChatMessage(PlayerChatMessage message, Predicate<ServerPlayer> shouldSendFiltered, @Nullable ServerPlayer sender, ChatSender sourceProfile, ChatType.Bound params) {
+        // Paper start
+        this.broadcastChatMessage(message, shouldSendFiltered, sender, sourceProfile, params, null);
+    }
+
+    private void broadcastChatMessage(PlayerChatMessage message, Predicate<ServerPlayer> shouldSendFiltered, @Nullable ServerPlayer sender, ChatSender sourceProfile, ChatType.Bound params, @Nullable Function<net.kyori.adventure.audience.Audience, Component> unsignedFunction) {
+        // Paper end
         boolean flag = this.verifyChatTrusted(message, sourceProfile);
 
-        this.server.logChatMessage(message.serverContent(), params, flag ? null : "Not Secure");
+        this.server.logChatMessage((unsignedFunction == null ? message : message.withUnsignedContent(unsignedFunction.apply(this.server.console))).serverContent(), params, flag ? null : "Not Secure"); // Paper
         OutgoingPlayerChatMessage outgoingplayerchatmessage = OutgoingPlayerChatMessage.create(message);
         boolean flag1 = message.isFullyFiltered();
         boolean flag2 = false;
@@ -1186,7 +1197,7 @@ public abstract class PlayerList {
             ServerPlayer entityplayer1 = (ServerPlayer) iterator.next();
             boolean flag3 = shouldSendFiltered.test(entityplayer1);
 
-            entityplayer1.sendChatMessage(outgoingplayerchatmessage, flag3, params);
+            entityplayer1.sendChatMessage(outgoingplayerchatmessage, flag3, params, unsignedFunction == null ? null : unsignedFunction.apply(entityplayer1.getBukkitEntity())); // Paper
             if (sender != entityplayer1) {
                 flag2 |= flag1 && flag3;
             }
@@ -1213,7 +1224,7 @@ public abstract class PlayerList {
 
     }
 
-    private boolean verifyChatTrusted(PlayerChatMessage message, ChatSender profile) {
+    public boolean verifyChatTrusted(PlayerChatMessage message, ChatSender profile) { // Paper - private -> public
         return !message.hasExpiredServer(Instant.now()) && message.verify(profile);
     }
 

@@ -229,6 +229,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
     private boolean allowFlight;
     @Nullable
     private String motd;
+    @Nullable private net.kyori.adventure.text.Component cachedMotd; // Paper
     private int playerIdleTimeout;
     public final long[] tickTimes;
     @Nullable
@@ -1606,8 +1607,18 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
         return this.motd;
     }
 
+    public net.kyori.adventure.text.Component getComponentMotd() {
+        net.kyori.adventure.text.Component component = cachedMotd;
+        if (this.motd != null && this.cachedMotd == null) {
+            component = cachedMotd = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(this.motd);
+        }
+
+        return component != null ? component : net.kyori.adventure.text.Component.empty();
+    }
+
     public void setMotd(String motd) {
         this.motd = motd;
+        this.cachedMotd = null; // Paper
     }
 
     public boolean previewsChat() {
@@ -2318,27 +2329,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
 
     // CraftBukkit start
     public final java.util.concurrent.ExecutorService chatExecutor = java.util.concurrent.Executors.newCachedThreadPool(
-            new com.google.common.util.concurrent.ThreadFactoryBuilder().setDaemon(true).setNameFormat("Async Chat Thread - #%d").build());
+            new com.google.common.util.concurrent.ThreadFactoryBuilder().setDaemon(true).setNameFormat("Async Chat Thread - #%d").setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(net.minecraft.server.MinecraftServer.LOGGER)).build()); // Paper
 
     public ChatDecorator getChatDecorator() {
-        return (entityplayer, ichatbasecomponent) -> {
-            // SPIGOT-7127: Console /say and similar
-            if (entityplayer == null) {
-                return CompletableFuture.completedFuture(ichatbasecomponent);
-            }
-
-            return CompletableFuture.supplyAsync(() -> {
-                AsyncPlayerChatPreviewEvent event = new AsyncPlayerChatPreviewEvent(true, entityplayer.getBukkitEntity(), CraftChatMessage.fromComponent(ichatbasecomponent), new LazyPlayerSet(this));
-                String originalFormat = event.getFormat(), originalMessage = event.getMessage();
-                this.server.getPluginManager().callEvent(event);
-
-                if (originalFormat.equals(event.getFormat()) && originalMessage.equals(event.getMessage()) && event.getPlayer().getName().equalsIgnoreCase(event.getPlayer().getDisplayName())) {
-                    return ichatbasecomponent;
-                }
-
-                return CraftChatMessage.fromStringOrNull(String.format(event.getFormat(), event.getPlayer().getDisplayName(), event.getMessage()));
-            }, chatExecutor);
-        };
+        // Paper start - moved to ChatPreviewProcessor
+        return ChatDecorator.create((sender, commandSourceStack, message, isPreview) -> {
+            final io.papermc.paper.adventure.ChatDecorationProcessor processor = new io.papermc.paper.adventure.ChatDecorationProcessor(this, sender, commandSourceStack, message, isPreview);
+            return processor.process();
+        });
+        // Paper end
         // CraftBukkit end
     }
 

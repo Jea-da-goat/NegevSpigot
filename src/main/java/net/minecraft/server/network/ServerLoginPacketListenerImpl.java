@@ -363,7 +363,7 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
                         if (PlayerPreLoginEvent.getHandlerList().getRegisteredListeners().length != 0) {
                             final PlayerPreLoginEvent event = new PlayerPreLoginEvent(playerName, address, uniqueId);
                             if (asyncEvent.getResult() != PlayerPreLoginEvent.Result.ALLOWED) {
-                                event.disallow(asyncEvent.getResult(), asyncEvent.getKickMessage());
+                                event.disallow(asyncEvent.getResult(), asyncEvent.kickMessage()); // Paper - Adventure
                             }
                             Waitable<PlayerPreLoginEvent.Result> waitable = new Waitable<PlayerPreLoginEvent.Result>() {
                                 @Override
@@ -374,12 +374,12 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
 
                             ServerLoginPacketListenerImpl.this.server.processQueue.add(waitable);
                             if (waitable.get() != PlayerPreLoginEvent.Result.ALLOWED) {
-                                ServerLoginPacketListenerImpl.this.disconnect(event.getKickMessage());
+                                ServerLoginPacketListenerImpl.this.disconnect(io.papermc.paper.adventure.PaperAdventure.asVanilla(event.kickMessage())); // Paper - Adventure
                                 return;
                             }
                         } else {
                             if (asyncEvent.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED) {
-                                ServerLoginPacketListenerImpl.this.disconnect(asyncEvent.getKickMessage());
+                                ServerLoginPacketListenerImpl.this.disconnect(io.papermc.paper.adventure.PaperAdventure.asVanilla(asyncEvent.kickMessage())); // Paper - Adventure
                                 return;
                             }
                         }

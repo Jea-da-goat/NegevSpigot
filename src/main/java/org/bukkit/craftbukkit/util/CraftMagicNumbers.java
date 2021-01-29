@@ -69,6 +69,38 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     private CraftMagicNumbers() {}
 
+    // Paper start
+    @Override
+    public net.kyori.adventure.text.flattener.ComponentFlattener componentFlattener() {
+        return io.papermc.paper.adventure.PaperAdventure.FLATTENER;
+    }
+
+    @Override
+    public net.kyori.adventure.text.serializer.gson.GsonComponentSerializer colorDownsamplingGsonComponentSerializer() {
+        return net.kyori.adventure.text.serializer.gson.GsonComponentSerializer.colorDownsamplingGson();
+    }
+
+    @Override
+    public net.kyori.adventure.text.serializer.gson.GsonComponentSerializer gsonComponentSerializer() {
+        return net.kyori.adventure.text.serializer.gson.GsonComponentSerializer.gson();
+    }
+
+    @Override
+    public net.kyori.adventure.text.serializer.plain.PlainComponentSerializer plainComponentSerializer() {
+        return io.papermc.paper.adventure.PaperAdventure.PLAIN;
+    }
+
+    @Override
+    public net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer plainTextSerializer() {
+        return net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText();
+    }
+
+    @Override
+    public net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer legacyComponentSerializer() {
+        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection();
+    }
+    // Paper end
+
     public static BlockState getBlock(MaterialData material) {
         return CraftMagicNumbers.getBlock(material.getItemType(), material.getData());
     }

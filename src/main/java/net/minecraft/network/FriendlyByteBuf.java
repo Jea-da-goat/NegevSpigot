@@ -18,6 +18,7 @@ import io.netty.handler.codec.EncoderException;
 import io.netty.util.ByteProcessor;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
+import io.papermc.paper.adventure.PaperAdventure; // Paper
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InputStream;
@@ -75,6 +76,7 @@ public class FriendlyByteBuf extends ByteBuf {
     private static final int MAX_VARLONG_SIZE = 10;
     private static final int DEFAULT_NBT_QUOTA = 2097152;
     private final ByteBuf source;
+    public java.util.Locale adventure$locale; // Paper
     public static final short MAX_STRING_LENGTH = 32767;
     public static final int MAX_COMPONENT_STRING_LENGTH = 262144;
     private static final int PUBLIC_KEY_SIZE = 256;
@@ -433,8 +435,15 @@ public class FriendlyByteBuf extends ByteBuf {
         }
     }
 
+    // Paper start
+    public FriendlyByteBuf writeComponent(final net.kyori.adventure.text.Component component) {
+        return this.writeUtf(PaperAdventure.asJsonString(component, this.adventure$locale), 262144);
+    }
+    // Paper end
+
     public FriendlyByteBuf writeComponent(Component text) {
-        return this.writeUtf(Component.Serializer.toJson(text), 262144);
+        //return this.a(IChatBaseComponent.ChatSerializer.a(ichatbasecomponent), 262144); // Paper - comment
+        return this.writeUtf(PaperAdventure.asJsonString(text, this.adventure$locale), 262144); // Paper
     }
 
     public <T extends Enum<T>> T readEnum(Class<T> enumClass) {
