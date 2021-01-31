@@ -87,7 +87,11 @@ public class AcquirePoi extends Behavior<PathfinderMob> {
                 return true;
             }
         };
-        Set<Pair<Holder<PoiType>, BlockPos>> set = poiManager.findAllClosestFirstWithType(this.poiType, predicate, entity.blockPosition(), 48, PoiManager.Occupancy.HAS_SPACE).limit(5L).collect(Collectors.toSet());
+        // Paper start - optimise POI access
+        java.util.List<Pair<Holder<PoiType>, BlockPos>> poiposes = new java.util.ArrayList<>();
+        io.papermc.paper.util.PoiAccess.findNearestPoiPositions(poiManager, this.poiType, predicate, entity.blockPosition(), 48, 48*48, PoiManager.Occupancy.HAS_SPACE, false, 5, poiposes);
+        Set<Pair<Holder<PoiType>, BlockPos>> set = new java.util.HashSet<>(poiposes);
+        // Paper end - optimise POI access
         Path path = findPathToPois(entity, set);
         if (path != null && path.canReach()) {
             BlockPos blockPos = path.getTarget();
