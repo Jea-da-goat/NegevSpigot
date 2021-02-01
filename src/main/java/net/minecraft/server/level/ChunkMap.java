@@ -1352,9 +1352,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
 
                 return chunk;
             });
-        }, (runnable) -> {
-            this.mainThreadMailbox.tell(ChunkTaskPriorityQueueSorter.message(holder, runnable));
-        });
+        }, this.mainThreadExecutor); // Paper - queue to execute immediately so this doesn't delay chunk unloading
     }
 
     public int getTickingGenerated() {
