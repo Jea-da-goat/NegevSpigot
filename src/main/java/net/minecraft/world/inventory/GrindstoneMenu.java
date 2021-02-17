@@ -198,13 +198,13 @@ public class GrindstoneMenu extends AbstractContainerMenu {
                 i = Math.max(item.getMaxDamage() - l, 0);
                 itemstack2 = this.mergeEnchants(itemstack, itemstack1);
                 if (!itemstack2.isDamageableItem()) {
-                    if (!ItemStack.matches(itemstack, itemstack1)) {
+                    if (!ItemStack.matches(itemstack, itemstack1) || itemstack2.getMaxStackSize() == 1) { // Paper - add max stack size check
                         this.resultSlots.setItem(0, ItemStack.EMPTY);
                         this.broadcastChanges();
                         return;
                     }
 
-                    b0 = 2;
+                    b0 = 2; // Paper - the problem line for above change, causing over-stacking
                 }
             } else {
                 boolean flag3 = !itemstack.isEmpty();
