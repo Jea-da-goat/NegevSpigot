@@ -871,6 +871,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
     // CraftBukkit start
     private boolean hasStopped = false;
     public volatile boolean hasFullyShutdown = false; // Paper
+    private boolean hasLoggedStop = false; // Paper
     private final Object stopLock = new Object();
     public final boolean hasStopped() {
         synchronized (this.stopLock) {
@@ -885,6 +886,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
             if (this.hasStopped) return;
             this.hasStopped = true;
         }
+        if (!hasLoggedStop && isDebugging()) io.papermc.paper.util.TraceUtil.dumpTraceForThread("Server stopped"); // Paper
         // Paper start - kill main thread, and kill it hard
         shutdownThread = Thread.currentThread();
         org.spigotmc.WatchdogThread.doStop(); // Paper
@@ -1015,6 +1017,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
     }
     public void safeShutdown(boolean flag, boolean isRestarting) {
         this.isRestarting = isRestarting;
+        this.hasLoggedStop = true; // Paper
+        if (isDebugging()) io.papermc.paper.util.TraceUtil.dumpTraceForThread("Server stopped"); // Paper
         // Paper end
         this.running = false;
         if (flag) {
