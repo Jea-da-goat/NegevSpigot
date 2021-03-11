@@ -696,6 +696,7 @@ public class ServerChunkCache extends ChunkSource {
 
     // CraftBukkit start - modelled on below
     public void purgeUnload() {
+        if (true) return; // Paper - tickets will be removed later, this behavior isn't really well accounted for by the chunk system
         this.level.getProfiler().push("purge");
         this.distanceManager.purgeStaleTickets();
         this.runDistanceManagerUpdates();
