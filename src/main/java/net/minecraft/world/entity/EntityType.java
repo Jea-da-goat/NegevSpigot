@@ -347,6 +347,12 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
 
     @Nullable
     public T spawn(ServerLevel worldserver, @Nullable CompoundTag nbttagcompound, @Nullable Component ichatbasecomponent, @Nullable Player entityhuman, BlockPos blockposition, MobSpawnType enummobspawn, boolean flag, boolean flag1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
+        // Paper start - add consumer to modify entity before spawn
+        return this.spawn(worldserver, nbttagcompound, ichatbasecomponent, entityhuman, blockposition, enummobspawn, flag, flag1, spawnReason, null);
+    }
+    @Nullable
+    public T spawn(ServerLevel worldserver, @Nullable CompoundTag nbttagcompound, @Nullable Component ichatbasecomponent, @Nullable Player entityhuman, BlockPos blockposition, MobSpawnType enummobspawn, boolean flag, boolean flag1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason, @Nullable java.util.function.Consumer<T> op) {
+        // Paper end
         // Paper start - Call PreCreatureSpawnEvent
         org.bukkit.entity.EntityType type = org.bukkit.entity.EntityType.fromName(EntityType.getKey(this).getPath());
         if (type != null) {
@@ -362,6 +368,7 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
         }
         // Paper end
         T t0 = this.create(worldserver, nbttagcompound, ichatbasecomponent, entityhuman, blockposition, enummobspawn, flag, flag1);
+        if (t0 != null && op != null) op.accept(t0); // Paper
 
         if (t0 != null) {
             worldserver.addFreshEntityWithPassengers(t0, spawnReason);

@@ -123,7 +123,7 @@ public class WanderingTraderSpawner implements CustomSpawner {
                     return false;
                 }
 
-                WanderingTrader entityvillagertrader = (WanderingTrader) EntityType.WANDERING_TRADER.spawn(world, (CompoundTag) null, (Component) null, (Player) null, blockposition2, MobSpawnType.EVENT, false, false, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL); // CraftBukkit
+                WanderingTrader entityvillagertrader = (WanderingTrader) EntityType.WANDERING_TRADER.spawn(world, (CompoundTag) null, (Component) null, (Player) null, blockposition2, MobSpawnType.EVENT, false, false, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL, trader -> trader.setDespawnDelay(48000)); // CraftBukkit // Paper - set despawnTimer before spawn events called
 
                 if (entityvillagertrader != null) {
                     for (int i = 0; i < 2; ++i) {
