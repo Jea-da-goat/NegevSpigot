@@ -202,19 +202,24 @@ public final class ChunkSystem {
     }
 
     public static List<ChunkHolder> getVisibleChunkHolders(final ServerLevel level) {
-        return new ArrayList<>(level.chunkSource.chunkMap.visibleChunkMap.values());
+        if (Bukkit.isPrimaryThread()) {
+            return level.chunkSource.chunkMap.updatingChunks.getVisibleValuesCopy();
+        }
+        synchronized (level.chunkSource.chunkMap.updatingChunks) {
+            return level.chunkSource.chunkMap.updatingChunks.getVisibleValuesCopy();
+        }
     }
 
     public static List<ChunkHolder> getUpdatingChunkHolders(final ServerLevel level) {
-        return new ArrayList<>(level.chunkSource.chunkMap.updatingChunkMap.values());
+        return level.chunkSource.chunkMap.updatingChunks.getUpdatingValuesCopy();
     }
 
     public static int getVisibleChunkHolderCount(final ServerLevel level) {
-        return level.chunkSource.chunkMap.visibleChunkMap.size();
+        return level.chunkSource.chunkMap.updatingChunks.getVisibleMap().size();
     }
 
     public static int getUpdatingChunkHolderCount(final ServerLevel level) {
-        return level.chunkSource.chunkMap.updatingChunkMap.size();
+        return level.chunkSource.chunkMap.updatingChunks.getUpdatingMap().size();
     }
 
     public static boolean hasAnyChunkHolders(final ServerLevel level) {

@@ -121,9 +121,11 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
     private static final int MIN_VIEW_DISTANCE = 3;
     public static final int MAX_VIEW_DISTANCE = 33;
     public static final int MAX_CHUNK_DISTANCE = 33 + ChunkStatus.maxDistance();
+    // Paper start - Don't copy
+    public final com.destroystokyo.paper.util.map.QueuedChangesMapLong2Object<ChunkHolder> updatingChunks = new com.destroystokyo.paper.util.map.QueuedChangesMapLong2Object<>();
+    // Paper end - Don't copy
     public static final int FORCED_TICKET_LEVEL = 31;
-    public final Long2ObjectLinkedOpenHashMap<ChunkHolder> updatingChunkMap = new Long2ObjectLinkedOpenHashMap();
-    public volatile Long2ObjectLinkedOpenHashMap<ChunkHolder> visibleChunkMap;
+    // Paper - Don't copy
     private final Long2ObjectLinkedOpenHashMap<ChunkHolder> pendingUnloads;
     public final LongSet entitiesInLevel;
     public final ServerLevel level;
@@ -224,7 +226,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
 
     public ChunkMap(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureTemplateManager structureTemplateManager, Executor executor, BlockableEventLoop<Runnable> mainThreadExecutor, LightChunkGetter chunkProvider, ChunkGenerator chunkGenerator, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory, int viewDistance, boolean dsync) {
         super(session.getDimensionPath(world.dimension()).resolve("region"), dataFixer, dsync);
-        this.visibleChunkMap = this.updatingChunkMap.clone();
+        // Paper - don't copy
         this.pendingUnloads = new Long2ObjectLinkedOpenHashMap();
         this.entitiesInLevel = new LongOpenHashSet();
         this.toDrop = new LongOpenHashSet();
@@ -327,12 +329,17 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
 
     @Nullable
     public ChunkHolder getUpdatingChunkIfPresent(long pos) {
-        return (ChunkHolder) this.updatingChunkMap.get(pos);
+        return this.updatingChunks.getUpdating(pos); // Paper - Don't copy
     }
 
     @Nullable
     public ChunkHolder getVisibleChunkIfPresent(long pos) {
-        return (ChunkHolder) this.visibleChunkMap.get(pos);
+        // Paper start - Don't copy
+        if (Thread.currentThread() == this.level.thread) {
+            return this.updatingChunks.getVisible(pos);
+        }
+        return this.updatingChunks.getVisibleAsync(pos);
+        // Paper end - Don't copy
     }
 
     protected IntSupplier getChunkQueueLevel(long pos) {
@@ -515,7 +522,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                 // Paper start
                 holder.onChunkAdd();
                 // Paper end
-                this.updatingChunkMap.put(pos, holder);
+                this.updatingChunks.queueUpdate(pos, holder); // Paper - Don't copy
                 this.modified = true;
             }
 
@@ -592,7 +599,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
 
         for (int i = 0; longiterator.hasNext() && (shouldKeepTicking.getAsBoolean() || i < 200 || this.toDrop.size() > 2000); longiterator.remove()) {
             long j = longiterator.nextLong();
-            ChunkHolder playerchunk = (ChunkHolder) this.updatingChunkMap.remove(j);
+            ChunkHolder playerchunk = this.updatingChunks.queueRemove(j); // Paper - Don't copy
 
             if (playerchunk != null) {
                 playerchunk.onChunkRemove(); // Paper
@@ -672,7 +679,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
         if (!this.modified) {
             return false;
         } else {
-            this.visibleChunkMap = this.updatingChunkMap.clone();
+            // Paper start - Don't copy
+            synchronized (this.updatingChunks) {
+                this.updatingChunks.performUpdates();
+            }
+            // Paper end - Don't copy
+
             this.modified = false;
             return true;
         }
