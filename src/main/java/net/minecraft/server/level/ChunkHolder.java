@@ -472,8 +472,10 @@ public class ChunkHolder {
         playerchunkmap.onFullChunkStatusChange(this.pos, playerchunk_state);
     }
 
+    protected long updateCount; // Paper - correctly handle recursion
     protected void updateFutures(ChunkMap chunkStorage, Executor executor) {
         io.papermc.paper.util.TickThread.ensureTickThread("Async ticket level update"); // Paper
+        long updateCount = ++this.updateCount; // Paper - correctly handle recursion
         ChunkStatus chunkstatus = ChunkHolder.getStatus(this.oldTicketLevel);
         ChunkStatus chunkstatus1 = ChunkHolder.getStatus(this.ticketLevel);
         boolean flag = this.oldTicketLevel <= ChunkMap.MAX_CHUNK_DISTANCE;
@@ -515,6 +517,12 @@ public class ChunkHolder {
 
             // Run callback right away if the future was already done
             chunkStorage.callbackExecutor.run();
+            // Paper start - correctly handle recursion
+            if (this.updateCount != updateCount) {
+                // something else updated ticket level for us.
+                return;
+            }
+            // Paper end - correctly handle recursion
         }
         // CraftBukkit end
 
