@@ -66,6 +66,7 @@ public class ShulkerBoxMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
+        if (!this.checkReachable) return true; // Paper - Add reachable override for ContainerShulkerBox
         return this.container.stillValid(player);
     }
 
