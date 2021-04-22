@@ -363,7 +363,7 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
                 if (blockEntity.isLit() && furnaceBurnEvent.isBurning()) {
                     // CraftBukkit end
                     flag1 = true;
-                    if (flag3) {
+                    if (flag3 && furnaceBurnEvent.willConsumeFuel()) { // Paper
                         Item item = itemstack.getItem();
 
                         itemstack.shrink(1);
