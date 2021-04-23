@@ -2894,7 +2894,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
             case PERFORM_RESPAWN:
                 if (this.player.wonGame) {
                     this.player.wonGame = false;
-                    this.player = this.server.getPlayerList().respawn(this.player, true);
+                    this.player = this.server.getPlayerList().respawn(this.player, this.server.getLevel(this.player.getRespawnDimension()), true, null, true, org.bukkit.event.player.PlayerRespawnEvent.RespawnFlag.END_PORTAL); // Paper - add isEndCreditsRespawn argument
                     CriteriaTriggers.CHANGED_DIMENSION.trigger(this.player, Level.END, Level.OVERWORLD);
                 } else {
                     if (this.player.getHealth() > 0.0F) {
