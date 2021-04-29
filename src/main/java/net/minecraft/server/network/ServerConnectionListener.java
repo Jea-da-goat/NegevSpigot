@@ -114,6 +114,7 @@ public class ServerConnectionListener {
                     pending.add((Connection) object); // Paper
                     channel.pipeline().addLast("packet_handler", (ChannelHandler) object);
                     ((Connection) object).setListener(new ServerHandshakePacketListenerImpl(ServerConnectionListener.this.server, (Connection) object));
+                    io.papermc.paper.network.ChannelInitializeListenerHolder.callListeners(channel); // Paper
                 }
             }).group((EventLoopGroup) lazyinitvar.get()).localAddress(address, port)).option(ChannelOption.AUTO_READ, false).bind().syncUninterruptibly()); // CraftBukkit
         }
