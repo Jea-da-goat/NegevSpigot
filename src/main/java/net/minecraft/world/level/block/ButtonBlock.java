@@ -186,6 +186,7 @@ public abstract class ButtonBlock extends FaceAttachedHorizontalDirectionalBlock
 
     @Override
     public void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
+        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper
         if (!world.isClientSide && this.sensitive && !(Boolean) state.getValue(ButtonBlock.POWERED)) {
             this.checkPressed(state, world, pos);
         }
