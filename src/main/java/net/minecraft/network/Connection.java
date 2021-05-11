@@ -641,6 +641,11 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
     // Spigot Start
     public SocketAddress getRawAddress()
     {
+        // Paper start - this can be nullable in the case of a Unix domain socket, so if it is, fake something
+        if (this.channel.remoteAddress() == null) {
+            return new java.net.InetSocketAddress(java.net.InetAddress.getLoopbackAddress(), 0);
+        }
+        // Paper end
         return this.channel.remoteAddress();
     }
     // Spigot End
