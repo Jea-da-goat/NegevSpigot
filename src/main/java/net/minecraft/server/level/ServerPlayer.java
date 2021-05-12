@@ -1208,15 +1208,21 @@ public class ServerPlayer extends Player {
     private void createEndPlatform(ServerLevel world, BlockPos centerPos) {
         BlockPos.MutableBlockPos blockposition_mutableblockposition = centerPos.mutable();
 
+        org.bukkit.craftbukkit.util.BlockStateListPopulator blockList = new org.bukkit.craftbukkit.util.BlockStateListPopulator(world); // Paper
         for (int i = -2; i <= 2; ++i) {
             for (int j = -2; j <= 2; ++j) {
                 for (int k = -1; k < 3; ++k) {
                     BlockState iblockdata = k == -1 ? Blocks.OBSIDIAN.defaultBlockState() : Blocks.AIR.defaultBlockState();
 
-                    world.setBlockAndUpdate(blockposition_mutableblockposition.set(centerPos).move(j, k, i), iblockdata);
+                    blockList.setBlock(blockposition_mutableblockposition.set(centerPos).move(j, k, i), iblockdata, 3); // Paper
                 }
             }
         }
+        // Paper start
+        if (new org.bukkit.event.world.PortalCreateEvent((List< org.bukkit.block.BlockState>) (List) blockList.getList(), world.getWorld(), this.getBukkitEntity(), org.bukkit.event.world.PortalCreateEvent.CreateReason.END_PLATFORM).callEvent()) {
+            blockList.updateList();
+        }
+        // Paper end
 
     }
 
