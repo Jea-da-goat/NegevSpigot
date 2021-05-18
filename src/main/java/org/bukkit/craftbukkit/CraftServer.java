@@ -405,10 +405,15 @@ public final class CraftServer implements Server {
     public void loadPlugins() {
         this.pluginManager.registerInterface(JavaPluginLoader.class);
 
-        File pluginFolder = (File) console.options.valueOf("plugins");
+        File pluginFolder = this.getPluginsFolder(); // Paper
 
-        if (pluginFolder.exists()) {
-            Plugin[] plugins = this.pluginManager.loadPlugins(pluginFolder);
+        // Paper start
+        if (true || pluginFolder.exists()) {
+            if (!pluginFolder.exists()) {
+                pluginFolder.mkdirs();
+            }
+            Plugin[] plugins = this.pluginManager.loadPlugins(pluginFolder, this.extraPluginJars());
+            // Paper end
             for (Plugin plugin : plugins) {
                 try {
                     String message = String.format("Loading %s", plugin.getDescription().getFullName());
@@ -422,6 +427,35 @@ public final class CraftServer implements Server {
             pluginFolder.mkdir();
         }
     }
+
+    // Paper start
+    @Override
+    public File getPluginsFolder() {
+        return (File) this.console.options.valueOf("plugins");
+    }
+
+    private List<File> extraPluginJars() {
+        @SuppressWarnings("unchecked")
+        final List<File> jars = (List<File>) this.console.options.valuesOf("add-plugin");
+        final List<File> list = new ArrayList<>();
+        for (final File file : jars) {
+            if (!file.exists()) {
+                net.minecraft.server.MinecraftServer.LOGGER.warn("File '{}' specified through 'add-plugin' argument does not exist, cannot load a plugin from it!", file.getAbsolutePath());
+                continue;
+            }
+            if (!file.isFile()) {
+                net.minecraft.server.MinecraftServer.LOGGER.warn("File '{}' specified through 'add-plugin' argument is not a file, cannot load a plugin from it!", file.getAbsolutePath());
+                continue;
+            }
+            if (!file.getName().endsWith(".jar")) {
+                net.minecraft.server.MinecraftServer.LOGGER.warn("File '{}' specified through 'add-plugin' argument is not a jar file, cannot load a plugin from it!", file.getAbsolutePath());
+                continue;
+            }
+            list.add(file);
+        }
+        return list;
+    }
+    // Paper end
 
     public void enablePlugins(PluginLoadOrder type) {
         if (type == PluginLoadOrder.STARTUP) {
