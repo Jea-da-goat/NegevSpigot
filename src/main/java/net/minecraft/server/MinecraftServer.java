@@ -545,11 +545,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                 worlddata = new PrimaryLevelData(worldsettings, generatorsettings, Lifecycle.stable());
             }
             worlddata.checkName(name); // CraftBukkit - Migration did not rewrite the level.dat; This forces 1.8 to take the last loaded world as respawn (in this case the end)
-            if (this.options.has("forceUpgrade")) {
-                net.minecraft.server.Main.forceUpgrade(worldSession, DataFixers.getDataFixer(), this.options.has("eraseCache"), () -> {
-                    return true;
-                }, worlddata.worldGenSettings());
-            }
+            // Paper - move down
 
             PrimaryLevelData iworlddataserver = worlddata;
             WorldGenSettings generatorsettings = worlddata.worldGenSettings();
@@ -564,6 +560,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                 biomeProvider = gen.getDefaultBiomeProvider(worldInfo);
             }
 
+            // Paper start - fix and optimise world upgrading
+            if (options.has("forceUpgrade")) {
+                net.minecraft.server.Main.convertWorldButItWorks(
+                    dimensionKey, worldSession, DataFixers.getDataFixer(), worlddimension.generator().getTypeNameForDataFixer(), options.has("eraseCache")
+                );
+            }
+            // Paper end - fix and optimise world upgrading
             ResourceKey<Level> worldKey = ResourceKey.create(Registry.DIMENSION_REGISTRY, dimensionKey.location());
 
             if (dimensionKey == LevelStem.OVERWORLD) {

@@ -182,6 +182,15 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
     public final Map<Explosion.CacheKey, Float> explosionDensityCache = new HashMap<>(); // Paper - Optimize explosions
     public java.util.ArrayDeque<net.minecraft.world.level.block.RedstoneTorchBlock.Toggle> redstoneUpdateInfos; // Paper - Move from Map in BlockRedstoneTorch to here
 
+    // Paper start - fix and optimise world upgrading
+    // copied from below
+    public static ResourceKey<DimensionType> getDimensionKey(DimensionType manager) {
+        return ((org.bukkit.craftbukkit.CraftServer)org.bukkit.Bukkit.getServer()).getHandle().getServer().registryHolder.ownedRegistryOrThrow(net.minecraft.core.Registry.DIMENSION_TYPE_REGISTRY).getResourceKey(manager).orElseThrow(() -> {
+            return new IllegalStateException("Unregistered dimension type: " + manager);
+        });
+    }
+    // Paper end - fix and optimise world upgrading
+
     public CraftWorld getWorld() {
         return this.world;
     }
