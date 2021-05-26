@@ -138,7 +138,7 @@ public class BellBlockEntity extends BlockEntity {
     private static void makeRaidersGlow(Level world, BlockPos pos, List<LivingEntity> hearingEntities) {
         hearingEntities.stream().filter((entity) -> {
             return isRaiderWithinRange(pos, entity);
-        }).forEach(BellBlockEntity::glow);
+        }).forEach(entity -> glow(entity, pos)); // Paper - pass BlockPos
     }
 
     private static void showBellParticles(Level world, BlockPos pos, List<LivingEntity> hearingEntities) {
@@ -170,7 +170,11 @@ public class BellBlockEntity extends BlockEntity {
         return entity.isAlive() && !entity.isRemoved() && pos.closerToCenterThan(entity.position(), 48.0D) && entity.getType().is(EntityTypeTags.RAIDERS);
     }
 
-    private static void glow(LivingEntity entity) {
+    // Paper start
+    private static void glow(LivingEntity entity) { glow(entity, null); }
+    private static void glow(LivingEntity entity, @javax.annotation.Nullable BlockPos pos) {
+        if (pos != null && !new io.papermc.paper.event.block.BellRevealRaiderEvent(entity.level.getWorld().getBlockAt(net.minecraft.server.MCUtil.toLocation(entity.level, pos)), entity.getBukkitEntity()).callEvent()) return;
+        // Paper end
         entity.addEffect(new MobEffectInstance(MobEffects.GLOWING, 60));
     }
 
