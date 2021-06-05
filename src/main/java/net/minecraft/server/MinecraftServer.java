@@ -1025,6 +1025,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
             net.minecrell.terminalconsole.TerminalConsoleAppender.close(); // Paper - Use TerminalConsoleAppender
         } catch (Exception e) {
         }
+        io.papermc.paper.log.CustomLogManager.forceReset(); // Paper - Reset loggers after shutdown
         this.onServerExit();
         // Paper end
     }
