@@ -53,9 +53,9 @@ public class SummonCommand {
 
             nbttagcompound1.putString("id", entity.toString());
             ServerLevel worldserver = source.getLevel();
-            Entity entity1 = EntityType.loadEntityRecursive(nbttagcompound1, worldserver, (entity1) -> {
-                entity1.moveTo(pos.x, pos.y, pos.z, entity1.getYRot(), entity1.getXRot());
-                return entity1;
+            Entity entity1 = EntityType.loadEntityRecursive(nbttagcompound1, worldserver, (loadedEntity) -> { // Paper - remap fix
+                loadedEntity.moveTo(pos.x, pos.y, pos.z, loadedEntity.getYRot(), loadedEntity.getXRot()); // Paper - remap fix
+                return loadedEntity; // Paper - remap fix
             });
 
             if (entity1 == null) {
