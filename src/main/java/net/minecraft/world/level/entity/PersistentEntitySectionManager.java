@@ -49,8 +49,10 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
     private final Long2ObjectMap<PersistentEntitySectionManager.ChunkLoadStatus> chunkLoadStatuses = new Long2ObjectOpenHashMap();
     private final LongSet chunksToUnload = new LongOpenHashSet();
     private final Queue<ChunkEntities<T>> loadingInbox = Queues.newConcurrentLinkedQueue();
+    public final io.papermc.paper.world.EntitySliceManager entitySliceManager; // Paper
 
-    public PersistentEntitySectionManager(Class<T> entityClass, LevelCallback<T> handler, EntityPersistentStorage<T> dataAccess) {
+    public PersistentEntitySectionManager(Class<T> entityClass, LevelCallback<T> handler, EntityPersistentStorage<T> dataAccess, io.papermc.paper.world.EntitySliceManager entitySliceManager) { // Paper
+        this.entitySliceManager = entitySliceManager; // Paper
         this.sectionStorage = new EntitySectionStorage<>(entityClass, this.chunkVisibility);
         this.chunkVisibility.defaultReturnValue(Visibility.HIDDEN);
         this.chunkLoadStatuses.defaultReturnValue(PersistentEntitySectionManager.ChunkLoadStatus.FRESH);
@@ -124,6 +126,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
             EntitySection<T> entitysection = this.sectionStorage.getOrCreateSection(i);
 
             entitysection.add(entity);
+            this.entitySliceManager.addEntity((Entity)entity); // Paper
             entity.setLevelCallback(new PersistentEntitySectionManager.Callback(entity, i, entitysection));
             if (!existing) {
                 this.callbacks.onCreated(entity);
@@ -181,6 +184,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
         io.papermc.paper.util.TickThread.ensureTickThread("Asynchronous chunk ticking status update"); // Paper
         Visibility visibility = Visibility.fromFullChunkStatus(levelType);
 
+        this.entitySliceManager.chunkStatusChange(chunkPos.x, chunkPos.z, levelType); // Paper
         this.updateChunkStatus(chunkPos, visibility);
     }
 
@@ -467,6 +471,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
             long i = SectionPos.asLong(blockposition);
 
             if (i != this.currentSectionKey) {
+                PersistentEntitySectionManager.this.entitySliceManager.moveEntity((Entity)this.entity); // Paper
                 Visibility visibility = this.currentSection.getStatus();
 
                 if (!this.currentSection.remove(this.entity)) {
@@ -524,6 +529,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
             if (!this.currentSection.remove(this.entity)) {
                 PersistentEntitySectionManager.LOGGER.warn("Entity {} wasn't found in section {} (destroying due to {})", new Object[]{this.entity, SectionPos.of(this.currentSectionKey), reason});
             }
+            PersistentEntitySectionManager.this.entitySliceManager.removeEntity((Entity)this.entity); // Paper
 
             Visibility visibility = PersistentEntitySectionManager.getEffectiveStatus(this.entity, this.currentSection.getStatus());
 

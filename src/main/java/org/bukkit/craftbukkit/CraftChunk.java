@@ -134,9 +134,7 @@ public class CraftChunk implements Chunk {
         long pair = ChunkPos.asLong(x, z);
 
         if (entityManager.areEntitiesLoaded(pair)) {
-            return entityManager.getEntities(new ChunkPos(this.x, this.z)).stream()
-                    .map(net.minecraft.world.entity.Entity::getBukkitEntity)
-                    .filter(Objects::nonNull).toArray(Entity[]::new);
+            return getCraftWorld().getHandle().getChunkEntities(this.x, this.z); // Paper - optimise this
         }
 
         entityManager.ensureChunkQueuedForLoad(pair); // Start entity loading
@@ -172,9 +170,7 @@ public class CraftChunk implements Chunk {
             }
         }
 
-        return entityManager.getEntities(new ChunkPos(this.x, this.z)).stream()
-                .map(net.minecraft.world.entity.Entity::getBukkitEntity)
-                .filter(Objects::nonNull).toArray(Entity[]::new);
+        return getCraftWorld().getHandle().getChunkEntities(this.x, this.z); // Paper - optimise this
     }
 
     @Override

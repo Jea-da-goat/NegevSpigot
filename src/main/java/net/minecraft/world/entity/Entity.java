@@ -490,6 +490,56 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
     }
     // Paper end - make end portalling safe
 
+    // Paper start
+    /**
+     * Overriding this field will cause memory leaks.
+     */
+    private final boolean hardCollides;
+
+    private static final java.util.Map<Class<? extends Entity>, Boolean> cachedOverrides = java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+    {
+        /* // Goodbye, broken on reobf...
+        Boolean hardCollides = cachedOverrides.get(this.getClass());
+        if (hardCollides == null) {
+            try {
+                java.lang.reflect.Method getHardCollisionBoxEntityMethod = Entity.class.getMethod("canCollideWith", Entity.class);
+                java.lang.reflect.Method hasHardCollisionBoxMethod = Entity.class.getMethod("canBeCollidedWith");
+                if (!this.getClass().getMethod(hasHardCollisionBoxMethod.getName(), hasHardCollisionBoxMethod.getParameterTypes()).equals(hasHardCollisionBoxMethod)
+                        || !this.getClass().getMethod(getHardCollisionBoxEntityMethod.getName(), getHardCollisionBoxEntityMethod.getParameterTypes()).equals(getHardCollisionBoxEntityMethod)) {
+                    hardCollides = Boolean.TRUE;
+                } else {
+                    hardCollides = Boolean.FALSE;
+                }
+                cachedOverrides.put(this.getClass(), hardCollides);
+            }
+            catch (ThreadDeath thr) { throw thr; }
+            catch (Throwable thr) {
+                // shouldn't happen, just explode
+                throw new RuntimeException(thr);
+            }
+        } */
+        this.hardCollides = this instanceof Boat
+            || this instanceof net.minecraft.world.entity.monster.Shulker
+            || this instanceof net.minecraft.world.entity.vehicle.AbstractMinecart
+            || this.shouldHardCollide();
+    }
+
+    // plugins can override
+    protected boolean shouldHardCollide() {
+        return false;
+    }
+
+    public final boolean hardCollides() {
+        return this.hardCollides;
+    }
+
+    public net.minecraft.server.level.ChunkHolder.FullChunkStatus chunkStatus;
+
+    public int sectionX = Integer.MIN_VALUE;
+    public int sectionY = Integer.MIN_VALUE;
+    public int sectionZ = Integer.MIN_VALUE;
+    // Paper end
+
     public Entity(EntityType<?> type, Level world) {
         this.id = Entity.ENTITY_COUNTER.incrementAndGet();
         this.passengers = ImmutableList.of();
@@ -2372,11 +2422,11 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
         return InteractionResult.PASS;
     }
 
-    public boolean canCollideWith(Entity other) {
+    public boolean canCollideWith(Entity other) { // Paper - diff on change, hard colliding entities override this - TODO CHECK ON UPDATE - AbstractMinecart/Boat override
         return other.canBeCollidedWith() && !this.isPassengerOfSameVehicle(other);
     }
 
-    public boolean canBeCollidedWith() {
+    public boolean canBeCollidedWith() { // Paper - diff on change, hard colliding entities override this TODO CHECK ON UPDATE - Boat/Shulker override
         return false;
     }
 

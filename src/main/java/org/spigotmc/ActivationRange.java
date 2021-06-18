@@ -211,7 +211,13 @@ public class ActivationRange
             ActivationType.VILLAGER.boundingBox = player.getBoundingBox().inflate( villagerActivationRange, worldHeight, villagerActivationRange );
             // Paper end
 
-            world.getEntities().get(maxBB, ActivationRange::activateEntity);
+            // Paper start
+            java.util.List<Entity> entities = world.getEntities((Entity)null, maxBB, null);
+            for (int i = 0; i < entities.size(); i++) {
+                Entity entity = entities.get(i);
+                ActivationRange.activateEntity(entity);
+            }
+            // Paper end
         }
         MinecraftTimings.entityActivationCheckTimer.stopTiming();
     }

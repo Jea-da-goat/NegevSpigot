@@ -293,6 +293,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
         this.entityLimiter = new org.spigotmc.TickLimiter(spigotConfig.entityMaxTickTime);
         this.tileLimiter = new org.spigotmc.TickLimiter(spigotConfig.tileMaxTickTime);
         this.chunkPacketBlockController = this.paperConfig().anticheat.antiXray.enabled ? new com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray(this, executor) : com.destroystokyo.paper.antixray.ChunkPacketBlockController.NO_OPERATION_INSTANCE; // Paper - Anti-Xray
+        this.entitySliceManager = new io.papermc.paper.world.EntitySliceManager((ServerLevel)this); // Paper
     }
 
     // Paper start
@@ -968,26 +969,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
     public List<Entity> getEntities(@Nullable Entity except, AABB box, Predicate<? super Entity> predicate) {
         this.getProfiler().incrementCounter("getEntities");
         List<Entity> list = Lists.newArrayList();
-
-        this.getEntities().get(box, (entity1) -> {
-            if (entity1 != except && predicate.test(entity1)) {
-                list.add(entity1);
-            }
-
-            if (entity1 instanceof EnderDragon) {
-                EnderDragonPart[] aentitycomplexpart = ((EnderDragon) entity1).getSubEntities();
-                int i = aentitycomplexpart.length;
-
-                for (int j = 0; j < i; ++j) {
-                    EnderDragonPart entitycomplexpart = aentitycomplexpart[j];
-
-                    if (entity1 != except && predicate.test(entitycomplexpart)) {
-                        list.add(entitycomplexpart);
-                    }
-                }
-            }
-
-        }, predicate == net.minecraft.world.entity.EntitySelector.CONTAINER_ENTITY_SELECTOR); // Paper
+        this.entitySliceManager.getEntities(except, box, list, predicate); // Paper - optimise this call
         return list;
     }
 
@@ -996,27 +978,22 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
         this.getProfiler().incrementCounter("getEntities");
         List<T> list = Lists.newArrayList();
 
-        this.getEntities().get(filter, box, (entity) -> {
-            if (predicate.test(entity)) {
-                list.add(entity);
+        // Paper start - optimise this call
+        if (filter instanceof net.minecraft.world.entity.EntityType) {
+            this.entitySliceManager.getEntities((net.minecraft.world.entity.EntityType)filter, box, list, predicate);
+        } else {
+            Predicate<? super T> test = (obj) -> {
+                return filter.tryCast(obj) != null;
+            };
+            predicate = predicate == null ? test : test.and((Predicate)predicate);
+            Class base;
+            if (filter == null || (base = filter.getBaseClass()) == null || base == Entity.class) {
+                this.entitySliceManager.getEntities((Entity) null, box, (List)list, (Predicate)predicate);
+            } else {
+                this.entitySliceManager.getEntities(base, null, box, (List)list, (Predicate)predicate); // Paper - optimise this call
             }
-
-            if (entity instanceof EnderDragon) {
-                EnderDragon entityenderdragon = (EnderDragon) entity;
-                EnderDragonPart[] aentitycomplexpart = entityenderdragon.getSubEntities();
-                int i = aentitycomplexpart.length;
-
-                for (int j = 0; j < i; ++j) {
-                    EnderDragonPart entitycomplexpart = aentitycomplexpart[j];
-                    T t0 = filter.tryCast(entitycomplexpart); // CraftBukkit - decompile error
-
-                    if (t0 != null && predicate.test(t0)) {
-                        list.add(t0);
-                    }
-                }
-            }
-
-        });
+        }
+        // Paper end - optimise this call
         return list;
     }
 
@@ -1343,4 +1320,46 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
     public long nextSubTickCount() {
         return (long) (this.subTickCount++);
     }
+
+    // Paper start
+    protected final io.papermc.paper.world.EntitySliceManager entitySliceManager;
+
+    public org.bukkit.entity.Entity[] getChunkEntities(int chunkX, int chunkZ) {
+        io.papermc.paper.world.ChunkEntitySlices slices = this.entitySliceManager.getChunk(chunkX, chunkZ);
+        if (slices == null) {
+            return new org.bukkit.entity.Entity[0];
+        }
+        return slices.getChunkEntities();
+    }
+
+    @Override
+    public List<Entity> getHardCollidingEntities(Entity except, AABB box, Predicate<? super Entity> predicate) {
+        List<Entity> ret = new java.util.ArrayList<>();
+        this.entitySliceManager.getEntities(except, box, ret, predicate);
+        return ret;
+    }
+
+    @Override
+    public void getEntities(Entity except, AABB box, Predicate<? super Entity> predicate, List<Entity> into) {
+        this.entitySliceManager.getEntities(except, box, into, predicate);
+    }
+
+    @Override
+    public void getHardCollidingEntities(Entity except, AABB box, Predicate<? super Entity> predicate, List<Entity> into) {
+        this.entitySliceManager.getHardCollidingEntities(except, box, into, predicate);
+    }
+
+    @Override
+    public <T> void getEntitiesByClass(Class<? extends T> clazz, Entity except, final AABB box, List<? super T> into,
+                                       Predicate<? super T> predicate) {
+        this.entitySliceManager.getEntities((Class)clazz, except, box, (List)into, (Predicate)predicate);
+    }
+
+    @Override
+    public <T extends Entity> List<T> getEntitiesOfClass(Class<T> entityClass, AABB box, Predicate<? super T> predicate) {
+        List<T> ret = new java.util.ArrayList<>();
+        this.entitySliceManager.getEntities(entityClass, null, box, ret, predicate);
+        return ret;
+    }
+    // Paper end
 }

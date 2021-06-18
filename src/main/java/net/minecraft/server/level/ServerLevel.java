@@ -454,7 +454,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
         DataFixer datafixer = minecraftserver.getFixerUpper();
         EntityPersistentStorage<Entity> entitypersistentstorage = new EntityStorage(this, convertable_conversionsession.getDimensionPath(resourcekey).resolve("entities"), datafixer, flag2, minecraftserver);
 
-        this.entityManager = new PersistentEntitySectionManager<>(Entity.class, new ServerLevel.EntityCallbacks(), entitypersistentstorage);
+        this.entityManager = new PersistentEntitySectionManager<>(Entity.class, new ServerLevel.EntityCallbacks(), entitypersistentstorage, this.entitySliceManager); // Paper
         StructureTemplateManager structuretemplatemanager = minecraftserver.getStructureManager();
         int j = this.spigotConfig.viewDistance; // Spigot
         int k = this.spigotConfig.simulationDistance; // Spigot
