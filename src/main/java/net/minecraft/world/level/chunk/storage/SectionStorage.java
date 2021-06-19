@@ -148,7 +148,14 @@ public class SectionStorage<R> extends RegionFileStorage implements AutoCloseabl
             int j = getVersion(dynamic);
             int k = SharedConstants.getCurrentVersion().getWorldVersion();
             boolean bl = j != k;
-            Dynamic<T> dynamic2 = this.fixerUpper.update(this.type.getType(), dynamic, j, k);
+            // Paper start - route to new converter system
+            Dynamic<T> dynamic2;
+            if (this.type.getType() == net.minecraft.util.datafix.fixes.References.POI_CHUNK) {
+                dynamic2 = new Dynamic<>(dynamic.getOps(), (T)ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.POI_CHUNK, (CompoundTag)dynamic.getValue(), j, k));
+            } else {
+                dynamic2 = this.fixerUpper.update(this.type.getType(), dynamic, j, k);
+            }
+            // Paper end - route to new converter system
             OptionalDynamic<T> optionalDynamic = dynamic2.get("Sections");
 
             for(int l = this.levelHeightAccessor.getMinSection(); l < this.levelHeightAccessor.getMaxSection(); ++l) {

@@ -87,7 +87,7 @@ public class ChunkStorage implements AutoCloseable {
         int i = ChunkStorage.getVersion(nbttagcompound);
 
         // CraftBukkit start
-        if (i < 1466) {
+        if (false && i < 1466) { // Paper - no longer needed, data converter system handles it now
             CompoundTag level = nbttagcompound.getCompound("Level");
             if (level.getBoolean("TerrainPopulated") && !level.getBoolean("LightPopulated")) {
                 ServerChunkCache cps = (generatoraccess == null) ? null : ((ServerLevel) generatoraccess).getChunkSource();
@@ -99,7 +99,7 @@ public class ChunkStorage implements AutoCloseable {
         // CraftBukkit end
 
         if (i < 1493) {
-            nbttagcompound = NbtUtils.update(this.fixerUpper, DataFixTypes.CHUNK, nbttagcompound, i, 1493);
+            ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.CHUNK, nbttagcompound, i, 1493); // Paper - replace chunk converter
             if (nbttagcompound.getCompound("Level").getBoolean("hasLegacyStructureData")) {
                 synchronized (this.persistentDataLock) { // Paper - Async chunk loading
                 LegacyStructureDataHandler persistentstructurelegacy = this.getLegacyStructureHandler(resourcekey, supplier);
@@ -119,7 +119,7 @@ public class ChunkStorage implements AutoCloseable {
         // Spigot end
 
         ChunkStorage.injectDatafixingContext(nbttagcompound, resourcekey, optional);
-        nbttagcompound = NbtUtils.update(this.fixerUpper, DataFixTypes.CHUNK, nbttagcompound, Math.max(1493, i));
+        nbttagcompound = ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.CHUNK, nbttagcompound, Math.max(1493, i), SharedConstants.getCurrentVersion().getWorldVersion()); // Paper - replace chunk converter
         if (i < SharedConstants.getCurrentVersion().getWorldVersion()) {
             nbttagcompound.putInt("DataVersion", SharedConstants.getCurrentVersion().getWorldVersion());
         }

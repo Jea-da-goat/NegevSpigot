@@ -115,7 +115,7 @@ public class StructureCheck {
 
                 CompoundTag compoundTag2;
                 try {
-                    compoundTag2 = NbtUtils.update(this.fixerUpper, DataFixTypes.CHUNK, compoundTag, i);
+                    compoundTag2 = ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.CHUNK, compoundTag, i, net.minecraft.SharedConstants.getCurrentVersion().getWorldVersion()); // Paper - replace chunk converter
                 } catch (Exception var12) {
                     LOGGER.warn("Failed to partially datafix chunk {}", pos, var12);
                     return StructureCheckResult.CHUNK_LOAD_NEEDED;
