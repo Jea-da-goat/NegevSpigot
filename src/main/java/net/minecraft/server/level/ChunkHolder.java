@@ -452,7 +452,13 @@ public class ChunkHolder {
         CompletableFuture<Void> completablefuture1 = new CompletableFuture();
 
         completablefuture1.thenRunAsync(() -> {
+            // Paper start - do not allow ticket level changes
+            boolean unloadingBefore = this.chunkMap.unloadingPlayerChunk;
+            this.chunkMap.unloadingPlayerChunk = true;
+            try {
+            // Paper end  - do not allow ticket level changes
             playerchunkmap.onFullChunkStatusChange(this.pos, playerchunk_state);
+            } finally { this.chunkMap.unloadingPlayerChunk = unloadingBefore; } // Paper - do not allow ticket level changes
         }, executor);
         this.pendingFullStateConfirmation = completablefuture1;
         completablefuture.thenAccept((either) -> {
@@ -469,7 +475,12 @@ public class ChunkHolder {
 
     private void demoteFullChunk(ChunkMap playerchunkmap, ChunkHolder.FullChunkStatus playerchunk_state) {
         this.pendingFullStateConfirmation.cancel(false);
+        // Paper start - do not allow ticket level changes
+        boolean unloadingBefore = this.chunkMap.unloadingPlayerChunk;
+        this.chunkMap.unloadingPlayerChunk = true;
+        try { // Paper end  - do not allow ticket level changes
         playerchunkmap.onFullChunkStatusChange(this.pos, playerchunk_state);
+        } finally { this.chunkMap.unloadingPlayerChunk = unloadingBefore; } // Paper - do not allow ticket level changes
     }
 
     protected long updateCount; // Paper - correctly handle recursion
