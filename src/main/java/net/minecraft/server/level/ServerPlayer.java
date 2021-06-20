@@ -1446,7 +1446,7 @@ public class ServerPlayer extends Player {
 
     @Override
     public boolean isInvulnerableTo(DamageSource damageSource) {
-        return super.isInvulnerableTo(damageSource) || this.isChangingDimension() || this.getAbilities().invulnerable && damageSource == DamageSource.WITHER;
+        return super.isInvulnerableTo(damageSource) || this.isChangingDimension() || this.getAbilities().invulnerable && damageSource == DamageSource.WITHER || !level.paperConfig().collisions.allowPlayerCrammingDamage && damageSource == DamageSource.CRAMMING; // Paper - disable player cramming
     }
 
     @Override
