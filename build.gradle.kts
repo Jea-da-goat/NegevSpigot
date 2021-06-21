@@ -1,4 +1,6 @@
+import io.papermc.paperweight.tasks.BaseTask
 import io.papermc.paperweight.util.*
+import java.nio.file.Files
 
 plugins {
     java
@@ -19,12 +21,14 @@ dependencies {
           Scanning takes about 1-2 seconds so adding this speeds up the server start.
      */
     implementation("org.apache.logging.log4j:log4j-core:2.14.1") // Paper - implementation
+    annotationProcessor("org.apache.logging.log4j:log4j-core:2.14.1") // Paper - Needed to generate meta for our Log4j plugins
     // Paper end
     implementation("org.apache.logging.log4j:log4j-iostreams:2.17.1") // Paper
     implementation("org.ow2.asm:asm:9.3")
     implementation("org.ow2.asm:asm-commons:9.3") // Paper - ASM event executor generation
     implementation("org.spongepowered:configurate-yaml:4.1.2") // Paper - config files
     implementation("commons-lang:commons-lang:2.6")
+    implementation("net.fabricmc:mapping-io:0.3.0") // Paper - needed to read mappings for stacktrace deobfuscation
     runtimeOnly("org.xerial:sqlite-jdbc:3.36.0.3")
     runtimeOnly("mysql:mysql-connector-java:8.0.29")
     runtimeOnly("com.lmax:disruptor:3.4.4") // Paper
@@ -103,6 +107,45 @@ tasks.check {
     dependsOn(scanJar)
 }
 // Paper end
+
+// Paper start - include reobf mappings in jar for stacktrace deobfuscation
+abstract class IncludeMappings : BaseTask() {
+    @get:InputFile
+    abstract val inputJar: RegularFileProperty
+
+    @get:InputFile
+    abstract val mappings: RegularFileProperty
+
+    @get:OutputFile
+    abstract val outputJar: RegularFileProperty
+
+    override fun init() {
+        super.init()
+        outputJar.convention(defaultOutput())
+    }
+
+    @TaskAction
+    private fun addMappings() {
+        outputJar.get().asFile.parentFile.mkdirs()
+        inputJar.get().asFile.copyTo(outputJar.get().asFile, overwrite = true)
+        outputJar.get().path.openZip().use { fs ->
+            val dir = fs.getPath("META-INF/mappings/")
+            Files.createDirectories(dir)
+            val target = dir.resolve("reobf.tiny")
+            Files.copy(mappings.path, target)
+        }
+    }
+}
+
+val includeMappings = tasks.register<IncludeMappings>("includeMappings") {
+    inputJar.set(tasks.fixJarForReobf.flatMap { it.outputJar })
+    mappings.set(tasks.reobfJar.flatMap { it.mappingsFile })
+}
+
+tasks.reobfJar {
+    inputJar.set(includeMappings.flatMap { it.outputJar })
+}
+// Paper end - include reobf mappings in jar for stacktrace deobfuscation
 
 tasks.test {
     exclude("org/bukkit/craftbukkit/inventory/ItemStack*Test.class")
