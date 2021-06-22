@@ -663,6 +663,14 @@ public abstract class AbstractHorse extends Animal implements ContainerListener,
 
     }
 
+    // Paper Start - Horse API
+    public void setMouthOpen(boolean open) {
+        this.setFlag(FLAG_OPEN_MOUTH, open);
+    }
+    public boolean isMouthOpen() {
+        return this.getFlag(FLAG_OPEN_MOUTH);
+    }
+    // Paper End - Horse API
     private void openMouth() {
         if (!this.level.isClientSide) {
             this.mouthCounter = 1;
@@ -675,6 +683,11 @@ public abstract class AbstractHorse extends Animal implements ContainerListener,
         this.setFlag(16, eatingGrass);
     }
 
+    // Paper Start - Horse API
+    public void setForceStanding(boolean standing) {
+        this.setFlag(FLAG_STANDING, standing);
+    }
+    // Paper End - Horse API
     public void setStanding(boolean angry) {
         if (angry) {
             this.setEating(false);
