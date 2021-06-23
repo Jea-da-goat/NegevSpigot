@@ -323,7 +323,28 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         Preconditions.checkArgument(count >= 0, "New arrow amount must be >= 0");
         this.getHandle().getEntityData().set(net.minecraft.world.entity.LivingEntity.DATA_ARROW_COUNT_ID, count);
     }
+    // Paper Start - Bee Stinger API
+    @Override
+    public int getBeeStingerCooldown() {
+        return getHandle().removeStingerTime;
+    }
 
+    @Override
+    public void setBeeStingerCooldown(int ticks) {
+        getHandle().removeStingerTime = ticks;
+    }
+
+    @Override
+    public int getBeeStingersInBody() {
+        return getHandle().getStingerCount();
+    }
+
+    @Override
+    public void setBeeStingersInBody(int count) {
+        Preconditions.checkArgument(count >= 0, "New bee stinger amount must be >= 0");
+        getHandle().setStingerCount(count);
+    }
+    // Paper End - Bee Stinger API
     @Override
     public void damage(double amount) {
         this.damage(amount, null);
