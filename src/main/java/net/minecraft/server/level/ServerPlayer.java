@@ -260,7 +260,6 @@ public class ServerPlayer extends Player {
     public boolean supressTrackerForLogin = false; // Paper
     public boolean didPlayerJoinEvent = false; // Paper
     public Integer clientViewDistance;
-    public String kickLeaveMessage = null; // SPIGOT-3034: Forward leave message to PlayerQuitEvent
     // CraftBukkit end
     public PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper
 
