@@ -586,17 +586,19 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
 
             if (itemstack1.isEmpty()) {
                 // Spigot start - SPIGOT-6693, InventorySubcontainer#setItem
+                ItemStack leftover = ItemStack.EMPTY; // Paper
                 if (!stack.isEmpty() && stack.getCount() > to.getMaxStackSize()) {
+                    leftover = stack; // Paper
                     stack = stack.split(to.getMaxStackSize());
                 }
                 // Spigot end
                 IGNORE_TILE_UPDATES = true; // Paper
                 to.setItem(slot, stack);
                 IGNORE_TILE_UPDATES = false; // Paper
-                stack = ItemStack.EMPTY;
+                stack = leftover; // Paper
                 flag = true;
             } else if (HopperBlockEntity.canMergeItems(itemstack1, stack)) {
-                int j = stack.getMaxStackSize() - itemstack1.getCount();
+                int j = Math.min(stack.getMaxStackSize(), to.getMaxStackSize()) - itemstack1.getCount(); // Paper
                 int k = Math.min(stack.getCount(), j);
 
                 stack.shrink(k);
