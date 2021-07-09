@@ -29,12 +29,33 @@ public class CraftAdvancement implements org.bukkit.advancement.Advancement {
         return Collections.unmodifiableCollection(this.handle.getCriteria().keySet());
     }
 
+    // Paper start
     @Override
-    public AdvancementDisplay getDisplay() {
-        if (this.handle.getDisplay() == null) {
-            return null;
-        }
-
-        return new CraftAdvancementDisplay(this.handle.getDisplay());
+    public io.papermc.paper.advancement.AdvancementDisplay getDisplay() {
+        return this.handle.getDisplay() == null ? null : this.handle.getDisplay().paper;
     }
+
+    @Override
+    public org.bukkit.advancement.Advancement getParent() {
+        return this.handle.getParent() == null ? null : this.handle.getParent().bukkit;
+    }
+
+    @Override
+    public Collection<org.bukkit.advancement.Advancement> getChildren() {
+        final var children = com.google.common.collect.ImmutableList.<org.bukkit.advancement.Advancement>builder();
+        for (Advancement advancement : this.handle.getChildren()) {
+            children.add(advancement.bukkit);
+        }
+        return children.build();
+    }
+
+    @Override
+    public org.bukkit.advancement.Advancement getRoot() {
+        Advancement advancement = this.handle;
+        while (advancement.getParent() != null) {
+            advancement = advancement.getParent();
+        }
+        return advancement.bukkit;
+    }
+    // Paper end
 }
