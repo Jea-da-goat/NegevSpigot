@@ -39,6 +39,7 @@ public class CampfireBlockEntity extends BlockEntity implements Clearable {
     public final int[] cookingProgress;
     public final int[] cookingTime;
     private final RecipeManager.CachedCheck<Container, CampfireCookingRecipe> quickCheck;
+    public final boolean[] stopCooking; // Paper
 
     public CampfireBlockEntity(BlockPos pos, BlockState state) {
         super(BlockEntityType.CAMPFIRE, pos, state);
@@ -46,6 +47,7 @@ public class CampfireBlockEntity extends BlockEntity implements Clearable {
         this.cookingProgress = new int[4];
         this.cookingTime = new int[4];
         this.quickCheck = RecipeManager.createCheck(RecipeType.CAMPFIRE_COOKING);
+        this.stopCooking = new boolean[4]; // Paper
     }
 
     public static void cookTick(Level world, BlockPos pos, BlockState state, CampfireBlockEntity campfire) {
@@ -56,7 +58,9 @@ public class CampfireBlockEntity extends BlockEntity implements Clearable {
 
             if (!itemstack.isEmpty()) {
                 flag = true;
+                if (!campfire.stopCooking[i]) { // Paper
                 int j = campfire.cookingProgress[i]++;
+                } // Paper
 
                 if (campfire.cookingProgress[i] >= campfire.cookingTime[i]) {
                     SimpleContainer inventorysubcontainer = new SimpleContainer(new ItemStack[]{itemstack});
@@ -163,6 +167,16 @@ public class CampfireBlockEntity extends BlockEntity implements Clearable {
             System.arraycopy(aint, 0, this.cookingTime, 0, Math.min(this.cookingTime.length, aint.length));
         }
 
+        // Paper start
+        if (nbt.contains("Paper.StopCooking", org.bukkit.craftbukkit.util.CraftMagicNumbers.NBT.TAG_BYTE_ARRAY)) {
+            byte[] abyte = nbt.getByteArray("Paper.StopCooking");
+            boolean[] cookingState = new boolean[4];
+            for (int index = 0; index < abyte.length; index++) {
+                cookingState[index] = abyte[index] == 1;
+            }
+            System.arraycopy(cookingState, 0, this.stopCooking, 0, Math.min(this.stopCooking.length, abyte.length));
+        }
+        // Paper end
     }
 
     @Override
@@ -171,6 +185,13 @@ public class CampfireBlockEntity extends BlockEntity implements Clearable {
         ContainerHelper.saveAllItems(nbt, this.items, true);
         nbt.putIntArray("CookingTimes", this.cookingProgress);
         nbt.putIntArray("CookingTotalTimes", this.cookingTime);
+        // Paper start
+        byte[] cookingState = new byte[4];
+        for (int index = 0; index < cookingState.length; index++) {
+            cookingState[index] = (byte) (this.stopCooking[index] ? 1 : 0);
+        }
+        nbt.putByteArray("Paper.StopCooking", cookingState);
+        // Paper end
     }
 
     @Override
