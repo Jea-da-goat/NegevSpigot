@@ -178,6 +178,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
     }
 
     public void updateChunkStatus(ChunkPos chunkPos, ChunkHolder.FullChunkStatus levelType) {
+        io.papermc.paper.util.TickThread.ensureTickThread("Asynchronous chunk ticking status update"); // Paper
         Visibility visibility = Visibility.fromFullChunkStatus(levelType);
 
         this.updateChunkStatus(chunkPos, visibility);

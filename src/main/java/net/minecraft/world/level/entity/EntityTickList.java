@@ -29,11 +29,13 @@ public class EntityTickList {
     }
 
     public void add(Entity entity) {
+        io.papermc.paper.util.TickThread.ensureTickThread("Asynchronous entity ticklist addition"); // Paper
         this.ensureActiveIsNotIterated();
         this.active.put(entity.getId(), entity);
     }
 
     public void remove(Entity entity) {
+        io.papermc.paper.util.TickThread.ensureTickThread("Asynchronous entity ticklist removal"); // Paper
         this.ensureActiveIsNotIterated();
         this.active.remove(entity.getId());
     }
@@ -43,6 +45,7 @@ public class EntityTickList {
     }
 
     public void forEach(Consumer<Entity> action) {
+        io.papermc.paper.util.TickThread.ensureTickThread("Asynchronous entity ticklist iteration"); // Paper
         if (this.iterated != null) {
             throw new UnsupportedOperationException("Only one concurrent iteration supported");
         } else {
