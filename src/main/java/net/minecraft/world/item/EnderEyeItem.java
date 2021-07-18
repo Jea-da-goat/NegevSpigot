@@ -68,7 +68,7 @@ public class EnderEyeItem extends Item {
                         double deltaX = soundPos.getX() - player.getX();
                         double deltaZ = soundPos.getZ() - player.getZ();
                         double distanceSquared = deltaX * deltaX + deltaZ * deltaZ;
-                        if (world.spigotConfig.endPortalSoundRadius > 0 && distanceSquared > world.spigotConfig.endPortalSoundRadius * world.spigotConfig.endPortalSoundRadius) continue; // Spigot
+                        if (world.spigotConfig.endPortalSoundRadius > 0 && (distanceSquared > world.spigotConfig.endPortalSoundRadius * world.spigotConfig.endPortalSoundRadius || player.getLevel() != world)) continue; // Spigot // Paper - ensure recipient is in same world as portal
                         if (distanceSquared > viewDistance * viewDistance) {
                             double deltaLength = Math.sqrt(distanceSquared);
                             double relativeX = player.getX() + (deltaX / deltaLength) * viewDistance;
