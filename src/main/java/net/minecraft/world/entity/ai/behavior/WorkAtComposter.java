@@ -100,7 +100,9 @@ public class WorkAtComposter extends WorkAtPoi {
                 ItemStack itemstack = inventorysubcontainer.addItem(new ItemStack(Items.BREAD, j));
 
                 if (!itemstack.isEmpty()) {
+                    entity.forceDrops = true; // Paper
                     entity.spawnAtLocation(itemstack, 0.5F);
+                    entity.forceDrops = false; // Paper
                 }
 
             }

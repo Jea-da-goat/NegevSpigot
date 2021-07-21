@@ -522,7 +522,9 @@ public class Panda extends Animal {
         }
 
         if (!this.level.isClientSide() && this.random.nextInt(700) == 0 && this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
+            this.forceDrops = true; // Paper
             this.spawnAtLocation((ItemLike) Items.SLIME_BALL);
+            this.forceDrops = false; // Paper
         }
 
     }
