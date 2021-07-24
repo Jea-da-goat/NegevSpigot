@@ -284,6 +284,7 @@ public final class CraftServer implements Server {
     public int reloadCount;
     private final io.papermc.paper.datapack.PaperDatapackManager datapackManager; // Paper
     public static Exception excessiveVelEx; // Paper - Velocity warnings
+    private final io.papermc.paper.logging.SysoutCatcher sysoutCatcher = new io.papermc.paper.logging.SysoutCatcher(); // Paper
 
     static {
         ConfigurationSerialization.registerClass(CraftOfflinePlayer.class);
