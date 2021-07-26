@@ -64,6 +64,19 @@ public class DamageSource {
         return this;
     }
     // CraftBukkit end
+    // Paper start - add critical damage API
+    private boolean critical;
+    public boolean isCritical() {
+        return this.critical;
+    }
+    public DamageSource critical() {
+        return this.critical(true);
+    }
+    public DamageSource critical(boolean critical) {
+        this.critical = critical;
+        return this;
+    }
+    // Paper end
 
     public static DamageSource sting(LivingEntity attacker) {
         return new EntityDamageSource("sting", attacker);
