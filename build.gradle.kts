@@ -29,6 +29,11 @@ dependencies {
     implementation("org.spongepowered:configurate-yaml:4.1.2") // Paper - config files
     implementation("commons-lang:commons-lang:2.6")
     implementation("net.fabricmc:mapping-io:0.3.0") // Paper - needed to read mappings for stacktrace deobfuscation
+    // Paper start - Use Velocity cipher
+    implementation("com.velocitypowered:velocity-native:1.1.0-SNAPSHOT") {
+        isTransitive = false
+    }
+    // Paper end
     runtimeOnly("org.xerial:sqlite-jdbc:3.36.0.3")
     runtimeOnly("mysql:mysql-connector-java:8.0.29")
     runtimeOnly("com.lmax:disruptor:3.4.4") // Paper
