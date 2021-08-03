@@ -2816,8 +2816,8 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                             }
                             // Paper end
                             // SPIGOT-7136 - Allays
-                            if (entity instanceof Allay) {
-                                ServerGamePacketListenerImpl.this.send(new ClientboundSetEquipmentPacket(entity.getId(), Arrays.stream(net.minecraft.world.entity.EquipmentSlot.values()).map((slot) -> Pair.of(slot, ((LivingEntity) entity).getItemBySlot(slot).copy())).collect(Collectors.toList())));
+                            if (entity instanceof Allay allay) { // Paper
+                                ServerGamePacketListenerImpl.this.send(new ClientboundSetEquipmentPacket(entity.getId(), Arrays.stream(net.minecraft.world.entity.EquipmentSlot.values()).map((slot) -> Pair.of(slot, allay.stripMeta(allay.getItemBySlot(slot), true))).collect(Collectors.toList()))); // Paper - remove unnecessary item meta
                                 player.containerMenu.sendAllDataToRemote();
                             }
                         }
