@@ -37,6 +37,11 @@ public class HoneycombItem extends Item {
         return getWaxed(blockState).map((state) -> {
             Player player = context.getPlayer();
             ItemStack itemStack = context.getItemInHand();
+            // Paper start - EntityChangeBlockEvent
+            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, blockPos, state).isCancelled()) {
+                return InteractionResult.PASS;
+            }
+            // Paper end
             if (player instanceof ServerPlayer) {
                 CriteriaTriggers.ITEM_USED_ON_BLOCK.trigger((ServerPlayer)player, blockPos, itemStack);
             }
