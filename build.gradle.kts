@@ -26,6 +26,7 @@ dependencies {
     implementation("commons-lang:commons-lang:2.6")
     runtimeOnly("org.xerial:sqlite-jdbc:3.36.0.3")
     runtimeOnly("mysql:mysql-connector-java:8.0.29")
+    runtimeOnly("com.lmax:disruptor:3.4.4") // Paper
 
     runtimeOnly("org.apache.maven:maven-resolver-provider:3.8.5")
     runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.7.3")
