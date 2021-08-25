@@ -212,7 +212,13 @@ public class Commands {
         if (environment.includeIntegrated) {
             PublishCommand.register(this.dispatcher);
         }
-
+        // Paper start
+        for (final CommandNode<CommandSourceStack> node : this.dispatcher.getRoot().getChildren()) {
+            if (node.getRequirement() == com.mojang.brigadier.builder.ArgumentBuilder.<CommandSourceStack>defaultRequirement()) {
+                node.requirement = stack -> stack.source == CommandSource.NULL || stack.getBukkitSender().hasPermission(org.bukkit.craftbukkit.command.VanillaCommandWrapper.getPermission(node));
+            }
+        }
+        // Paper end
         // CraftBukkit start
     }
 
