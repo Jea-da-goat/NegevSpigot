@@ -32,9 +32,9 @@ public class ResourceLocation implements Comparable<ResourceLocation> {
         this.namespace = StringUtils.isEmpty(id[0]) ? "minecraft" : id[0];
         this.path = id[1];
         if (!isValidNamespace(this.namespace)) {
-            throw new ResourceLocationException("Non [a-z0-9_.-] character in namespace of location: " + this.namespace + ":" + this.path);
+            throw new ResourceLocationException("Non [a-z0-9_.-] character in namespace of location: " + org.apache.commons.lang3.StringUtils.normalizeSpace(this.namespace) + ":" + org.apache.commons.lang3.StringUtils.normalizeSpace(this.path)); // Paper
         } else if (!isValidPath(this.path)) {
-            throw new ResourceLocationException("Non [a-z0-9/._-] character in path of location: " + this.namespace + ":" + this.path);
+            throw new ResourceLocationException("Non [a-z0-9/._-] character in path of location: " + this.namespace + ":" + org.apache.commons.lang3.StringUtils.normalizeSpace(this.path)); // Paper
         }
     }
 
