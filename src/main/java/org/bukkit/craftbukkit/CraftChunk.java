@@ -130,46 +130,6 @@ public class CraftChunk implements Chunk {
             this.getWorld().getChunkAt(x, z); // Transient load for this tick
         }
 
-        PersistentEntitySectionManager<net.minecraft.world.entity.Entity> entityManager = this.getCraftWorld().getHandle().entityManager;
-        long pair = ChunkPos.asLong(x, z);
-
-        if (entityManager.areEntitiesLoaded(pair)) {
-            return getCraftWorld().getHandle().getChunkEntities(this.x, this.z); // Paper - optimise this
-        }
-
-        entityManager.ensureChunkQueuedForLoad(pair); // Start entity loading
-
-        // SPIGOT-6772: Use entity mailbox and re-schedule entities if they get unloaded
-        ProcessorMailbox<Runnable> mailbox = ((EntityStorage) entityManager.permanentStorage).entityDeserializerQueue;
-        BooleanSupplier supplier = () -> {
-            // only execute inbox if our entities are not present
-            if (entityManager.areEntitiesLoaded(pair)) {
-                return true;
-            }
-
-            if (!entityManager.isPending(pair)) {
-                // Our entities got unloaded, this should normally not happen.
-                entityManager.ensureChunkQueuedForLoad(pair); // Re-start entity loading
-            }
-
-            // tick loading inbox, which loads the created entities to the world
-            // (if present)
-            entityManager.tick();
-            // check if our entities are loaded
-            return entityManager.areEntitiesLoaded(pair);
-        };
-
-        // now we wait until the entities are loaded,
-        // the converting from NBT to entity object is done on the main Thread which is why we wait
-        while (!supplier.getAsBoolean()) {
-            if (mailbox.size() != 0) {
-                mailbox.run();
-            } else {
-                Thread.yield();
-                LockSupport.parkNanos("waiting for entity loading", 100000L);
-            }
-        }
-
         return getCraftWorld().getHandle().getChunkEntities(this.x, this.z); // Paper - optimise this
     }
 
