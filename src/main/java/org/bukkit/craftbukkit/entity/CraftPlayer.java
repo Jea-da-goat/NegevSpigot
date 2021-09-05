@@ -1135,13 +1135,92 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void setRotation(float yaw, float pitch) {
-        throw new UnsupportedOperationException("Cannot set rotation of players. Consider teleporting instead.");
+        // Paper start - Teleport API
+        Location targetLocation = this.getEyeLocation();
+        targetLocation.setYaw(yaw);
+        targetLocation.setPitch(pitch);
+
+        org.bukkit.util.Vector direction = targetLocation.getDirection();
+        targetLocation.add(direction);
+        this.lookAt(targetLocation, io.papermc.paper.entity.LookAnchor.EYES);
+        // Paper end
     }
 
     @Override
     public boolean teleport(Location location, PlayerTeleportEvent.TeleportCause cause) {
+        // Paper start - Teleport API
+        return this.teleport(location, cause, false);
+    }
+
+    @Override
+    public boolean teleport(Location location, PlayerTeleportEvent.TeleportCause cause, boolean ignorePassengers, boolean dismount) {
+        return this.teleport(location, cause, ignorePassengers, dismount, new io.papermc.paper.entity.RelativeTeleportFlag[0]);
+    }
+
+    @Override
+    public void lookAt(@NotNull org.bukkit.entity.Entity entity, @NotNull io.papermc.paper.entity.LookAnchor playerAnchor, @NotNull io.papermc.paper.entity.LookAnchor entityAnchor) {
+        this.getHandle().lookAt(toNmsAnchor(playerAnchor), ((CraftEntity) entity).getHandle(), toNmsAnchor(entityAnchor));
+    }
+
+    @Override
+    public void lookAt(double x, double y, double z, @NotNull io.papermc.paper.entity.LookAnchor playerAnchor) {
+        this.getHandle().lookAt(toNmsAnchor(playerAnchor), new Vec3(x, y, z));
+    }
+
+    public static net.minecraft.commands.arguments.EntityAnchorArgument.Anchor toNmsAnchor(io.papermc.paper.entity.LookAnchor nmsAnchor) {
+        return switch (nmsAnchor) {
+            case EYES -> net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES;
+            case FEET -> net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.FEET;
+        };
+    }
+
+    public static io.papermc.paper.entity.LookAnchor toApiAnchor(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor playerAnchor) {
+        return switch (playerAnchor) {
+            case EYES -> io.papermc.paper.entity.LookAnchor.EYES;
+            case FEET -> io.papermc.paper.entity.LookAnchor.FEET;
+        };
+    }
+
+    public static net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument toNmsRelativeFlag(io.papermc.paper.entity.RelativeTeleportFlag apiFlag) {
+        return switch (apiFlag) {
+            case X -> net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument.X;
+            case Y -> net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument.Y;
+            case Z -> net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument.Z;
+            case PITCH -> net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument.X_ROT;
+            case YAW -> net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument.Y_ROT;
+        };
+    }
+
+    public static io.papermc.paper.entity.RelativeTeleportFlag toApiRelativeFlag(net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument nmsFlag) {
+        return switch (nmsFlag) {
+            case X -> io.papermc.paper.entity.RelativeTeleportFlag.X;
+            case Y -> io.papermc.paper.entity.RelativeTeleportFlag.Y;
+            case Z -> io.papermc.paper.entity.RelativeTeleportFlag.Z;
+            case X_ROT -> io.papermc.paper.entity.RelativeTeleportFlag.PITCH;
+            case Y_ROT -> io.papermc.paper.entity.RelativeTeleportFlag.YAW;
+        };
+    }
+
+    @Override
+    public boolean teleport(Location location, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause, boolean ignorePassengers, boolean dismount, io.papermc.paper.entity.RelativeTeleportFlag... flags) {
+        var relativeArguments = java.util.EnumSet.noneOf(net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument.class);
+        for (io.papermc.paper.entity.RelativeTeleportFlag flag : flags) {
+            relativeArguments.add(toNmsRelativeFlag(flag));
+        }
+        // Paper end - Teleport API
         Preconditions.checkArgument(location != null, "location");
         Preconditions.checkArgument(location.getWorld() != null, "location.world");
+        // Paper start - Teleport passenger API
+        // Don't allow teleporting between worlds while keeping passengers
+        if (ignorePassengers && entity.isVehicle() && location.getWorld() != this.getWorld()) {
+            return false;
+        }
+
+        // Don't allow to teleport between worlds if remaining on vehicle
+        if (!dismount && entity.isPassenger() && location.getWorld() != this.getWorld()) {
+            return false;
+        }
+        // Paper end
         location.checkFinite();
 
         ServerPlayer entity = this.getHandle();
@@ -1154,7 +1233,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
            return false;
         }
 
-        if (entity.isVehicle()) {
+        if (entity.isVehicle() && !ignorePassengers) { // Paper - Teleport API
             return false;
         }
 
@@ -1172,7 +1251,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         }
 
         // If this player is riding another entity, we must dismount before teleporting.
-        entity.stopRiding();
+        if (dismount) entity.stopRiding(); // Paper - Teleport API
 
         // SPIGOT-5509: Wakeup, similar to riding
         if (this.isSleeping()) {
@@ -1194,7 +1273,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
         // Check if the fromWorld and toWorld are the same.
         if (fromWorld == toWorld) {
-            entity.connection.teleport(to);
+            entity.connection.internalTeleport(to.getX(), to.getY(), to.getZ(), to.getYaw(), to.getPitch(), relativeArguments, dismount); // Paper - Teleport API
         } else {
             server.getHandle().respawn(entity, toWorld, true, to, !toWorld.paperConfig().environment.disableTeleportationSuffocationCheck); // Paper
         }

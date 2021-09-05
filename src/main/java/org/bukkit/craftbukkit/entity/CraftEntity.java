@@ -542,15 +542,33 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public boolean teleport(Location location, TeleportCause cause) {
+        // Paper start - Teleport passenger API
+        return teleport(location, cause, false);
+    }
+
+    @Override
+    public boolean teleport(Location location, TeleportCause cause, boolean ignorePassengers, boolean dismount) {
+        // Paper end
         Preconditions.checkArgument(location != null, "location cannot be null");
         location.checkFinite();
+        // Paper start - Teleport passenger API
+        // Don't allow teleporting between worlds while keeping passengers
+        if (ignorePassengers && this.entity.isVehicle() && location.getWorld() != this.getWorld()) {
+            return false;
+        }
 
-        if (this.entity.isVehicle() || this.entity.isRemoved()) {
+        // Don't allow to teleport between worlds if remaining on vehicle
+        if (!dismount && this.entity.isPassenger() && location.getWorld() != this.getWorld()) {
+            return false;
+        }
+        // Paper end
+
+        if ((!ignorePassengers && this.entity.isVehicle()) || this.entity.isRemoved()) { // Paper - Teleport passenger API
             return false;
         }
 
         // If this entity is riding another entity, we must dismount before teleporting.
-        this.entity.stopRiding();
+        if (dismount) this.entity.stopRiding(); // Paper - Teleport passenger API
 
         // Let the server handle cross world teleports
         if (location.getWorld() != null && !location.getWorld().equals(this.getWorld())) {
