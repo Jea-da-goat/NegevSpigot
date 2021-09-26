@@ -25,8 +25,15 @@ public class UpgradeRecipe implements net.minecraft.world.item.crafting.Recipe<C
     final Ingredient addition;
     final ItemStack result;
     private final ResourceLocation id;
+    final boolean copyNbt; // Paper
 
     public UpgradeRecipe(ResourceLocation id, Ingredient base, Ingredient addition, ItemStack result) {
+        // Paper start
+        this(id, base, addition, result, true);
+    }
+    public UpgradeRecipe(ResourceLocation id, Ingredient base, Ingredient addition, ItemStack result, boolean copyNbt) {
+        this.copyNbt = copyNbt;
+        // Paper end
         this.id = id;
         this.base = base;
         this.addition = addition;
@@ -41,11 +48,13 @@ public class UpgradeRecipe implements net.minecraft.world.item.crafting.Recipe<C
     @Override
     public ItemStack assemble(Container inventory) {
         ItemStack itemstack = this.result.copy();
+        if (copyNbt) { // Paper - copy nbt conditionally
         CompoundTag nbttagcompound = inventory.getItem(0).getTag();
 
         if (nbttagcompound != null) {
             itemstack.setTag(nbttagcompound.copy());
         }
+        } // Paper
 
         return itemstack;
     }
@@ -96,7 +105,7 @@ public class UpgradeRecipe implements net.minecraft.world.item.crafting.Recipe<C
     public Recipe toBukkitRecipe() {
         CraftItemStack result = CraftItemStack.asCraftMirror(this.result);
 
-        CraftSmithingRecipe recipe = new CraftSmithingRecipe(CraftNamespacedKey.fromMinecraft(this.id), result, CraftRecipe.toBukkit(this.base), CraftRecipe.toBukkit(this.addition));
+        CraftSmithingRecipe recipe = new CraftSmithingRecipe(CraftNamespacedKey.fromMinecraft(this.id), result, CraftRecipe.toBukkit(this.base), CraftRecipe.toBukkit(this.addition), this.copyNbt); // Paper
 
         return recipe;
     }
