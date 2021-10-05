@@ -243,7 +243,7 @@ public abstract class PlayerList {
         final String s1;
 
         if (connection.getRemoteAddress() != null) {
-            s1 = connection.getRemoteAddress().toString();
+            s1 = io.papermc.paper.configuration.GlobalConfiguration.get().logging.logPlayerIpAddresses ? connection.getRemoteAddress().toString() : "<ip address withheld>"; // Paper
         } else {
             s1 = "local";
         }

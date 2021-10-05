@@ -51,10 +51,11 @@ public class PacketUtils {
                         packet.handle(listener);
                     } catch (Exception exception) {
                         net.minecraft.network.Connection networkmanager = listener.getConnection();
+                        String playerIP = io.papermc.paper.configuration.GlobalConfiguration.get().logging.logPlayerIpAddresses ? String.valueOf(networkmanager.getRemoteAddress()) : "<ip address withheld>"; // Paper
                         if (networkmanager.getPlayer() != null) {
-                            LOGGER.error("Error whilst processing packet {} for {}[{}]", packet, networkmanager.getPlayer().getScoreboardName(), networkmanager.getRemoteAddress(), exception);
+                            LOGGER.error("Error whilst processing packet {} for {}[{}]", packet, networkmanager.getPlayer().getScoreboardName(), playerIP, exception); // Paper
                         } else {
-                            LOGGER.error("Error whilst processing packet {} for connection from {}", packet, networkmanager.getRemoteAddress(), exception);
+                            LOGGER.error("Error whilst processing packet {} for connection from {}", packet, playerIP, exception); // Paper
                         }
                         net.minecraft.network.chat.Component error = net.minecraft.network.chat.Component.literal("Packet processing error");
                         networkmanager.send(new net.minecraft.network.protocol.game.ClientboundDisconnectPacket(error), net.minecraft.network.PacketSendListener.thenRun(() -> networkmanager.disconnect(error)));
