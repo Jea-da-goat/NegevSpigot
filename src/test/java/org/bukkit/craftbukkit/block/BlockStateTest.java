@@ -45,4 +45,11 @@ public class BlockStateTest extends AbstractTestingBase {
             }
         }
     }
+
+    @Test
+    public void testBlockEntityTypes() {
+        for (var blockEntityType : Registry.BLOCK_ENTITY_TYPE) {
+            org.junit.Assert.assertNotNull(CraftBlockStates.getBlockStateType(blockEntityType));
+        }
+    }
 }
