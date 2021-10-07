@@ -2049,6 +2049,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
             this.worldData.setDataPackConfig(MinecraftServer.getSelectedPacks(this.packRepository));
             this.resources.managers.updateRegistryTags(this.registryAccess());
             io.papermc.paper.registry.PaperRegistry.clearCaches(); // Paper
+            net.minecraft.world.item.alchemy.PotionBrewing.reload(); // Paper
             new io.papermc.paper.event.server.ServerResourcesReloadedEvent(cause).callEvent(); // Paper
             // Paper start
             if (Thread.currentThread() != this.serverThread) {
