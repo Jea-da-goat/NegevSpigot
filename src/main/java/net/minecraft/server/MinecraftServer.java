@@ -553,7 +553,14 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
             long i = generatorsettings.seed();
             long j = BiomeManager.obfuscateSeed(i);
             List<CustomSpawner> list = ImmutableList.of(new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(iworlddataserver));
-            LevelStem worlddimension = (LevelStem) iregistry.get(dimensionKey);
+            // Paper start - Use correct LevelStem registry
+            final LevelStem worlddimension;
+            if (dimensionKey == LevelStem.END || dimensionKey == LevelStem.NETHER) {
+                worlddimension = generatorsettings.dimensions().get(dimensionKey);
+            } else {
+                worlddimension = iregistry.get(dimensionKey);
+            }
+            // Paper end
 
             org.bukkit.generator.WorldInfo worldInfo = new org.bukkit.craftbukkit.generator.CraftWorldInfo(iworlddataserver, worldSession, org.bukkit.World.Environment.getEnvironment(dimension), worlddimension.typeHolder().value());
             if (biomeProvider == null && gen != null) {
