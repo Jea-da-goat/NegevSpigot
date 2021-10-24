@@ -457,6 +457,30 @@ public final class CraftMagicNumbers implements UnsafeValues {
         return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.of((CompoundTag) converted.getValue()));
     }
 
+    @Override
+    public byte[] serializeEntity(org.bukkit.entity.Entity entity) {
+        Preconditions.checkNotNull(entity, "null cannot be serialized");
+        Preconditions.checkArgument(entity instanceof org.bukkit.craftbukkit.entity.CraftEntity, "only CraftEntities can be serialized");
+
+        CompoundTag compound = new CompoundTag();
+        ((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().serializeEntity(compound);
+        return serializeNbtToBytes(compound);
+    }
+
+    @Override
+    public org.bukkit.entity.Entity deserializeEntity(byte[] data, org.bukkit.World world, boolean preserveUUID) {
+        Preconditions.checkNotNull(data, "null cannot be deserialized");
+        Preconditions.checkArgument(data.length > 0, "cannot deserialize nothing");
+
+        CompoundTag compound = deserializeNbtFromBytes(data);
+        int dataVersion = compound.getInt("DataVersion");
+        Dynamic<Tag> converted = DataFixers.getDataFixer().update(References.ENTITY_TREE, new Dynamic<>(NbtOps.INSTANCE, compound), dataVersion, getDataVersion());
+        compound = (CompoundTag) converted.getValue();
+        if (!preserveUUID) compound.remove("UUID"); // Generate a new UUID so we don't have to worry about deserializing the same entity twice
+        return net.minecraft.world.entity.EntityType.create(compound, ((org.bukkit.craftbukkit.CraftWorld) world).getHandle())
+            .orElseThrow(() -> new IllegalArgumentException("An ID was not found for the data. Did you downgrade?")).getBukkitEntity();
+    }
+
     private byte[] serializeNbtToBytes(CompoundTag compound) {
         compound.putInt("DataVersion", getDataVersion());
         java.io.ByteArrayOutputStream outputStream = new java.io.ByteArrayOutputStream();
