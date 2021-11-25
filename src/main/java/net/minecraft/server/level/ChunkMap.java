@@ -1104,7 +1104,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
         completablefuture1.thenAcceptAsync((either) -> {
             either.ifLeft((chunk) -> {
                 this.tickingGenerated.getAndIncrement();
-                MutableObject<ClientboundLevelChunkWithLightPacket> mutableobject = new MutableObject();
+                MutableObject<java.util.Map<Object, ClientboundLevelChunkWithLightPacket>> mutableobject = new MutableObject<>(); // Paper - Anti-Xray - Bypass
 
                 this.getPlayers(chunkcoordintpair, false).forEach((entityplayer) -> {
                     this.playerLoadedChunk(entityplayer, mutableobject, chunk);
@@ -1283,7 +1283,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
             while (objectiterator.hasNext()) {
                 ChunkHolder playerchunk = (ChunkHolder) objectiterator.next();
                 ChunkPos chunkcoordintpair = playerchunk.getPos();
-                MutableObject<ClientboundLevelChunkWithLightPacket> mutableobject = new MutableObject();
+                MutableObject<java.util.Map<Object, ClientboundLevelChunkWithLightPacket>> mutableobject = new MutableObject<>(); // Paper - Anti-Xray - Bypass
 
                 this.getPlayers(chunkcoordintpair, false).forEach((entityplayer) -> {
                     SectionPos sectionposition = entityplayer.getLastSectionPos();
@@ -1297,7 +1297,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
 
     }
 
-    protected void updateChunkTracking(ServerPlayer player, ChunkPos pos, MutableObject<ClientboundLevelChunkWithLightPacket> packet, boolean oldWithinViewDistance, boolean newWithinViewDistance) {
+    protected void updateChunkTracking(ServerPlayer player, ChunkPos pos, MutableObject<java.util.Map<Object, ClientboundLevelChunkWithLightPacket>> packet, boolean oldWithinViewDistance, boolean newWithinViewDistance) { // Paper - Anti-Xray - Bypass
         if (player.level == this.level) {
             if (newWithinViewDistance && !oldWithinViewDistance) {
                 ChunkHolder playerchunk = this.getVisibleChunkIfPresent(pos.toLong());
@@ -1834,12 +1834,17 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
 
     }
 
-    private void playerLoadedChunk(ServerPlayer player, MutableObject<ClientboundLevelChunkWithLightPacket> cachedDataPacket, LevelChunk chunk) {
-        if (cachedDataPacket.getValue() == null) {
-            cachedDataPacket.setValue(new ClientboundLevelChunkWithLightPacket(chunk, this.lightEngine, (BitSet) null, (BitSet) null, true));
+    // Paper start - Anti-Xray - Bypass
+    private void playerLoadedChunk(ServerPlayer player, MutableObject<java.util.Map<Object, ClientboundLevelChunkWithLightPacket>> cachedDataPackets, LevelChunk chunk) {
+        if (cachedDataPackets.getValue() == null) {
+            cachedDataPackets.setValue(new java.util.HashMap<>());
         }
 
-        player.trackChunk(chunk.getPos(), (Packet) cachedDataPacket.getValue());
+        Boolean shouldModify = chunk.getLevel().chunkPacketBlockController.shouldModify(player, chunk);
+        player.trackChunk(chunk.getPos(), (Packet) cachedDataPackets.getValue().computeIfAbsent(shouldModify, (s) -> {
+            return new ClientboundLevelChunkWithLightPacket(chunk, this.lightEngine, (BitSet) null, (BitSet) null, true, (Boolean) s);
+        }));
+        // Paper end
         DebugPackets.sendPoiPacketsForChunk(this.level, chunk.getPos());
         List<Entity> list = Lists.newArrayList();
         List<Entity> list1 = Lists.newArrayList();
