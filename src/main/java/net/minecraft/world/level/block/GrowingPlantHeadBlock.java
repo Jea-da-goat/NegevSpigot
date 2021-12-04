@@ -40,15 +40,35 @@ public abstract class GrowingPlantHeadBlock extends GrowingPlantBlock implements
 
     @Override
     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
-        if ((Integer) state.getValue(GrowingPlantHeadBlock.AGE) < 25 && random.nextDouble() < (100.0D / world.spigotConfig.kelpModifier) * this.growPerTickProbability) { // Spigot
+        // Paper start
+        final int modifier;
+        if (state.is(Blocks.TWISTING_VINES) || state.is(Blocks.TWISTING_VINES_PLANT)) {
+            modifier = world.spigotConfig.twistingVinesModifier;
+        } else if (state.is(Blocks.WEEPING_VINES) || state.is(Blocks.WEEPING_VINES_PLANT)) {
+            modifier = world.spigotConfig.weepingVinesModifier;
+        } else if (state.is(Blocks.CAVE_VINES) || state.is(Blocks.CAVE_VINES_PLANT)) {
+            modifier = world.spigotConfig.caveVinesModifier;
+        } else if (state.is(Blocks.KELP) || state.is(Blocks.KELP_PLANT)) {
+            modifier = world.spigotConfig.kelpModifier;
+        } else {
+            modifier = 100; // Above cases are exhaustive as of 1.18
+        }
+        if ((Integer) state.getValue(GrowingPlantHeadBlock.AGE) < 25 && random.nextDouble() < (modifier / 100.0D) * this.growPerTickProbability) { // Spigot // Paper - fix growth modifier having the reverse effect
+            // Paper end
             BlockPos blockposition1 = pos.relative(this.growthDirection);
 
             if (this.canGrowInto(world.getBlockState(blockposition1))) {
-                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(world, pos, blockposition1, this.getGrowIntoState(state, world.random)); // CraftBukkit
+                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(world, pos, blockposition1, this.getGrowIntoState(state, world.random, world)); // CraftBukkit // Paper
             }
         }
 
     }
+
+    // Paper start
+    protected BlockState getGrowIntoState(BlockState state, RandomSource random, @javax.annotation.Nullable Level level) {
+        return this.getGrowIntoState(state, random);
+    }
+    // Paper end
 
     protected BlockState getGrowIntoState(BlockState state, RandomSource random) {
         return (BlockState) state.cycle(GrowingPlantHeadBlock.AGE);
