@@ -20,10 +20,11 @@ dependencies {
           all its classes to check if they are plugins.
           Scanning takes about 1-2 seconds so adding this speeds up the server start.
      */
-    implementation("org.apache.logging.log4j:log4j-core:2.14.1") // Paper - implementation
-    annotationProcessor("org.apache.logging.log4j:log4j-core:2.14.1") // Paper - Needed to generate meta for our Log4j plugins
+    implementation("org.apache.logging.log4j:log4j-core:2.17.1") // Paper - implementation
+    annotationProcessor("org.apache.logging.log4j:log4j-core:2.17.1") // Paper - Needed to generate meta for our Log4j plugins
     // Paper end
     implementation("org.apache.logging.log4j:log4j-iostreams:2.17.1") // Paper
+    implementation("org.apache.logging.log4j:log4j-slf4j18-impl:2.17.1") // Paper
     implementation("org.ow2.asm:asm:9.3")
     implementation("org.ow2.asm:asm-commons:9.3") // Paper - ASM event executor generation
     implementation("org.spongepowered:configurate-yaml:4.1.2") // Paper - config files
