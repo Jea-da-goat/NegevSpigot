@@ -515,6 +515,7 @@ public class CraftBlock implements Block {
         net.minecraft.world.level.block.state.BlockState iblockdata = this.getNMS();
         net.minecraft.world.level.block.Block block = iblockdata.getBlock();
         net.minecraft.world.item.ItemStack nmsItem = CraftItemStack.asNMSCopy(item);
+        net.minecraft.world.level.material.FluidState fluidState = this.world.getFluidState(this.position); // Paper
         boolean result = false;
 
         // Modelled off EntityHuman#hasBlock
@@ -525,7 +526,7 @@ public class CraftBlock implements Block {
         }
 
         // SPIGOT-6778: Directly call setBlock instead of setTypeAndData, so that the tile entiy is not removed and custom remove logic is run.
-        return this.world.setBlock(position, Blocks.AIR.defaultBlockState(), 3) && result;
+        return this.world.setBlock(position, fluidState.createLegacyBlock(), 3) && result; // Paper - leave liquid if waterlogged
     }
 
     @Override
