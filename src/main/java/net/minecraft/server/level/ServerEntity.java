@@ -158,7 +158,7 @@ public class ServerEntity {
                 boolean flag2 = flag1 || this.tickCount % 60 == 0;
                 boolean flag3 = Math.abs(i - this.yRotp) >= 1 || Math.abs(j - this.xRotp) >= 1;
 
-                if (this.tickCount > 0 || this.entity instanceof AbstractArrow) {
+                if (!(this.entity instanceof net.minecraft.world.entity.decoration.HangingEntity) || this.tickCount > 0 || this.entity instanceof AbstractArrow) { // Paper - Always update position
                     long k = this.positionCodec.encodeX(vec3d);
                     long l = this.positionCodec.encodeY(vec3d);
                     long i1 = this.positionCodec.encodeZ(vec3d);
