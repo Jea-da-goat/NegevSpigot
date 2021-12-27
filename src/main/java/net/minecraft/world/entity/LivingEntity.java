@@ -3376,7 +3376,7 @@ public abstract class LivingEntity extends Entity {
         boolean flag1 = this.getType().is(EntityTypeTags.FREEZE_HURTS_EXTRA_TYPES);
         int i;
 
-        if (!this.level.isClientSide && !this.isDeadOrDying()) {
+        if (!this.level.isClientSide && !this.isDeadOrDying() && !freezeLocked) { // Paper - Freeze Tick Lock API
             i = this.getTicksFrozen();
             if (this.isInPowderSnow && this.canFreeze()) {
                 this.setTicksFrozen(Math.min(this.getTicksRequiredToFreeze(), i + 1));
