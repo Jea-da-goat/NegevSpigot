@@ -1212,7 +1212,7 @@ public final class CraftServer implements Server {
         net.minecraft.core.Registry<LevelStem> iregistry = worlddata.worldGenSettings().dimensions();
         LevelStem worlddimension = (LevelStem) iregistry.get(actualDimension);
 
-        WorldInfo worldInfo = new CraftWorldInfo(worlddata, worldSession, creator.environment(), worlddimension.typeHolder().value());
+        WorldInfo worldInfo = new CraftWorldInfo(worlddata, worldSession, creator.environment(), worlddimension.typeHolder().value(), worlddimension.generator(), this.getHandle().getServer().registryAccess()); // Paper
         if (biomeProvider == null && generator != null) {
             biomeProvider = generator.getDefaultBiomeProvider(worldInfo);
         }

@@ -562,7 +562,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
             }
             // Paper end
 
-            org.bukkit.generator.WorldInfo worldInfo = new org.bukkit.craftbukkit.generator.CraftWorldInfo(iworlddataserver, worldSession, org.bukkit.World.Environment.getEnvironment(dimension), worlddimension.typeHolder().value());
+            org.bukkit.generator.WorldInfo worldInfo = new org.bukkit.craftbukkit.generator.CraftWorldInfo(iworlddataserver, worldSession, org.bukkit.World.Environment.getEnvironment(dimension), worlddimension.typeHolder().value(), worlddimension.generator(), this.registryAccess()); // Paper
             if (biomeProvider == null && gen != null) {
                 biomeProvider = gen.getDefaultBiomeProvider(worldInfo);
             }
