@@ -2495,6 +2495,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
         }
 
         public void onTickingStart(Entity entity) {
+            if (entity instanceof net.minecraft.world.entity.Marker) return; // Paper - Don't tick markers
             ServerLevel.this.entityTickList.add(entity);
             ServerLevel.this.entityManager.addNavigatorsIfPathingToRegion(entity); // Paper - optimise notify
         }
