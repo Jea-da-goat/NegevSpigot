@@ -236,7 +236,13 @@ public abstract class ChunkGenerator {
             HolderSet<Biome> holderset = concentricringsstructureplacement.preferredBiomes();
             RandomSource randomsource = RandomSource.create();
 
+            // Paper start
+            if (this.conf.strongholdSeed != null && this.structureSets.getResourceKey(holder).orElse(null) == net.minecraft.world.level.levelgen.structure.BuiltinStructureSets.STRONGHOLDS) {
+                randomsource.setSeed(this.conf.strongholdSeed);
+            } else {
             randomsource.setSeed(this instanceof FlatLevelSource ? 0L : randomstate.legacyLevelSeed());
+            }
+            // Paper end
             double d0 = randomsource.nextDouble() * 3.141592653589793D * 2.0D;
             int l = 0;
             int i1 = 0;

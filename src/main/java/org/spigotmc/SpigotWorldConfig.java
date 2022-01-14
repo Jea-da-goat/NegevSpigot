@@ -366,6 +366,7 @@ public class SpigotWorldConfig
     public int mansionSeed;
     public int fossilSeed;
     public int portalSeed;
+    public Long strongholdSeed; // Paper
     private void initWorldGenSeeds()
     {
         this.villageSeed = this.getInt( "seed-village", 10387312 );
@@ -383,6 +384,10 @@ public class SpigotWorldConfig
         this.mansionSeed = this.getInt( "seed-mansion", 10387319 );
         this.fossilSeed = this.getInt( "seed-fossil", 14357921 );
         this.portalSeed = this.getInt( "seed-portal", 34222645 );
+        // Paper start
+        final String strongholdSeedString = this.getString("seed-stronghold", "default");
+        this.strongholdSeed = org.apache.commons.lang3.math.NumberUtils.isParsable(strongholdSeedString) ? Long.parseLong(strongholdSeedString) : null;
+        // Paper end
         this.log( "Custom Map Seeds:  Village: " + this.villageSeed + " Desert: " + this.desertSeed + " Igloo: " + this.iglooSeed + " Jungle: " + this.jungleSeed + " Swamp: " + this.swampSeed + " Monument: " + this.monumentSeed
                 + " Ocean: " + this.oceanSeed + " Shipwreck: " + this.shipwreckSeed + " End City: " + this.endCitySeed + " Slime: " + this.slimeSeed + " Nether: " + this.netherSeed + " Mansion: " + this.mansionSeed + " Fossil: " + this.fossilSeed + " Portal: " + this.portalSeed );
     }
