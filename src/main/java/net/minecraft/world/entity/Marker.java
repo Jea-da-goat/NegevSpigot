@@ -38,8 +38,9 @@ public class Marker extends Entity {
     }
 
     @Override
-    protected void addPassenger(Entity passenger) {
+    protected boolean addPassenger(Entity passenger) { // Paper - fix upstream
         passenger.stopRiding();
+        return false; // Paper - fix upstream
     }
 
     @Override
