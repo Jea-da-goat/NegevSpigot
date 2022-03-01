@@ -201,7 +201,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         return CraftMagicNumbers.MATERIAL_BLOCK.get(material);
     }
 
-    public static net.minecraft.world.level.material.Fluid getFluid(Fluid fluid) {
+    public static net.minecraft.world.level.material.Fluid getFluid(Material fluid) { // Paper - wrong type
         return CraftMagicNumbers.MATERIAL_FLUID.get(fluid);
     }
 

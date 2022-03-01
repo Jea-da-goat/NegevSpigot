@@ -16,7 +16,7 @@ public class CraftFluidTag extends CraftTag<net.minecraft.world.level.material.F
 
     @Override
     public boolean isTagged(Fluid fluid) {
-        return CraftMagicNumbers.getFluid(fluid).is(tag);
+        return registry.getHolderOrThrow(net.minecraft.resources.ResourceKey.create(net.minecraft.core.Registry.FLUID_REGISTRY, org.bukkit.craftbukkit.util.CraftNamespacedKey.toMinecraft(fluid.getKey()))).is(tag); // Paper
     }
 
     @Override
