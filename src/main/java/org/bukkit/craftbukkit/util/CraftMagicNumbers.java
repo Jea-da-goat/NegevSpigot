@@ -512,6 +512,11 @@ public final class CraftMagicNumbers implements UnsafeValues {
     public int nextEntityId() {
         return net.minecraft.world.entity.Entity.nextEntityId();
     }
+
+    @Override
+    public <T extends org.bukkit.Keyed> Registry<T> registryFor(Class<T> classOfT) {
+        return io.papermc.paper.registry.PaperRegistry.getRegistry(classOfT);
+    }
     // Paper end
 
     /**
