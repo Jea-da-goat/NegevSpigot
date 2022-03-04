@@ -566,7 +566,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
             // Paper end
         } else if (FallingBlock.class.isAssignableFrom(clazz)) {
             BlockPos pos = new BlockPos(x, y, z);
-            entity = FallingBlockEntity.fall(world, pos, this.getHandle().getBlockState(pos));
+            entity = new FallingBlockEntity(world, x, y, z, this.getHandle().getBlockState(pos)); // Paper
         } else if (Projectile.class.isAssignableFrom(clazz)) {
             if (Snowball.class.isAssignableFrom(clazz)) {
                 entity = new net.minecraft.world.entity.projectile.Snowball(world, x, y, z);
