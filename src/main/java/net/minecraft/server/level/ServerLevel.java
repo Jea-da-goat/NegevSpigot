@@ -1284,7 +1284,13 @@ public class ServerLevel extends Level implements WorldGenLevel {
             }
 
         }
+        // Paper start
+        this.saveLevelDat();
+    }
 
+    public void saveLevelDat() {
+        this.saveLevelData();
+        // Paper end
         // CraftBukkit start - moved from MinecraftServer.saveChunks
         ServerLevel worldserver1 = this;
 

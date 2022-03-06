@@ -957,6 +957,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
             }
         }
 
+        // Paper start - let's be a little more intelligent around crashes
+        // make sure level.dat saves
+        for (ServerLevel level : this.getAllLevels()) {
+            level.saveLevelDat();
+        }
+        // Paper end - let's be a little more intelligent around crashes
+
         while (this.levels.values().stream().anyMatch((worldserver1) -> {
             return worldserver1.getChunkSource().chunkMap.hasWork();
         })) {
@@ -969,9 +976,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                 worldserver.getChunkSource().tick(() -> {
                     return true;
                 }, false);
+                while (worldserver.getChunkSource().pollTask()); // Paper - drain tasks
             }
 
-            this.waitUntilNextTick();
+            this.forceTicks = true; // Paper
+            while (this.pollTask()); // Paper - drain tasks
         }
 
         this.saveAllChunks(false, true, false);
@@ -1266,6 +1275,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
     }
 
     private boolean haveTime() {
+        // Paper start
+        if (this.forceTicks) {
+            return true;
+        }
+        // Paper end
         // CraftBukkit start
         if (isOversleep) return canOversleep();// Paper - because of our changes, this logic is broken
         return this.forceTicks || this.runningTask() || Util.getMillis() < (this.mayHaveDelayedTasks ? this.delayedTasksMaxNextTickTime : this.nextTickTime);
