@@ -361,7 +361,7 @@ public class Cat extends TamableAnimal {
         });
         ServerLevel worldserver = world.getLevel();
 
-        if (worldserver.structureManager().getStructureWithPieceAt(this.blockPosition(), StructureTags.CATS_SPAWN_AS_BLACK).isValid()) {
+        if (worldserver.structureManager().getStructureWithPieceAt(this.blockPosition(), StructureTags.CATS_SPAWN_AS_BLACK, world).isValid()) { // Paper - fix deadlock
             this.setCatVariant(CatVariant.ALL_BLACK);
             this.setPersistenceRequired();
         }
