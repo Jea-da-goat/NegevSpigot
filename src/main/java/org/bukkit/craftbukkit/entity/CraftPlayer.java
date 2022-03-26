@@ -965,13 +965,20 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void sendBlockDamage(Location loc, float progress) {
+        // Paper start - customBlockDamage identity
+        sendBlockDamage(loc, progress, this.getHandle().getId());
+    }
+
+    @Override
+    public void sendBlockDamage(Location loc, float progress, int destroyerIdentity) {
+        // Paper end - customBlockDamage identity
         Preconditions.checkArgument(loc != null, "loc must not be null");
         Preconditions.checkArgument(progress >= 0.0 && progress <= 1.0, "progress must be between 0.0 and 1.0 (inclusive)");
 
         if (this.getHandle().connection == null) return;
 
         int stage = (int) (9 * progress); // There are 0 - 9 damage states
-        ClientboundBlockDestructionPacket packet = new ClientboundBlockDestructionPacket(this.getHandle().getId(), new BlockPos(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()), stage);
+        ClientboundBlockDestructionPacket packet = new ClientboundBlockDestructionPacket(destroyerIdentity, new BlockPos(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()), stage);  // Paper - customBlockDamage identity
         this.getHandle().connection.send(packet);
     }
 
