@@ -1912,7 +1912,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         // Paper end
         GameRules.Value<?> handle = this.getHandle().getGameRules().getRule(CraftWorld.getGameRulesNMS().get(rule));
         handle.deserialize(event.getValue()); // Paper
-        handle.onChanged(this.getHandle().getServer());
+        handle.onChanged(this.getHandle()); // Paper
         return true;
     }
 
@@ -1952,7 +1952,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         // Paper end
         GameRules.Value<?> handle = this.getHandle().getGameRules().getRule(CraftWorld.getGameRulesNMS().get(rule.getName()));
         handle.deserialize(event.getValue()); // Paper
-        handle.onChanged(this.getHandle().getServer());
+        handle.onChanged(this.getHandle()); // Paper
         return true;
     }
 

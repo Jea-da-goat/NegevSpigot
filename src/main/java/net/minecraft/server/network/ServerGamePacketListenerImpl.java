@@ -3007,7 +3007,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                     this.player = this.server.getPlayerList().respawn(this.player, false);
                     if (this.server.isHardcore()) {
                         this.player.setGameMode(GameType.SPECTATOR, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.HARDCORE_DEATH, null); // Paper
-                        ((GameRules.BooleanValue) this.player.getLevel().getGameRules().getRule(GameRules.RULE_SPECTATORSGENERATECHUNKS)).set(false, this.server);
+                        ((GameRules.BooleanValue) this.player.getLevel().getGameRules().getRule(GameRules.RULE_SPECTATORSGENERATECHUNKS)).set(false, this.player.getLevel()); // Paper
                     }
                 }
                 break;
