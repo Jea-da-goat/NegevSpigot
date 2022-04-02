@@ -266,7 +266,11 @@ public class StructureTemplate {
 
                         if (definedstructure_blockinfo.nbt != null) {
                             tileentity = world.getBlockEntity(blockposition2);
-                            Clearable.tryClear(tileentity);
+                            // Paper start - Fix NBT pieces overriding a block entity during worldgen deadlock
+                            if (!(world instanceof net.minecraft.world.level.WorldGenLevel)) {
+                                Clearable.tryClear(tileentity);
+                            }
+                            // Paper end
                             world.setBlock(blockposition2, Blocks.BARRIER.defaultBlockState(), 20);
                         }
 
@@ -381,7 +385,11 @@ public class StructureTemplate {
                         if (pair1.getSecond() != null) {
                             tileentity = world.getBlockEntity(blockposition6);
                             if (tileentity != null) {
-                                tileentity.setChanged();
+                                // Paper start - Fix NBT pieces overriding a block entity during worldgen deadlock
+                                if (!(world instanceof net.minecraft.world.level.WorldGenLevel)) {
+                                    tileentity.setChanged();
+                                }
+                                // Paper end
                             }
                         }
                     }
