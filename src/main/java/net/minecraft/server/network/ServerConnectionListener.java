@@ -111,6 +111,12 @@ public class ServerConnectionListener {
             ServerConnectionListener.LOGGER.info("Paper: Using " + com.velocitypowered.natives.util.Natives.cipher.getLoadedVariant() + " cipher from Velocity.");
             // Paper end
 
+            // Paper start - indicate Proxy Protocol usage
+            if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.proxyProtocol) {
+                ServerConnectionListener.LOGGER.info("Paper: Using Proxy Protocol");
+            }
+            // Paper end
+
             this.channels.add(((ServerBootstrap) ((ServerBootstrap) (new ServerBootstrap()).channel(oclass)).childHandler(new ChannelInitializer<Channel>() {
                 protected void initChannel(Channel channel) {
                     try {
@@ -123,6 +129,30 @@ public class ServerConnectionListener {
                     channel.pipeline().addLast("timeout", new ReadTimeoutHandler(30)).addLast("legacy_query", new LegacyQueryHandler(ServerConnectionListener.this)).addLast("splitter", new Varint21FrameDecoder()).addLast("decoder", new PacketDecoder(PacketFlow.SERVERBOUND)).addLast("prepender", new Varint21LengthFieldPrepender()).addLast("encoder", new PacketEncoder(PacketFlow.CLIENTBOUND));
                     int j = ServerConnectionListener.this.server.getRateLimitPacketsPerSecond();
                     Object object = j > 0 ? new RateKickingConnection(j) : new Connection(PacketFlow.SERVERBOUND);
+
+                    // Paper start - Add support for Proxy Protocol
+                    if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.proxyProtocol) {
+                        channel.pipeline().addAfter("timeout", "haproxy-decoder", new io.netty.handler.codec.haproxy.HAProxyMessageDecoder());
+                        channel.pipeline().addAfter("haproxy-decoder", "haproxy-handler", new ChannelInboundHandlerAdapter() {
+                            @Override
+                            public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+                                if (msg instanceof io.netty.handler.codec.haproxy.HAProxyMessage message) {
+                                    if (message.command() == io.netty.handler.codec.haproxy.HAProxyCommand.PROXY) {
+                                        String realaddress = message.sourceAddress();
+                                        int realport = message.sourcePort();
+
+                                        SocketAddress socketaddr = new java.net.InetSocketAddress(realaddress, realport);
+
+                                        Connection connection = (Connection) channel.pipeline().get("packet_handler");
+                                        connection.address = socketaddr;
+                                    }
+                                } else {
+                                    super.channelRead(ctx, msg);
+                                }
+                            }
+                        });
+                    }
+                    // Paper end
 
                     // ServerConnectionListener.this.connections.add((Connection) object); // CraftBukkit - decompile error
                     pending.add((Connection) object); // Paper
