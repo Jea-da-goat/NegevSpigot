@@ -85,7 +85,7 @@ public class MushroomBlock extends BushBlock implements BonemealableBlock {
 
     public boolean growMushroom(ServerLevel world, BlockPos pos, BlockState state, RandomSource random) {
         world.removeBlock(pos, false);
-        SaplingBlock.treeType = (this == Blocks.BROWN_MUSHROOM) ? TreeType.BROWN_MUSHROOM : TreeType.BROWN_MUSHROOM; // CraftBukkit
+        SaplingBlock.treeType = (this == Blocks.BROWN_MUSHROOM) ? TreeType.BROWN_MUSHROOM : TreeType.RED_MUSHROOM; // CraftBukkit // Paper
         if (((ConfiguredFeature) ((Holder) this.featureSupplier.get()).value()).place(world, world.getChunkSource().getGenerator(), random, pos)) {
             return true;
         } else {
