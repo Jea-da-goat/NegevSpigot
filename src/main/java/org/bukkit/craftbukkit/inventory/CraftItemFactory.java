@@ -196,6 +196,12 @@ public final class CraftItemFactory implements ItemFactory {
         case ZOMBIE_SPAWN_EGG:
         case ZOMBIE_VILLAGER_SPAWN_EGG:
         case ZOMBIFIED_PIGLIN_SPAWN_EGG:
+        // Paper start
+        case ALLAY_SPAWN_EGG:
+        case FROG_SPAWN_EGG:
+        case TADPOLE_SPAWN_EGG:
+        case WARDEN_SPAWN_EGG:
+        // Paper end
             return meta instanceof CraftMetaSpawnEgg ? meta : new CraftMetaSpawnEgg(meta);
         case ARMOR_STAND:
             return meta instanceof CraftMetaArmorStand ? meta : new CraftMetaArmorStand(meta);

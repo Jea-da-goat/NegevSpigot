@@ -18,6 +18,12 @@ import org.bukkit.material.MaterialData;
 public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
 
     private static final Set<Material> SPAWN_EGG_MATERIALS = Sets.newHashSet(
+            // Paper start
+            Material. ALLAY_SPAWN_EGG,
+            Material. FROG_SPAWN_EGG,
+            Material. TADPOLE_SPAWN_EGG,
+            Material. WARDEN_SPAWN_EGG,
+            // Paper end
             Material.AXOLOTL_SPAWN_EGG,
             Material.BAT_SPAWN_EGG,
             Material.BEE_SPAWN_EGG,
