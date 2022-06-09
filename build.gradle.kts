@@ -12,6 +12,7 @@ dependencies {
     implementation("org.apache.logging.log4j:log4j-iostreams:2.17.1") // Paper
     implementation("org.ow2.asm:asm:9.3")
     implementation("org.ow2.asm:asm-commons:9.3") // Paper - ASM event executor generation
+    implementation("org.spongepowered:configurate-yaml:4.1.2") // Paper - config files
     implementation("commons-lang:commons-lang:2.6")
     runtimeOnly("org.xerial:sqlite-jdbc:3.36.0.3")
     runtimeOnly("mysql:mysql-connector-java:8.0.29")

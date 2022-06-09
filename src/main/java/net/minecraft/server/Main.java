@@ -114,6 +114,11 @@ public class Main {
             DedicatedServerSettings dedicatedserversettings = new DedicatedServerSettings(optionset); // CraftBukkit - CLI argument support
 
             dedicatedserversettings.forceSave();
+            // Paper start - load config files for access below if needed
+            org.bukkit.configuration.file.YamlConfiguration bukkitConfiguration = io.papermc.paper.configuration.PaperConfigurations.loadLegacyConfigFile((File) optionset.valueOf("bukkit-settings"));
+            org.bukkit.configuration.file.YamlConfiguration spigotConfiguration = io.papermc.paper.configuration.PaperConfigurations.loadLegacyConfigFile((File) optionset.valueOf("spigot-settings"));
+            // Paper end
+
             Path path1 = Paths.get("eula.txt");
             Eula eula = new Eula(path1);
 
@@ -150,7 +155,7 @@ public class Main {
             }
 
             File file = (File) optionset.valueOf("universe"); // CraftBukkit
-            Services services = Services.create(new YggdrasilAuthenticationService(Proxy.NO_PROXY), file);
+            Services services = Services.create(new YggdrasilAuthenticationService(Proxy.NO_PROXY), file, optionset); // Paper
             // CraftBukkit start
             String s = (String) Optional.ofNullable((String) optionset.valueOf("world")).orElse(dedicatedserversettings.getProperties().levelName);
             LevelStorageSource convertable = LevelStorageSource.createDefault(file.toPath());

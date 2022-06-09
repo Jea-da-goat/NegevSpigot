@@ -46,6 +46,7 @@ public abstract class AbstractTestingBase {
 
         DummyServer.setup();
         DummyEnchantments.setup();
+        io.papermc.paper.configuration.GlobalConfigTestingBase.setupGlobalConfigForTest(); // Paper
 
         ImmutableList.Builder<Material> builder = ImmutableList.builder();
         for (Material m : Material.values()) {
