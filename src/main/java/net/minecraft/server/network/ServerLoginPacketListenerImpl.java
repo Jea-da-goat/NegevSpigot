@@ -167,7 +167,7 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
 
                 profilepublickey = ServerLoginPacketListenerImpl.validatePublicKey(this.profilePublicKeyData, this.gameProfile.getId(), signaturevalidator, this.server.enforceSecureProfile());
             } catch (ProfilePublicKey.ValidationException profilepublickey_b) {
-                ServerLoginPacketListenerImpl.LOGGER.error("Failed to validate profile key: {}", profilepublickey_b.getMessage());
+                // ServerLoginPacketListenerImpl.LOGGER.error("Failed to validate profile key: {}", profilepublickey_b.getMessage()); // Paper - unnecessary log
                 if (!this.connection.isMemoryConnection()) {
                     this.disconnect(profilepublickey_b.getComponent());
                     return;
