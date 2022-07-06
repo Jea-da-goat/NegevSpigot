@@ -2298,7 +2298,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
 
     private boolean tryHandleChat(String message, Instant timestamp, LastSeenMessages.Update acknowledgment) {
         if (!this.updateChatOrder(timestamp)) {
-            ServerGamePacketListenerImpl.LOGGER.warn("{} sent out-of-order chat: '{}'", this.player.getName().getString(), message);
+            ServerGamePacketListenerImpl.LOGGER.warn("{} sent out-of-order chat: '{}': {} > {}", this.player.getName().getString(), message, this.lastChatTimeStamp.get().getEpochSecond(), timestamp.getEpochSecond()); // Paper
             this.server.scheduleOnMain(() -> { // Paper - push to main
             this.disconnect(Component.translatable("multiplayer.disconnect.out_of_order_chat"), org.bukkit.event.player.PlayerKickEvent.Cause.OUT_OF_ORDER_CHAT); // Paper - kick event cause
             }); // Paper - push to main
@@ -2569,7 +2569,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
         }
 
         if (playerchatmessage.hasExpiredServer(Instant.now())) {
-            ServerGamePacketListenerImpl.LOGGER.warn("{} sent expired chat: '{}'. Is the client/server system time unsynchronized?", this.player.getName().getString(), playerchatmessage.signedContent().plain());
+            ServerGamePacketListenerImpl.LOGGER.warn("{} sent expired chat: '{}'. Is the client/server system time unsynchronized? c: {} s: {}", this.player.getName().getString(), playerchatmessage.signedContent().plain(), playerchatmessage.timeStamp().getEpochSecond(), Instant.now().getEpochSecond()); // Paper
         }
 
         return true;
