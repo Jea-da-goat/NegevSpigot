@@ -2259,13 +2259,24 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
         PlayerCommandPreprocessEvent event = new PlayerCommandPreprocessEvent(this.getCraftPlayer(), command, new LazyPlayerSet(this.server));
         this.cserver.getPluginManager().callEvent(event);
 
-        if (event.isCancelled()) {
-            return;
-        }
         command = event.getMessage().substring(1);
 
-        ParseResults<CommandSourceStack> parseresults = this.parseCommand(command);
-        Map<String, PlayerChatMessage> map = (packet.command().equals(command)) ? this.collectSignedArguments(packet, PreviewableCommand.of(parseresults)) : Collections.emptyMap();
+        // Paper start - send message headers for cancelled or changed commands
+        ParseResults<CommandSourceStack> parseresults = this.parseCommand(packet.command());
+        Map<String, PlayerChatMessage> map = this.collectSignedArguments(packet, PreviewableCommand.of(parseresults));
+        if (event.isCancelled() || !packet.command().equals(command)) {
+            for (final PlayerChatMessage message : map.values()) {
+                player.server.getPlayerList().broadcastMessageHeader(message, Set.of());
+            }
+            if (event.isCancelled()) {
+                return;
+            }
+
+            // Remove signatures if the command was changed and use the changed command source stack
+            map.clear();
+            parseresults = this.parseCommand(command);
+        }
+        // Paper end
         // CraftBukkit end
         Iterator iterator = map.values().iterator();
 
