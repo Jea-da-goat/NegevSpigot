@@ -52,7 +52,7 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
     private static final AtomicInteger UNIQUE_THREAD_ID = new AtomicInteger(0);
     static final Logger LOGGER = LogUtils.getLogger();
     private static final int MAX_TICKS_BEFORE_LOGIN = 600;
-    private static final RandomSource RANDOM = RandomSource.create();
+    private static final RandomSource RANDOM = new org.bukkit.craftbukkit.util.RandomSourceWrapper(new java.util.Random()); // Paper - This is called across threads, make safe
     private final byte[] nonce;
     final MinecraftServer server;
     public final Connection connection;
