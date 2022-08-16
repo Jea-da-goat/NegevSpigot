@@ -43,7 +43,7 @@ public class SuspiciousStewItem extends Item {
 
                 MobEffect mobEffect = MobEffect.byId(compoundTag2.getInt("EffectId"));
                 if (mobEffect != null) {
-                    user.addEffect(new MobEffectInstance(mobEffect, j));
+                    user.addEffect(new MobEffectInstance(mobEffect, j), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.FOOD); // Paper
                 }
             }
         }

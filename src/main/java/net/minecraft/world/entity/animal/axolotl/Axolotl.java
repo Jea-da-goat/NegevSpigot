@@ -433,7 +433,7 @@ public class Axolotl extends Animal implements LerpingModel, Bucketable {
             player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, i, 0), this, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.AXOLOTL); // CraftBukkit
         }
 
-        player.removeEffect(MobEffects.DIG_SLOWDOWN);
+        player.removeEffect(MobEffects.DIG_SLOWDOWN, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.AXOLOTL); // Paper
     }
 
     @Override
