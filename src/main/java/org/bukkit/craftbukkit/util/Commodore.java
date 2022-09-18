@@ -434,6 +434,12 @@ public class Commodore
                         {
                             desc = getOriginalOrRewrite(desc);
                         }
+                        if (owner.equals("org/bukkit/WorldCreator") && name.equals("keepSpawnLoaded") && desc.equals("(Lnet/kyori/adventure/util/TriState;)V")) {
+                            super.visitMethodInsn(opcode, owner, name, "(Lnet/kyori/adventure/util/TriState;)Lorg/bukkit/WorldCreator;", itf);
+                            // new method has a return, so, make sure we pop it
+                            super.visitInsn(Opcodes.POP);
+                            return;
+                        }
                         // Paper end
 
                         if ( modern )
