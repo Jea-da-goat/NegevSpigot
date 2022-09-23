@@ -14,6 +14,12 @@ import net.minecraft.world.inventory.InventoryCrafting;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.World;
 
+// CraftBukkit start
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.inventory.CraftRecipe;
+import org.bukkit.craftbukkit.inventory.CraftShapelessRecipe;
+// CraftBukkit end
+
 public class ShapelessRecipes implements RecipeCrafting {
 
     private final MinecraftKey id;
@@ -27,6 +33,20 @@ public class ShapelessRecipes implements RecipeCrafting {
         this.result = itemstack;
         this.ingredients = nonnulllist;
     }
+
+    // CraftBukkit start
+    @SuppressWarnings("unchecked")
+    public org.bukkit.inventory.ShapelessRecipe toBukkitRecipe() {
+        CraftItemStack result = CraftItemStack.asCraftMirror(this.result);
+        CraftShapelessRecipe recipe = new CraftShapelessRecipe(result, this);
+        recipe.setGroup(this.group);
+
+        for (RecipeItemStack list : this.ingredients) {
+            recipe.addIngredient(CraftRecipe.toBukkit(list));
+        }
+        return recipe;
+    }
+    // CraftBukkit end
 
     @Override
     public MinecraftKey getId() {

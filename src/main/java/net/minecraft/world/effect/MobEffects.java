@@ -69,6 +69,14 @@ public class MobEffects {
         return new MobEffect.a(22);
     }));
 
+    // CraftBukkit start
+    static {
+        for (Object effect : IRegistry.MOB_EFFECT) {
+            org.bukkit.potion.PotionEffectType.registerPotionEffectType(new org.bukkit.craftbukkit.potion.CraftPotionEffectType((MobEffectList) effect));
+        }
+    }
+    // CraftBukkit end
+
     public MobEffects() {}
 
     private static MobEffectList register(int i, String s, MobEffectList mobeffectlist) {

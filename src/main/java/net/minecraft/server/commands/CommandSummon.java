@@ -65,7 +65,7 @@ public class CommandSummon {
                     ((EntityInsentient) entity).finalizeSpawn(commandlistenerwrapper.getLevel(), commandlistenerwrapper.getLevel().getCurrentDifficultyAt(entity.blockPosition()), EnumMobSpawn.COMMAND, (GroupDataEntity) null, (NBTTagCompound) null);
                 }
 
-                if (!worldserver.tryAddFreshEntityWithPassengers(entity)) {
+                if (!worldserver.tryAddFreshEntityWithPassengers(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.COMMAND)) { // CraftBukkit - pass a spawn reason of "COMMAND"
                     throw CommandSummon.ERROR_DUPLICATE_UUID.create();
                 } else {
                     commandlistenerwrapper.sendSuccess(IChatBaseComponent.translatable("commands.summon.success", entity.getDisplayName()), true);

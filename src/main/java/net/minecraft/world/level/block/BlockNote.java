@@ -51,7 +51,8 @@ public class BlockNote extends Block {
 
         if (flag1 != (Boolean) iblockdata.getValue(BlockNote.POWERED)) {
             if (flag1) {
-                this.playNote((Entity) null, world, blockposition);
+                this.playNote((Entity) null, world, blockposition, iblockdata); // CraftBukkit
+                iblockdata = world.getBlockState(blockposition); // CraftBukkit - SPIGOT-5617: update in case changed in event
             }
 
             world.setBlock(blockposition, (IBlockData) iblockdata.setValue(BlockNote.POWERED, flag1), 3);
@@ -59,11 +60,18 @@ public class BlockNote extends Block {
 
     }
 
-    private void playNote(@Nullable Entity entity, World world, BlockPosition blockposition) {
+    private void playNote(@Nullable Entity entity, World world, BlockPosition blockposition, IBlockData data) { // CraftBukkit
         if (world.getBlockState(blockposition.above()).isAir()) {
+            // CraftBukkit start
+            org.bukkit.event.block.NotePlayEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callNotePlayEvent(world, blockposition, data.getValue(BlockNote.INSTRUMENT), data.getValue(BlockNote.NOTE));
+            if (event.isCancelled()) {
+                return;
+            }
+            // CraftBukkit end
             world.blockEvent(blockposition, this, 0, 0);
             world.gameEvent(entity, GameEvent.NOTE_BLOCK_PLAY, blockposition);
         }
+
     }
 
     @Override
@@ -73,7 +81,7 @@ public class BlockNote extends Block {
         } else {
             iblockdata = (IBlockData) iblockdata.cycle(BlockNote.NOTE);
             world.setBlock(blockposition, iblockdata, 3);
-            this.playNote(entityhuman, world, blockposition);
+            this.playNote(entityhuman, world, blockposition, iblockdata); // CraftBukkit
             entityhuman.awardStat(StatisticList.TUNE_NOTEBLOCK);
             return EnumInteractionResult.CONSUME;
         }
@@ -82,7 +90,7 @@ public class BlockNote extends Block {
     @Override
     public void attack(IBlockData iblockdata, World world, BlockPosition blockposition, EntityHuman entityhuman) {
         if (!world.isClientSide) {
-            this.playNote(entityhuman, world, blockposition);
+            this.playNote(entityhuman, world, blockposition, iblockdata); // CraftBukkit
             entityhuman.awardStat(StatisticList.PLAY_NOTEBLOCK);
         }
     }

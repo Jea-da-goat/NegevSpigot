@@ -46,6 +46,14 @@ public class Enchantments {
     public static final Enchantment MENDING = register("mending", new EnchantmentMending(Enchantment.Rarity.RARE, EnumItemSlot.values()));
     public static final Enchantment VANISHING_CURSE = register("vanishing_curse", new EnchantmentVanishing(Enchantment.Rarity.VERY_RARE, EnumItemSlot.values()));
 
+    // CraftBukkit start
+    static {
+        for (Object enchantment : IRegistry.ENCHANTMENT) {
+            org.bukkit.enchantments.Enchantment.registerEnchantment(new org.bukkit.craftbukkit.enchantments.CraftEnchantment((Enchantment) enchantment));
+        }
+    }
+    // CraftBukkit end
+
     public Enchantments() {}
 
     private static Enchantment register(String s, Enchantment enchantment) {

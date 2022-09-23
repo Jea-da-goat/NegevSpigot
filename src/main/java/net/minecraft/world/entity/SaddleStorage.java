@@ -40,6 +40,15 @@ public class SaddleStorage {
         }
     }
 
+    // CraftBukkit add setBoostTicks(int)
+    public void setBoostTicks(int ticks) {
+        this.boosting = true;
+        this.boostTime = 0;
+        this.boostTimeTotal = ticks;
+        this.entityData.set(this.boostTimeAccessor, this.boostTimeTotal);
+    }
+    // CraftBukkit end
+
     public void addAdditionalSaveData(NBTTagCompound nbttagcompound) {
         nbttagcompound.putBoolean("Saddle", this.hasSaddle());
     }

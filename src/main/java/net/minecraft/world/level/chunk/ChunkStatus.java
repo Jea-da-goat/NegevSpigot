@@ -47,7 +47,7 @@ public class ChunkStatus {
     });
     public static final ChunkStatus STRUCTURE_STARTS = register("structure_starts", ChunkStatus.EMPTY, 0, ChunkStatus.PRE_FEATURES, ChunkStatus.Type.PROTOCHUNK, (chunkstatus, executor, worldserver, chunkgenerator, structuretemplatemanager, lightenginethreaded, function, list, ichunkaccess, flag) -> {
         if (!ichunkaccess.getStatus().isOrAfter(chunkstatus)) {
-            if (worldserver.getServer().getWorldData().worldGenSettings().generateStructures()) {
+            if (worldserver.serverLevelData.worldGenSettings().generateStructures()) { // CraftBukkit
                 chunkgenerator.createStructures(worldserver.registryAccess(), worldserver.getChunkSource().randomState(), worldserver.structureManager(), ichunkaccess, structuretemplatemanager, worldserver.getSeed());
             }
 

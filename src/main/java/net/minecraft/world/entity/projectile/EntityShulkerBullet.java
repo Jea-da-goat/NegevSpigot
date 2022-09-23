@@ -59,7 +59,20 @@ public class EntityShulkerBullet extends IProjectile {
         this.finalTarget = entity;
         this.currentMoveDirection = EnumDirection.UP;
         this.selectNextMoveDirection(enumdirection_enumaxis);
+        projectileSource = (org.bukkit.entity.LivingEntity) entityliving.getBukkitEntity(); // CraftBukkit
     }
+
+    // CraftBukkit start
+    public Entity getTarget() {
+        return this.finalTarget;
+    }
+
+    public void setTarget(Entity e) {
+        this.finalTarget = e;
+        this.currentMoveDirection = EnumDirection.UP;
+        this.selectNextMoveDirection(EnumDirection.EnumAxis.X);
+    }
+    // CraftBukkit end
 
     @Override
     public SoundCategory getSoundSource() {
@@ -224,7 +237,7 @@ public class EntityShulkerBullet extends IProjectile {
             MovingObjectPosition movingobjectposition = ProjectileHelper.getHitResult(this, this::canHitEntity);
 
             if (movingobjectposition.getType() != MovingObjectPosition.EnumMovingObjectType.MISS) {
-                this.onHit(movingobjectposition);
+                this.preOnHit(movingobjectposition); // CraftBukkit - projectile hit event
             }
         }
 
@@ -291,7 +304,7 @@ public class EntityShulkerBullet extends IProjectile {
         if (flag) {
             this.doEnchantDamageEffects(entityliving, entity);
             if (entity instanceof EntityLiving) {
-                ((EntityLiving) entity).addEffect(new MobEffect(MobEffects.LEVITATION, 200), (Entity) MoreObjects.firstNonNull(entity1, this));
+                ((EntityLiving) entity).addEffect(new MobEffect(MobEffects.LEVITATION, 200), (Entity) MoreObjects.firstNonNull(entity1, this), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
             }
         }
 
@@ -317,6 +330,11 @@ public class EntityShulkerBullet extends IProjectile {
 
     @Override
     public boolean hurt(DamageSource damagesource, float f) {
+        // CraftBukkit start
+        if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f, false)) {
+            return false;
+        }
+        // CraftBukkit end
         if (!this.level.isClientSide) {
             this.playSound(SoundEffects.SHULKER_BULLET_HURT, 1.0F, 1.0F);
             ((WorldServer) this.level).sendParticles(Particles.CRIT, this.getX(), this.getY(), this.getZ(), 15, 0.2D, 0.2D, 0.2D, 0.0D);

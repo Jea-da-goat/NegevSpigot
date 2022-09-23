@@ -37,4 +37,10 @@ public class EntityDamageSourceIndirect extends EntityDamageSource {
 
         return !itemstack.isEmpty() && itemstack.hasCustomHoverName() ? IChatBaseComponent.translatable(s1, entityliving.getDisplayName(), ichatbasecomponent, itemstack.getDisplayName()) : IChatBaseComponent.translatable(s, entityliving.getDisplayName(), ichatbasecomponent);
     }
+
+    // CraftBukkit start
+    public Entity getProximateDamageSource() {
+        return super.getEntity();
+    }
+    // CraftBukkit end
 }

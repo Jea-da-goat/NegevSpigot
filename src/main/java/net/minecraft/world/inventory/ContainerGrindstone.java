@@ -19,8 +19,30 @@ import net.minecraft.world.level.World;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3D;
 
+// CraftBukkit start
+import org.bukkit.Location;
+import org.bukkit.craftbukkit.inventory.CraftInventoryGrindstone;
+import org.bukkit.craftbukkit.inventory.CraftInventoryView;
+import org.bukkit.entity.Player;
+// CraftBukkit end
+
 public class ContainerGrindstone extends Container {
 
+    // CraftBukkit start
+    private CraftInventoryView bukkitEntity = null;
+    private Player player;
+
+    @Override
+    public CraftInventoryView getBukkitView() {
+        if (bukkitEntity != null) {
+            return bukkitEntity;
+        }
+
+        CraftInventoryGrindstone inventory = new CraftInventoryGrindstone(this.repairSlots, this.resultSlots);
+        bukkitEntity = new CraftInventoryView(this.player, inventory, this);
+        return bukkitEntity;
+    }
+    // CraftBukkit end
     public static final int MAX_NAME_LENGTH = 35;
     public static final int INPUT_SLOT = 0;
     public static final int ADDITIONAL_SLOT = 1;
@@ -46,6 +68,13 @@ public class ContainerGrindstone extends Container {
                 super.setChanged();
                 ContainerGrindstone.this.slotsChanged(this);
             }
+
+            // CraftBukkit start
+            @Override
+            public Location getLocation() {
+                return containeraccess.getLocation();
+            }
+            // CraftBukkit end
         };
         this.access = containeraccess;
         this.addSlot(new Slot(this.repairSlots, 0, 49, 19) {
@@ -124,6 +153,7 @@ public class ContainerGrindstone extends Container {
             this.addSlot(new Slot(playerinventory, j, 8 + j * 18, 142));
         }
 
+        player = (Player) playerinventory.player.getBukkitEntity(); // CraftBukkit
     }
 
     @Override
@@ -251,6 +281,7 @@ public class ContainerGrindstone extends Container {
 
     @Override
     public boolean stillValid(EntityHuman entityhuman) {
+        if (!this.checkReachable) return true; // CraftBukkit
         return stillValid(this.access, entityhuman, Blocks.GRINDSTONE);
     }
 

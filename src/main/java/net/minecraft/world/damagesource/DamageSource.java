@@ -52,6 +52,18 @@ public class DamageSource {
     private boolean isFall;
     private boolean noAggro;
     public final String msgId;
+    // CraftBukkit start
+    private boolean sweep;
+
+    public boolean isSweep() {
+        return sweep;
+    }
+
+    public DamageSource sweep() {
+        this.sweep = true;
+        return this;
+    }
+    // CraftBukkit end
 
     public static DamageSource sting(EntityLiving entityliving) {
         return new EntityDamageSource("sting", entityliving);

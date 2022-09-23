@@ -257,7 +257,7 @@ public class EntityParrot extends EntityPerchable implements EntityBird {
             }
 
             if (!this.level.isClientSide) {
-                if (this.random.nextInt(10) == 0) {
+                if (this.random.nextInt(10) == 0 && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this, entityhuman).isCancelled()) { // CraftBukkit
                     this.tame(entityhuman);
                     this.level.broadcastEntityEvent(this, (byte) 7);
                 } else {
@@ -271,7 +271,7 @@ public class EntityParrot extends EntityPerchable implements EntityBird {
                 itemstack.shrink(1);
             }
 
-            this.addEffect(new MobEffect(MobEffects.POISON, 900));
+            this.addEffect(new MobEffect(MobEffects.POISON, 900), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.FOOD); // CraftBukkit
             if (entityhuman.isCreative() || !this.isInvulnerable()) {
                 this.hurt(DamageSource.playerAttack(entityhuman), Float.MAX_VALUE);
             }
@@ -383,7 +383,7 @@ public class EntityParrot extends EntityPerchable implements EntityBird {
 
     @Override
     public boolean isPushable() {
-        return true;
+        return super.isPushable(); // CraftBukkit - collidable API
     }
 
     @Override
@@ -399,7 +399,7 @@ public class EntityParrot extends EntityPerchable implements EntityBird {
             return false;
         } else {
             if (!this.level.isClientSide) {
-                this.setOrderedToSit(false);
+                // this.setOrderedToSit(false); // CraftBukkit - moved into EntityLiving.damageEntity(DamageSource, float)
             }
 
             return super.hurt(damagesource, f);

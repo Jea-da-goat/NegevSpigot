@@ -40,7 +40,7 @@ public class CaveVinesPlantBlock extends BlockGrowingStem implements IBlockFragi
 
     @Override
     public EnumInteractionResult use(IBlockData iblockdata, World world, BlockPosition blockposition, EntityHuman entityhuman, EnumHand enumhand, MovingObjectPositionBlock movingobjectpositionblock) {
-        return CaveVines.use(iblockdata, world, blockposition);
+        return CaveVines.use(iblockdata, world, blockposition, entityhuman); // CraftBukkit
     }
 
     @Override

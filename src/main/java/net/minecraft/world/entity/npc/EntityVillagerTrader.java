@@ -44,6 +44,13 @@ import net.minecraft.world.item.trading.MerchantRecipeList;
 import net.minecraft.world.level.World;
 import net.minecraft.world.phys.Vec3D;
 
+// CraftBukkit start
+import org.bukkit.Bukkit;
+import org.bukkit.craftbukkit.inventory.CraftMerchantRecipe;
+import org.bukkit.entity.AbstractVillager;
+import org.bukkit.event.entity.VillagerAcquireTradeEvent;
+// CraftBukkit end
+
 public class EntityVillagerTrader extends EntityVillagerAbstract {
 
     private static final int NUMBER_OF_TRADE_OFFERS = 5;
@@ -53,6 +60,7 @@ public class EntityVillagerTrader extends EntityVillagerAbstract {
 
     public EntityVillagerTrader(EntityTypes<? extends EntityVillagerTrader> entitytypes, World world) {
         super(entitytypes, world);
+        this.setDespawnDelay(48000); // CraftBukkit - set default from MobSpawnerTrader
     }
 
     @Override
@@ -130,7 +138,16 @@ public class EntityVillagerTrader extends EntityVillagerAbstract {
             MerchantRecipe merchantrecipe = villagertrades_imerchantrecipeoption.getOffer(this, this.random);
 
             if (merchantrecipe != null) {
-                merchantrecipelist.add(merchantrecipe);
+                // CraftBukkit start
+                VillagerAcquireTradeEvent event = new VillagerAcquireTradeEvent((AbstractVillager) getBukkitEntity(), merchantrecipe.asBukkit());
+                // Suppress during worldgen
+                if (this.valid) {
+                    Bukkit.getPluginManager().callEvent(event);
+                }
+                if (!event.isCancelled()) {
+                    merchantrecipelist.add(CraftMerchantRecipe.fromBukkit(event.getRecipe()).toMinecraft());
+                }
+                // CraftBukkit end
             }
 
         }

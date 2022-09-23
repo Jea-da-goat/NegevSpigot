@@ -16,6 +16,10 @@ import net.minecraft.world.level.levelgen.feature.WorldGenFeatureConfigured;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.phys.shapes.VoxelShapeCollision;
 
+// CraftBukkit start
+import org.bukkit.TreeType;
+// CraftBukkit end
+
 public class BlockMushroom extends BlockPlant implements IBlockFragilePlantElement {
 
     protected static final float AABB_OFFSET = 3.0F;
@@ -61,7 +65,7 @@ public class BlockMushroom extends BlockPlant implements IBlockFragilePlantEleme
             }
 
             if (worldserver.isEmptyBlock(blockposition2) && iblockdata.canSurvive(worldserver, blockposition2)) {
-                worldserver.setBlock(blockposition2, iblockdata, 2);
+                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(worldserver, blockposition, blockposition2, iblockdata, 2); // CraftBukkit
             }
         }
 
@@ -82,6 +86,7 @@ public class BlockMushroom extends BlockPlant implements IBlockFragilePlantEleme
 
     public boolean growMushroom(WorldServer worldserver, BlockPosition blockposition, IBlockData iblockdata, RandomSource randomsource) {
         worldserver.removeBlock(blockposition, false);
+        BlockSapling.treeType = (this == Blocks.BROWN_MUSHROOM) ? TreeType.BROWN_MUSHROOM : TreeType.BROWN_MUSHROOM; // CraftBukkit
         if (((WorldGenFeatureConfigured) ((Holder) this.featureSupplier.get()).value()).place(worldserver, worldserver.getChunkSource().getGenerator(), randomsource, blockposition)) {
             return true;
         } else {

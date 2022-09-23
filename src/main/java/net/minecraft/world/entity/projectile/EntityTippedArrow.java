@@ -142,6 +142,25 @@ public class EntityTippedArrow extends EntityArrow {
         }
     }
 
+    // CraftBukkit start accessor methods
+    public void refreshEffects() {
+        this.getEntityData().set(EntityTippedArrow.ID_EFFECT_COLOR, PotionUtil.getColor((Collection) PotionUtil.getAllEffects(this.potion, (Collection) this.effects)));
+    }
+
+    public String getPotionType() {
+        return IRegistry.POTION.getKey(this.potion).toString();
+    }
+
+    public void setPotionType(String string) {
+        this.potion = IRegistry.POTION.get(new net.minecraft.resources.MinecraftKey(string));
+        this.getEntityData().set(EntityTippedArrow.ID_EFFECT_COLOR, PotionUtil.getColor((Collection) PotionUtil.getAllEffects(this.potion, (Collection) this.effects)));
+    }
+
+    public boolean isTipped() {
+        return !(this.effects.isEmpty() && this.potion == Potions.EMPTY);
+    }
+    // CraftBukkit end
+
     public int getColor() {
         return (Integer) this.entityData.get(EntityTippedArrow.ID_EFFECT_COLOR);
     }
@@ -210,7 +229,7 @@ public class EntityTippedArrow extends EntityArrow {
 
         while (iterator.hasNext()) {
             mobeffect = (MobEffect) iterator.next();
-            entityliving.addEffect(new MobEffect(mobeffect.getEffect(), Math.max(mobeffect.getDuration() / 8, 1), mobeffect.getAmplifier(), mobeffect.isAmbient(), mobeffect.isVisible()), entity);
+            entityliving.addEffect(new MobEffect(mobeffect.getEffect(), Math.max(mobeffect.getDuration() / 8, 1), mobeffect.getAmplifier(), mobeffect.isAmbient(), mobeffect.isVisible()), entity, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ARROW); // CraftBukkit
         }
 
         if (!this.effects.isEmpty()) {
@@ -218,7 +237,7 @@ public class EntityTippedArrow extends EntityArrow {
 
             while (iterator.hasNext()) {
                 mobeffect = (MobEffect) iterator.next();
-                entityliving.addEffect(mobeffect, entity);
+                entityliving.addEffect(mobeffect, entity, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ARROW); // CraftBukkit
             }
         }
 

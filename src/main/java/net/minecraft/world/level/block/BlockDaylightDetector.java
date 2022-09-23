@@ -67,6 +67,7 @@ public class BlockDaylightDetector extends BlockTileEntity {
 
         i = MathHelper.clamp(i, (int) 0, (int) 15);
         if ((Integer) iblockdata.getValue(BlockDaylightDetector.POWER) != i) {
+            i = org.bukkit.craftbukkit.event.CraftEventFactory.callRedstoneChange(world, blockposition, ((Integer) iblockdata.getValue(POWER)), i).getNewCurrent(); // CraftBukkit - Call BlockRedstoneEvent
             world.setBlock(blockposition, (IBlockData) iblockdata.setValue(BlockDaylightDetector.POWER, i), 3);
         }
 

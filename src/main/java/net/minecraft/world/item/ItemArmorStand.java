@@ -55,6 +55,11 @@ public class ItemArmorStand extends Item {
 
                     entityarmorstand.moveTo(entityarmorstand.getX(), entityarmorstand.getY(), entityarmorstand.getZ(), f, 0.0F);
                     this.randomizePose(entityarmorstand, world.random);
+                    // CraftBukkit start
+                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPlaceEvent(itemactioncontext, entityarmorstand).isCancelled()) {
+                        return EnumInteractionResult.FAIL;
+                    }
+                    // CraftBukkit end
                     worldserver.addFreshEntityWithPassengers(entityarmorstand);
                     world.playSound((EntityHuman) null, entityarmorstand.getX(), entityarmorstand.getY(), entityarmorstand.getZ(), SoundEffects.ARMOR_STAND_PLACE, SoundCategory.BLOCKS, 0.75F, 0.8F);
                     entityarmorstand.gameEvent(GameEvent.ENTITY_PLACE, itemactioncontext.getPlayer());

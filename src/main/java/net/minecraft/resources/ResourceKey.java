@@ -9,7 +9,7 @@ import net.minecraft.core.IRegistry;
 
 public class ResourceKey<T> {
 
-    private static final Map<String, ResourceKey<?>> VALUES = Collections.synchronizedMap(Maps.newIdentityHashMap());
+    private static final Map<String, ResourceKey<?>> VALUES = Collections.synchronizedMap(Maps.newHashMap()); // CraftBukkit - SPIGOT-6973: remove costly intern
     private final MinecraftKey registryName;
     private final MinecraftKey location;
 
@@ -28,7 +28,7 @@ public class ResourceKey<T> {
     }
 
     private static <T> ResourceKey<T> create(MinecraftKey minecraftkey, MinecraftKey minecraftkey1) {
-        String s = (minecraftkey + ":" + minecraftkey1).intern();
+        String s = (minecraftkey + ":" + minecraftkey1); // CraftBukkit - SPIGOT-6973: remove costly intern
 
         return (ResourceKey) ResourceKey.VALUES.computeIfAbsent(s, (s1) -> {
             return new ResourceKey<>(minecraftkey, minecraftkey1);
@@ -49,7 +49,7 @@ public class ResourceKey<T> {
     }
 
     public <E> Optional<ResourceKey<E>> cast(ResourceKey<? extends IRegistry<E>> resourcekey) {
-        return this.isFor(resourcekey) ? Optional.of(this) : Optional.empty();
+        return this.isFor(resourcekey) ? (Optional) Optional.of(this) : Optional.empty(); // CraftBukkit - decompile error
     }
 
     public MinecraftKey location() {

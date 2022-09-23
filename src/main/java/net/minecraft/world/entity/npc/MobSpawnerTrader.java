@@ -113,7 +113,7 @@ public class MobSpawnerTrader implements MobSpawner {
                     return false;
                 }
 
-                EntityVillagerTrader entityvillagertrader = (EntityVillagerTrader) EntityTypes.WANDERING_TRADER.spawn(worldserver, (NBTTagCompound) null, (IChatBaseComponent) null, (EntityHuman) null, blockposition2, EnumMobSpawn.EVENT, false, false);
+                EntityVillagerTrader entityvillagertrader = (EntityVillagerTrader) EntityTypes.WANDERING_TRADER.spawn(worldserver, (NBTTagCompound) null, (IChatBaseComponent) null, (EntityHuman) null, blockposition2, EnumMobSpawn.EVENT, false, false, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL); // CraftBukkit
 
                 if (entityvillagertrader != null) {
                     for (int i = 0; i < 2; ++i) {
@@ -121,7 +121,7 @@ public class MobSpawnerTrader implements MobSpawner {
                     }
 
                     this.serverLevelData.setWanderingTraderId(entityvillagertrader.getUUID());
-                    entityvillagertrader.setDespawnDelay(48000);
+                    // entityvillagertrader.setDespawnDelay(48000); // CraftBukkit - moved to EntityVillagerTrader constructor. This lets the value be modified by plugins on CreatureSpawnEvent
                     entityvillagertrader.setWanderTarget(blockposition1);
                     entityvillagertrader.restrictTo(blockposition1, 16);
                     return true;
@@ -136,7 +136,7 @@ public class MobSpawnerTrader implements MobSpawner {
         BlockPosition blockposition = this.findSpawnPositionNear(worldserver, entityvillagertrader.blockPosition(), i);
 
         if (blockposition != null) {
-            EntityLlamaTrader entityllamatrader = (EntityLlamaTrader) EntityTypes.TRADER_LLAMA.spawn(worldserver, (NBTTagCompound) null, (IChatBaseComponent) null, (EntityHuman) null, blockposition, EnumMobSpawn.EVENT, false, false);
+            EntityLlamaTrader entityllamatrader = (EntityLlamaTrader) EntityTypes.TRADER_LLAMA.spawn(worldserver, (NBTTagCompound) null, (IChatBaseComponent) null, (EntityHuman) null, blockposition, EnumMobSpawn.EVENT, false, false, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL); // CraftBukkit
 
             if (entityllamatrader != null) {
                 entityllamatrader.setLeashedTo(entityvillagertrader, true);

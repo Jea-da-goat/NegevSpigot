@@ -109,7 +109,17 @@ public class EntityEnderman extends EntityMonster implements IEntityAngerable {
 
     @Override
     public void setTarget(@Nullable EntityLiving entityliving) {
-        super.setTarget(entityliving);
+        // CraftBukkit start - fire event
+        setTarget(entityliving, org.bukkit.event.entity.EntityTargetEvent.TargetReason.UNKNOWN, true);
+    }
+
+    @Override
+    public boolean setTarget(EntityLiving entityliving, org.bukkit.event.entity.EntityTargetEvent.TargetReason reason, boolean fireEvent) {
+        if (!super.setTarget(entityliving, reason, fireEvent)) {
+            return false;
+        }
+        entityliving = getTarget();
+        // CraftBukkit end
         AttributeModifiable attributemodifiable = this.getAttribute(GenericAttributes.MOVEMENT_SPEED);
 
         if (entityliving == null) {
@@ -124,6 +134,7 @@ public class EntityEnderman extends EntityMonster implements IEntityAngerable {
                 attributemodifiable.addTransientModifier(EntityEnderman.SPEED_MODIFIER_ATTACKING);
             }
         }
+        return true;
 
     }
 
@@ -474,9 +485,13 @@ public class EntityEnderman extends EntityMonster implements IEntityAngerable {
             if (iblockdata2 != null) {
                 iblockdata2 = Block.updateFromNeighbourShapes(iblockdata2, this.enderman.level, blockposition);
                 if (this.canPlaceBlock(world, blockposition, iblockdata2, iblockdata, iblockdata1, blockposition1)) {
+                    // CraftBukkit start - Place event
+                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.enderman, blockposition, iblockdata2).isCancelled()) {
                     world.setBlock(blockposition, iblockdata2, 3);
                     world.gameEvent(GameEvent.BLOCK_PLACE, blockposition, GameEvent.a.of(this.enderman, iblockdata2));
                     this.enderman.setCarriedBlock((IBlockData) null);
+                    }
+                    // CraftBukkit end
                 }
 
             }
@@ -515,9 +530,13 @@ public class EntityEnderman extends EntityMonster implements IEntityAngerable {
             boolean flag = movingobjectpositionblock.getBlockPos().equals(blockposition);
 
             if (iblockdata.is(TagsBlock.ENDERMAN_HOLDABLE) && flag) {
-                world.removeBlock(blockposition, false);
-                world.gameEvent(GameEvent.BLOCK_DESTROY, blockposition, GameEvent.a.of(this.enderman, iblockdata));
-                this.enderman.setCarriedBlock(iblockdata.getBlock().defaultBlockState());
+                // CraftBukkit start - Pickup event
+                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.enderman, blockposition, Blocks.AIR.defaultBlockState()).isCancelled()) {
+                    world.removeBlock(blockposition, false);
+                    world.gameEvent(GameEvent.BLOCK_DESTROY, blockposition, GameEvent.a.of(this.enderman, iblockdata));
+                    this.enderman.setCarriedBlock(iblockdata.getBlock().defaultBlockState());
+                }
+                // CraftBukkit end
             }
 
         }

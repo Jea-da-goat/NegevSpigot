@@ -32,7 +32,7 @@ public class PacketPlayOutMultiBlockChange implements Packet<PacketListenerPlayO
             short short0 = (Short) shortiterator.next();
 
             this.positions[j] = short0;
-            this.states[j] = chunksection.getBlockState(SectionPosition.sectionRelativeX(short0), SectionPosition.sectionRelativeY(short0), SectionPosition.sectionRelativeZ(short0));
+            this.states[j] = (chunksection != null) ? chunksection.getBlockState(SectionPosition.sectionRelativeX(short0), SectionPosition.sectionRelativeY(short0), SectionPosition.sectionRelativeZ(short0)) : net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(); // CraftBukkit - SPIGOT-6076, Mojang bug when empty chunk section notified
         }
 
     }

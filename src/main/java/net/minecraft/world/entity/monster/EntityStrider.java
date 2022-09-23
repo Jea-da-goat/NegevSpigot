@@ -320,7 +320,13 @@ public class EntityStrider extends EntityAnimal implements ISteerable, ISaddleab
             IBlockData iblockdata1 = this.getBlockStateOnLegacy();
             boolean flag = iblockdata.is(TagsBlock.STRIDER_WARM_BLOCKS) || iblockdata1.is(TagsBlock.STRIDER_WARM_BLOCKS) || this.getFluidHeight(TagsFluid.LAVA) > 0.0D;
 
-            this.setSuffocating(!flag);
+            // CraftBukkit start
+            if (!flag ^ this.isSuffocating()) {
+                if (org.bukkit.craftbukkit.event.CraftEventFactory.callStriderTemperatureChangeEvent(this, !flag)) {
+                    this.setSuffocating(!flag);
+                }
+            }
+            // CraftBukkit end
         }
 
         super.tick();

@@ -57,7 +57,7 @@ public class CaveVinesBlock extends BlockGrowingTop implements IBlockFragilePlan
 
     @Override
     public EnumInteractionResult use(IBlockData iblockdata, World world, BlockPosition blockposition, EntityHuman entityhuman, EnumHand enumhand, MovingObjectPositionBlock movingobjectpositionblock) {
-        return CaveVines.use(iblockdata, world, blockposition);
+        return CaveVines.use(iblockdata, world, blockposition, entityhuman); // CraftBukkit
     }
 
     @Override

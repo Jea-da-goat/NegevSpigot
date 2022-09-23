@@ -164,7 +164,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
     }
 
     private static <T extends PacketListener> void genericsFtw(Packet<T> packet, PacketListener packetlistener) {
-        packet.handle(packetlistener);
+        packet.handle((T) packetlistener); // CraftBukkit - decompile error
     }
 
     public void setListener(PacketListener packetlistener) {
@@ -289,7 +289,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
 
     public void disconnect(IChatBaseComponent ichatbasecomponent) {
         if (this.channel.isOpen()) {
-            this.channel.close().awaitUninterruptibly();
+            this.channel.close(); // We can't wait as this may be called from an event loop.
             this.disconnectedReason = ichatbasecomponent;
         }
 

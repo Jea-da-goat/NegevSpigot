@@ -51,6 +51,13 @@ public class BlockFungi extends BlockPlant implements IBlockFragilePlantElement 
 
     @Override
     public void performBonemeal(WorldServer worldserver, RandomSource randomsource, BlockPosition blockposition, IBlockData iblockdata) {
+        // CraftBukkit start
+        if (this == Blocks.WARPED_FUNGUS) {
+            BlockSapling.treeType = org.bukkit.TreeType.WARPED_FUNGUS;
+        } else if (this == Blocks.CRIMSON_FUNGUS) {
+            BlockSapling.treeType = org.bukkit.TreeType.CRIMSON_FUNGUS;
+        }
+        // CraftBukkit end
         ((WorldGenFeatureConfigured) ((Holder) this.feature.get()).value()).place(worldserver, worldserver.getChunkSource().getGenerator(), randomsource, blockposition);
     }
 }

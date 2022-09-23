@@ -130,7 +130,9 @@ public class EntityEvokerFangs extends Entity {
 
         if (entityliving.isAlive() && !entityliving.isInvulnerable() && entityliving != entityliving1) {
             if (entityliving1 == null) {
+                org.bukkit.craftbukkit.event.CraftEventFactory.entityDamage = this; // CraftBukkit
                 entityliving.hurt(DamageSource.MAGIC, 6.0F);
+                org.bukkit.craftbukkit.event.CraftEventFactory.entityDamage = null; // CraftBukkit
             } else {
                 if (entityliving1.isAlliedTo((Entity) entityliving)) {
                     return;
