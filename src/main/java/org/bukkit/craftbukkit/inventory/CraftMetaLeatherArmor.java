@@ -5,8 +5,8 @@ import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.collect.Sets;
 import java.util.Map;
 import java.util.Set;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagInt;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.IntTag;
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
@@ -38,13 +38,13 @@ class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
         this.color = armorMeta.color;
     }
 
-    CraftMetaLeatherArmor(NBTTagCompound tag) {
+    CraftMetaLeatherArmor(CompoundTag tag) {
         super(tag);
         if (tag.contains(DISPLAY.NBT)) {
-            NBTTagCompound display = tag.getCompound(DISPLAY.NBT);
+            CompoundTag display = tag.getCompound(DISPLAY.NBT);
             if (display.contains(COLOR.NBT)) {
                 try {
-                    color = Color.fromRGB(display.getInt(COLOR.NBT));
+                    this.color = Color.fromRGB(display.getInt(COLOR.NBT));
                 } catch (IllegalArgumentException ex) {
                     // Invalid colour
                 }
@@ -54,30 +54,30 @@ class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
 
     CraftMetaLeatherArmor(Map<String, Object> map) {
         super(map);
-        setColor(SerializableMeta.getObject(Color.class, map, COLOR.BUKKIT, true));
+        this.setColor(SerializableMeta.getObject(Color.class, map, COLOR.BUKKIT, true));
     }
 
     @Override
-    void applyToItem(NBTTagCompound itemTag) {
+    void applyToItem(CompoundTag itemTag) {
         super.applyToItem(itemTag);
 
-        if (hasColor()) {
-            setDisplayTag(itemTag, COLOR.NBT, NBTTagInt.valueOf(color.asRGB()));
+        if (this.hasColor()) {
+            setDisplayTag(itemTag, COLOR.NBT, IntTag.valueOf(this.color.asRGB()));
         }
     }
 
     @Override
     boolean isEmpty() {
-        return super.isEmpty() && isLeatherArmorEmpty();
+        return super.isEmpty() && this.isLeatherArmorEmpty();
     }
 
     boolean isLeatherArmorEmpty() {
-        return !(hasColor());
+        return !(this.hasColor());
     }
 
     @Override
     boolean applicableTo(Material type) {
-        return LEATHER_ARMOR_MATERIALS.contains(type);
+        return CraftMetaLeatherArmor.LEATHER_ARMOR_MATERIALS.contains(type);
     }
 
     @Override
@@ -87,7 +87,7 @@ class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
 
     @Override
     public Color getColor() {
-        return color;
+        return this.color;
     }
 
     @Override
@@ -103,7 +103,7 @@ class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
     Builder<String, Object> serialize(Builder<String, Object> builder) {
         super.serialize(builder);
 
-        if (hasColor()) {
+        if (this.hasColor()) {
             builder.put(COLOR.BUKKIT, color);
         }
 
@@ -118,22 +118,22 @@ class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
         if (meta instanceof CraftMetaLeatherArmor) {
             CraftMetaLeatherArmor that = (CraftMetaLeatherArmor) meta;
 
-            return color.equals(that.color);
+            return this.color.equals(that.color);
         }
         return true;
     }
 
     @Override
     boolean notUncommon(CraftMetaItem meta) {
-        return super.notUncommon(meta) && (meta instanceof CraftMetaLeatherArmor || isLeatherArmorEmpty());
+        return super.notUncommon(meta) && (meta instanceof CraftMetaLeatherArmor || this.isLeatherArmorEmpty());
     }
 
     @Override
     int applyHash() {
         final int original;
         int hash = original = super.applyHash();
-        if (hasColor()) {
-            hash ^= color.hashCode();
+        if (this.hasColor()) {
+            hash ^= this.color.hashCode();
         }
         return original != hash ? CraftMetaSkull.class.hashCode() ^ hash : hash;
     }

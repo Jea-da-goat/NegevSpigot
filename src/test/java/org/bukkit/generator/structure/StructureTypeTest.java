@@ -2,8 +2,7 @@ package org.bukkit.generator.structure;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import net.minecraft.core.IRegistry;
-import net.minecraft.resources.MinecraftKey;
+import net.minecraft.resources.ResourceLocation;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
@@ -30,8 +29,8 @@ public class StructureTypeTest extends AbstractTestingBase {
 
     @Test
     public void testMinecraftToBukkitFieldName() {
-        for (net.minecraft.world.level.levelgen.structure.StructureType<?> structureType : IRegistry.STRUCTURE_TYPES) {
-            MinecraftKey minecraftKey = IRegistry.STRUCTURE_TYPES.getKey(structureType);
+        for (net.minecraft.world.level.levelgen.structure.StructureType<?> structureType : net.minecraft.core.Registry.STRUCTURE_TYPES) {
+            ResourceLocation minecraftKey = net.minecraft.core.Registry.STRUCTURE_TYPES.getKey(structureType);
 
             try {
                 StructureType bukkit = (StructureType) StructureType.class.getField(minecraftKey.getPath().toUpperCase()).get(null);

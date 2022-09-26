@@ -1,38 +1,38 @@
 package net.minecraft.world.level.block;
 
-import net.minecraft.core.BlockPosition;
-import net.minecraft.core.EnumDirection;
-import net.minecraft.server.level.WorldServer;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.EnumHand;
-import net.minecraft.world.EnumInteractionResult;
-import net.minecraft.world.entity.player.EntityHuman;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.IBlockAccess;
-import net.minecraft.world.level.World;
-import net.minecraft.world.level.block.state.BlockBase;
-import net.minecraft.world.level.block.state.BlockStateList;
-import net.minecraft.world.level.block.state.IBlockData;
-import net.minecraft.world.phys.MovingObjectPositionBlock;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.phys.BlockHitResult;
 
-public class CaveVinesBlock extends BlockGrowingTop implements IBlockFragilePlantElement, CaveVines {
+public class CaveVinesBlock extends GrowingPlantHeadBlock implements BonemealableBlock, CaveVines {
 
     private static final float CHANCE_OF_BERRIES_ON_GROWTH = 0.11F;
 
-    public CaveVinesBlock(BlockBase.Info blockbase_info) {
-        super(blockbase_info, EnumDirection.DOWN, CaveVinesBlock.SHAPE, false, 0.1D);
-        this.registerDefaultState((IBlockData) ((IBlockData) ((IBlockData) this.stateDefinition.any()).setValue(CaveVinesBlock.AGE, 0)).setValue(CaveVinesBlock.BERRIES, false));
+    public CaveVinesBlock(BlockBehaviour.Properties settings) {
+        super(settings, Direction.DOWN, CaveVinesBlock.SHAPE, false, 0.1D);
+        this.registerDefaultState((BlockState) ((BlockState) ((BlockState) this.stateDefinition.any()).setValue(CaveVinesBlock.AGE, 0)).setValue(CaveVinesBlock.BERRIES, false));
     }
 
     @Override
-    protected int getBlocksToGrowWhenBonemealed(RandomSource randomsource) {
+    protected int getBlocksToGrowWhenBonemealed(RandomSource random) {
         return 1;
     }
 
     @Override
-    protected boolean canGrowInto(IBlockData iblockdata) {
-        return iblockdata.isAir();
+    protected boolean canGrowInto(BlockState state) {
+        return state.isAir();
     }
 
     @Override
@@ -41,43 +41,43 @@ public class CaveVinesBlock extends BlockGrowingTop implements IBlockFragilePlan
     }
 
     @Override
-    protected IBlockData updateBodyAfterConvertedFromHead(IBlockData iblockdata, IBlockData iblockdata1) {
-        return (IBlockData) iblockdata1.setValue(CaveVinesBlock.BERRIES, (Boolean) iblockdata.getValue(CaveVinesBlock.BERRIES));
+    protected BlockState updateBodyAfterConvertedFromHead(BlockState from, BlockState to) {
+        return (BlockState) to.setValue(CaveVinesBlock.BERRIES, (Boolean) from.getValue(CaveVinesBlock.BERRIES));
     }
 
     @Override
-    protected IBlockData getGrowIntoState(IBlockData iblockdata, RandomSource randomsource) {
-        return (IBlockData) super.getGrowIntoState(iblockdata, randomsource).setValue(CaveVinesBlock.BERRIES, randomsource.nextFloat() < 0.11F);
+    protected BlockState getGrowIntoState(BlockState state, RandomSource random) {
+        return (BlockState) super.getGrowIntoState(state, random).setValue(CaveVinesBlock.BERRIES, random.nextFloat() < 0.11F);
     }
 
     @Override
-    public ItemStack getCloneItemStack(IBlockAccess iblockaccess, BlockPosition blockposition, IBlockData iblockdata) {
+    public ItemStack getCloneItemStack(BlockGetter world, BlockPos pos, BlockState state) {
         return new ItemStack(Items.GLOW_BERRIES);
     }
 
     @Override
-    public EnumInteractionResult use(IBlockData iblockdata, World world, BlockPosition blockposition, EntityHuman entityhuman, EnumHand enumhand, MovingObjectPositionBlock movingobjectpositionblock) {
-        return CaveVines.use(iblockdata, world, blockposition, entityhuman); // CraftBukkit
+    public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return CaveVines.use(state, world, pos, player); // CraftBukkit
     }
 
     @Override
-    protected void createBlockStateDefinition(BlockStateList.a<Block, IBlockData> blockstatelist_a) {
-        super.createBlockStateDefinition(blockstatelist_a);
-        blockstatelist_a.add(CaveVinesBlock.BERRIES);
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        super.createBlockStateDefinition(builder);
+        builder.add(CaveVinesBlock.BERRIES);
     }
 
     @Override
-    public boolean isValidBonemealTarget(IBlockAccess iblockaccess, BlockPosition blockposition, IBlockData iblockdata, boolean flag) {
-        return !(Boolean) iblockdata.getValue(CaveVinesBlock.BERRIES);
+    public boolean isValidBonemealTarget(BlockGetter world, BlockPos pos, BlockState state, boolean isClient) {
+        return !(Boolean) state.getValue(CaveVinesBlock.BERRIES);
     }
 
     @Override
-    public boolean isBonemealSuccess(World world, RandomSource randomsource, BlockPosition blockposition, IBlockData iblockdata) {
+    public boolean isBonemealSuccess(Level world, RandomSource random, BlockPos pos, BlockState state) {
         return true;
     }
 
     @Override
-    public void performBonemeal(WorldServer worldserver, RandomSource randomsource, BlockPosition blockposition, IBlockData iblockdata) {
-        worldserver.setBlock(blockposition, (IBlockData) iblockdata.setValue(CaveVinesBlock.BERRIES, true), 2);
+    public void performBonemeal(ServerLevel world, RandomSource random, BlockPos pos, BlockState state) {
+        world.setBlock(pos, (BlockState) state.setValue(CaveVinesBlock.BERRIES, true), 2);
     }
 }

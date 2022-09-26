@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.world.entity.item.EntityFallingBlock;
+import net.minecraft.world.entity.item.FallingBlockEntity;
 import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftServer;
@@ -10,13 +10,13 @@ import org.bukkit.entity.FallingBlock;
 
 public class CraftFallingBlock extends CraftEntity implements FallingBlock {
 
-    public CraftFallingBlock(CraftServer server, EntityFallingBlock entity) {
+    public CraftFallingBlock(CraftServer server, FallingBlockEntity entity) {
         super(server, entity);
     }
 
     @Override
-    public EntityFallingBlock getHandle() {
-        return (EntityFallingBlock) entity;
+    public FallingBlockEntity getHandle() {
+        return (FallingBlockEntity) entity;
     }
 
     @Override
@@ -31,32 +31,32 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
 
     @Override
     public Material getMaterial() {
-        return getBlockData().getMaterial();
+        return this.getBlockData().getMaterial();
     }
 
     @Override
     public BlockData getBlockData() {
-        return CraftBlockData.fromData(getHandle().getBlockState());
+        return CraftBlockData.fromData(this.getHandle().getBlockState());
     }
 
     @Override
     public boolean getDropItem() {
-        return getHandle().dropItem;
+        return this.getHandle().dropItem;
     }
 
     @Override
     public void setDropItem(boolean drop) {
-        getHandle().dropItem = drop;
+        this.getHandle().dropItem = drop;
     }
 
     @Override
     public boolean canHurtEntities() {
-        return getHandle().hurtEntities;
+        return this.getHandle().hurtEntities;
     }
 
     @Override
     public void setHurtEntities(boolean hurtEntities) {
-        getHandle().hurtEntities = hurtEntities;
+        this.getHandle().hurtEntities = hurtEntities;
     }
 
     @Override
@@ -64,6 +64,6 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
         super.setTicksLived(value);
 
         // Second field for EntityFallingBlock
-        getHandle().time = value;
+        this.getHandle().time = value;
     }
 }

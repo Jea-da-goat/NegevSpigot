@@ -5,58 +5,58 @@ import com.mojang.serialization.Codec;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
-import net.minecraft.core.IRegistry;
+import net.minecraft.core.Registry;
 
 public class ResourceKey<T> {
 
     private static final Map<String, ResourceKey<?>> VALUES = Collections.synchronizedMap(Maps.newHashMap()); // CraftBukkit - SPIGOT-6973: remove costly intern
-    private final MinecraftKey registryName;
-    private final MinecraftKey location;
+    private final ResourceLocation registryName;
+    private final ResourceLocation location;
 
-    public static <T> Codec<ResourceKey<T>> codec(ResourceKey<? extends IRegistry<T>> resourcekey) {
-        return MinecraftKey.CODEC.xmap((minecraftkey) -> {
-            return create(resourcekey, minecraftkey);
+    public static <T> Codec<ResourceKey<T>> codec(ResourceKey<? extends Registry<T>> registry) {
+        return ResourceLocation.CODEC.xmap((minecraftkey) -> {
+            return ResourceKey.create(registry, minecraftkey);
         }, ResourceKey::location);
     }
 
-    public static <T> ResourceKey<T> create(ResourceKey<? extends IRegistry<T>> resourcekey, MinecraftKey minecraftkey) {
-        return create(resourcekey.location, minecraftkey);
+    public static <T> ResourceKey<T> create(ResourceKey<? extends Registry<T>> registry, ResourceLocation value) {
+        return ResourceKey.create(registry.location, value);
     }
 
-    public static <T> ResourceKey<IRegistry<T>> createRegistryKey(MinecraftKey minecraftkey) {
-        return create(IRegistry.ROOT_REGISTRY_NAME, minecraftkey);
+    public static <T> ResourceKey<Registry<T>> createRegistryKey(ResourceLocation registry) {
+        return ResourceKey.create(Registry.ROOT_REGISTRY_NAME, registry);
     }
 
-    private static <T> ResourceKey<T> create(MinecraftKey minecraftkey, MinecraftKey minecraftkey1) {
-        String s = (minecraftkey + ":" + minecraftkey1); // CraftBukkit - SPIGOT-6973: remove costly intern
+    private static <T> ResourceKey<T> create(ResourceLocation registry, ResourceLocation value) {
+        String s = (registry + ":" + value); // CraftBukkit - SPIGOT-6973: remove costly intern
 
         return (ResourceKey) ResourceKey.VALUES.computeIfAbsent(s, (s1) -> {
-            return new ResourceKey<>(minecraftkey, minecraftkey1);
+            return new ResourceKey<>(registry, value);
         });
     }
 
-    private ResourceKey(MinecraftKey minecraftkey, MinecraftKey minecraftkey1) {
-        this.registryName = minecraftkey;
-        this.location = minecraftkey1;
+    private ResourceKey(ResourceLocation registry, ResourceLocation value) {
+        this.registryName = registry;
+        this.location = value;
     }
 
     public String toString() {
         return "ResourceKey[" + this.registryName + " / " + this.location + "]";
     }
 
-    public boolean isFor(ResourceKey<? extends IRegistry<?>> resourcekey) {
-        return this.registryName.equals(resourcekey.location());
+    public boolean isFor(ResourceKey<? extends Registry<?>> registry) {
+        return this.registryName.equals(registry.location());
     }
 
-    public <E> Optional<ResourceKey<E>> cast(ResourceKey<? extends IRegistry<E>> resourcekey) {
-        return this.isFor(resourcekey) ? (Optional) Optional.of(this) : Optional.empty(); // CraftBukkit - decompile error
+    public <E> Optional<ResourceKey<E>> cast(ResourceKey<? extends Registry<E>> registryRef) {
+        return this.isFor(registryRef) ? (Optional) Optional.of(this) : Optional.empty(); // CraftBukkit - decompile error
     }
 
-    public MinecraftKey location() {
+    public ResourceLocation location() {
         return this.location;
     }
 
-    public MinecraftKey registry() {
+    public ResourceLocation registry() {
         return this.registryName;
     }
 }

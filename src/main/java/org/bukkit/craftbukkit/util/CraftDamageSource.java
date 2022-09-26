@@ -25,7 +25,7 @@ public final class CraftDamageSource extends DamageSource {
         return newSource;
     }
 
-    private CraftDamageSource(String identifier) {
-        super(identifier);
+    private CraftDamageSource(String name) {
+        super(name);
     }
 }

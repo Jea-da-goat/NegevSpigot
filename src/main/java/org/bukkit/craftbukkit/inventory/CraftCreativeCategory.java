@@ -24,7 +24,7 @@ public final class CraftCreativeCategory {
             return null;
         }
 
-        CreativeCategory bukkit = NMS_TO_BUKKIT.get(tab);
+        CreativeCategory bukkit = CraftCreativeCategory.NMS_TO_BUKKIT.get(tab);
         if (bukkit == null) {
             throw new UnsupportedOperationException("Item is not present in any known CreativeModeTab. This is a bug.");
         }

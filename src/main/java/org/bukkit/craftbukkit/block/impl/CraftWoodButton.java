@@ -9,68 +9,68 @@ public final class CraftWoodButton extends org.bukkit.craftbukkit.block.data.Cra
         super();
     }
 
-    public CraftWoodButton(net.minecraft.world.level.block.state.IBlockData state) {
+    public CraftWoodButton(net.minecraft.world.level.block.state.BlockState state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.type.CraftSwitch
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateEnum<?> FACE = getEnum(net.minecraft.world.level.block.BlockWoodButton.class, "face");
+    private static final net.minecraft.world.level.block.state.properties.EnumProperty<?> FACE = getEnum(net.minecraft.world.level.block.WoodButtonBlock.class, "face");
 
     @Override
     public org.bukkit.block.data.type.Switch.Face getFace() {
-        return get(FACE, org.bukkit.block.data.type.Switch.Face.class);
+        return get(CraftWoodButton.FACE, org.bukkit.block.data.type.Switch.Face.class);
     }
 
     @Override
     public void setFace(org.bukkit.block.data.type.Switch.Face face) {
-        set(FACE, face);
+        set(CraftWoodButton.FACE, face);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftDirectional
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateEnum<?> FACING = getEnum(net.minecraft.world.level.block.BlockWoodButton.class, "facing");
+    private static final net.minecraft.world.level.block.state.properties.EnumProperty<?> FACING = getEnum(net.minecraft.world.level.block.WoodButtonBlock.class, "facing");
 
     @Override
     public org.bukkit.block.BlockFace getFacing() {
-        return get(FACING, org.bukkit.block.BlockFace.class);
+        return get(CraftWoodButton.FACING, org.bukkit.block.BlockFace.class);
     }
 
     @Override
     public void setFacing(org.bukkit.block.BlockFace facing) {
-        set(FACING, facing);
+        set(CraftWoodButton.FACING, facing);
     }
 
     @Override
     public java.util.Set<org.bukkit.block.BlockFace> getFaces() {
-        return getValues(FACING, org.bukkit.block.BlockFace.class);
+        return getValues(CraftWoodButton.FACING, org.bukkit.block.BlockFace.class);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftFaceAttachable
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateEnum<?> ATTACH_FACE = getEnum(net.minecraft.world.level.block.BlockWoodButton.class, "face");
+    private static final net.minecraft.world.level.block.state.properties.EnumProperty<?> ATTACH_FACE = getEnum(net.minecraft.world.level.block.WoodButtonBlock.class, "face");
 
     @Override
     public org.bukkit.block.data.FaceAttachable.AttachedFace getAttachedFace() {
-        return get(ATTACH_FACE, org.bukkit.block.data.FaceAttachable.AttachedFace.class);
+        return get(CraftWoodButton.ATTACH_FACE, org.bukkit.block.data.FaceAttachable.AttachedFace.class);
     }
 
     @Override
     public void setAttachedFace(org.bukkit.block.data.FaceAttachable.AttachedFace face) {
-        set(ATTACH_FACE, face);
+        set(CraftWoodButton.ATTACH_FACE, face);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftPowerable
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean POWERED = getBoolean(net.minecraft.world.level.block.BlockWoodButton.class, "powered");
+    private static final net.minecraft.world.level.block.state.properties.BooleanProperty POWERED = getBoolean(net.minecraft.world.level.block.WoodButtonBlock.class, "powered");
 
     @Override
     public boolean isPowered() {
-        return get(POWERED);
+        return get(CraftWoodButton.POWERED);
     }
 
     @Override
     public void setPowered(boolean powered) {
-        set(POWERED, powered);
+        set(CraftWoodButton.POWERED, powered);
     }
 }

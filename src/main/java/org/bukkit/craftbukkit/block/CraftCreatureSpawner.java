@@ -2,22 +2,21 @@ package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
 import java.util.Optional;
-import net.minecraft.world.entity.EntityTypes;
-import net.minecraft.world.level.block.entity.TileEntityMobSpawner;
+import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
 import org.bukkit.World;
 import org.bukkit.block.CreatureSpawner;
 import org.bukkit.entity.EntityType;
 
-public class CraftCreatureSpawner extends CraftBlockEntityState<TileEntityMobSpawner> implements CreatureSpawner {
+public class CraftCreatureSpawner extends CraftBlockEntityState<SpawnerBlockEntity> implements CreatureSpawner {
 
-    public CraftCreatureSpawner(World world, TileEntityMobSpawner tileEntity) {
+    public CraftCreatureSpawner(World world, SpawnerBlockEntity tileEntity) {
         super(world, tileEntity);
     }
 
     @Override
     public EntityType getSpawnedType() {
-        Optional<EntityTypes<?>> type = EntityTypes.by(this.getSnapshot().getSpawner().nextSpawnData.getEntityToSpawn());
-        return (type.isEmpty()) ? EntityType.PIG : EntityType.fromName(EntityTypes.getKey(type.get()).getPath());
+        Optional<net.minecraft.world.entity.EntityType<?>> type = net.minecraft.world.entity.EntityType.by(this.getSnapshot().getSpawner().nextSpawnData.getEntityToSpawn());
+        return (type.isEmpty()) ? EntityType.PIG : EntityType.fromName(net.minecraft.world.entity.EntityType.getKey(type.get()).getPath());
     }
 
     @Override
@@ -26,13 +25,13 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<TileEntityMobSpa
             throw new IllegalArgumentException("Can't spawn EntityType " + entityType + " from mobspawners!");
         }
 
-        this.getSnapshot().getSpawner().setEntityId(EntityTypes.byString(entityType.getName()).get());
+        this.getSnapshot().getSpawner().setEntityId(net.minecraft.world.entity.EntityType.byString(entityType.getName()).get());
     }
 
     @Override
     public String getCreatureTypeName() {
-        Optional<EntityTypes<?>> type = EntityTypes.by(this.getSnapshot().getSpawner().nextSpawnData.getEntityToSpawn());
-        return (type.isEmpty()) ? "" : EntityTypes.getKey(type.get()).getPath();
+        Optional<net.minecraft.world.entity.EntityType<?>> type = net.minecraft.world.entity.EntityType.by(this.getSnapshot().getSpawner().nextSpawnData.getEntityToSpawn());
+        return (type.isEmpty()) ? "" : net.minecraft.world.entity.EntityType.getKey(type.get()).getPath();
     }
 
     @Override
@@ -42,7 +41,7 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<TileEntityMobSpa
         if (type == null) {
             return;
         }
-        setSpawnedType(type);
+        this.setSpawnedType(type);
     }
 
     @Override
@@ -62,7 +61,7 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<TileEntityMobSpa
 
     @Override
     public void setMinSpawnDelay(int spawnDelay) {
-        Preconditions.checkArgument(spawnDelay <= getMaxSpawnDelay(), "Minimum Spawn Delay must be less than or equal to Maximum Spawn Delay");
+        Preconditions.checkArgument(spawnDelay <= this.getMaxSpawnDelay(), "Minimum Spawn Delay must be less than or equal to Maximum Spawn Delay");
         this.getSnapshot().getSpawner().minSpawnDelay = spawnDelay;
     }
 
@@ -74,7 +73,7 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<TileEntityMobSpa
     @Override
     public void setMaxSpawnDelay(int spawnDelay) {
         Preconditions.checkArgument(spawnDelay > 0, "Maximum Spawn Delay must be greater than 0.");
-        Preconditions.checkArgument(spawnDelay >= getMinSpawnDelay(), "Maximum Spawn Delay must be greater than or equal to Minimum Spawn Delay");
+        Preconditions.checkArgument(spawnDelay >= this.getMinSpawnDelay(), "Maximum Spawn Delay must be greater than or equal to Minimum Spawn Delay");
         this.getSnapshot().getSpawner().maxSpawnDelay = spawnDelay;
     }
 

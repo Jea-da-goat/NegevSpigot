@@ -3,7 +3,7 @@ package net.minecraft.world.entity.animal.axolotl;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.mojang.logging.LogUtils;
-import com.mojang.math.Vector3fa;
+import com.mojang.math.Vector3f;
 import com.mojang.serialization.Dynamic;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -11,65 +11,65 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import net.minecraft.SystemUtils;
-import net.minecraft.core.BlockPosition;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.network.protocol.game.PacketDebug;
-import net.minecraft.network.syncher.DataWatcher;
-import net.minecraft.network.syncher.DataWatcherObject;
-import net.minecraft.network.syncher.DataWatcherRegistry;
-import net.minecraft.server.level.WorldServer;
-import net.minecraft.sounds.SoundEffect;
-import net.minecraft.sounds.SoundEffects;
-import net.minecraft.tags.TagsBlock;
-import net.minecraft.tags.TagsItem;
+import net.minecraft.Util;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.protocol.game.DebugPackets;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.DifficultyDamageScaler;
-import net.minecraft.world.EnumHand;
-import net.minecraft.world.EnumInteractionResult;
+import net.minecraft.world.DifficultyInstance;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityAgeable;
-import net.minecraft.world.entity.EntityInsentient;
-import net.minecraft.world.entity.EntityLiving;
-import net.minecraft.world.entity.EntityPose;
-import net.minecraft.world.entity.EntitySize;
-import net.minecraft.world.entity.EntityTypes;
-import net.minecraft.world.entity.EnumMobSpawn;
-import net.minecraft.world.entity.EnumMonsterType;
-import net.minecraft.world.entity.EnumMoveType;
-import net.minecraft.world.entity.GroupDataEntity;
+import net.minecraft.world.entity.EntityDimensions;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LerpingModel;
-import net.minecraft.world.entity.ai.BehaviorController;
-import net.minecraft.world.entity.ai.attributes.AttributeProvider;
-import net.minecraft.world.entity.ai.attributes.GenericAttributes;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.MobType;
+import net.minecraft.world.entity.MoverType;
+import net.minecraft.world.entity.Pose;
+import net.minecraft.world.entity.SpawnGroupData;
+import net.minecraft.world.entity.ai.Brain;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.control.SmoothSwimmingLookControl;
 import net.minecraft.world.entity.ai.control.SmoothSwimmingMoveControl;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.navigation.AmphibiousPathNavigation;
-import net.minecraft.world.entity.ai.navigation.NavigationAbstract;
+import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.ai.sensing.Sensor;
 import net.minecraft.world.entity.ai.sensing.SensorType;
+import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.animal.Bucketable;
-import net.minecraft.world.entity.animal.EntityAnimal;
-import net.minecraft.world.entity.player.EntityHuman;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.IWorldReader;
-import net.minecraft.world.level.World;
-import net.minecraft.world.level.WorldAccess;
-import net.minecraft.world.level.pathfinder.PathType;
-import net.minecraft.world.phys.Vec3D;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.pathfinder.BlockPathTypes;
+import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
 
-public class Axolotl extends EntityAnimal implements LerpingModel, Bucketable {
+public class Axolotl extends Animal implements LerpingModel, Bucketable {
 
     // CraftBukkit start - SPIGOT-6907: re-implement LivingEntity#setMaximumAir()
     @Override
     public int getDefaultMaxAirSupply() {
-        return AXOLOTL_TOTAL_AIR_SUPPLY;
+        return Axolotl.AXOLOTL_TOTAL_AIR_SUPPLY;
     }
     // CraftBukkit end
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -77,33 +77,33 @@ public class Axolotl extends EntityAnimal implements LerpingModel, Bucketable {
     protected static final ImmutableList<? extends SensorType<? extends Sensor<? super Axolotl>>> SENSOR_TYPES = ImmutableList.of(SensorType.NEAREST_LIVING_ENTITIES, SensorType.NEAREST_ADULT, SensorType.HURT_BY, SensorType.AXOLOTL_ATTACKABLES, SensorType.AXOLOTL_TEMPTATIONS);
     // CraftBukkit - decompile error
     protected static final ImmutableList<? extends MemoryModuleType<?>> MEMORY_TYPES = ImmutableList.<MemoryModuleType<?>>of(MemoryModuleType.BREED_TARGET, MemoryModuleType.NEAREST_LIVING_ENTITIES, MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES, MemoryModuleType.NEAREST_VISIBLE_PLAYER, MemoryModuleType.NEAREST_VISIBLE_ATTACKABLE_PLAYER, MemoryModuleType.LOOK_TARGET, MemoryModuleType.WALK_TARGET, MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE, MemoryModuleType.PATH, MemoryModuleType.ATTACK_TARGET, MemoryModuleType.ATTACK_COOLING_DOWN, MemoryModuleType.NEAREST_VISIBLE_ADULT, new MemoryModuleType[]{MemoryModuleType.HURT_BY_ENTITY, MemoryModuleType.PLAY_DEAD_TICKS, MemoryModuleType.NEAREST_ATTACKABLE, MemoryModuleType.TEMPTING_PLAYER, MemoryModuleType.TEMPTATION_COOLDOWN_TICKS, MemoryModuleType.IS_TEMPTED, MemoryModuleType.HAS_HUNTING_COOLDOWN, MemoryModuleType.IS_PANICKING});
-    private static final DataWatcherObject<Integer> DATA_VARIANT = DataWatcher.defineId(Axolotl.class, DataWatcherRegistry.INT);
-    private static final DataWatcherObject<Boolean> DATA_PLAYING_DEAD = DataWatcher.defineId(Axolotl.class, DataWatcherRegistry.BOOLEAN);
-    private static final DataWatcherObject<Boolean> FROM_BUCKET = DataWatcher.defineId(Axolotl.class, DataWatcherRegistry.BOOLEAN);
+    private static final EntityDataAccessor<Integer> DATA_VARIANT = SynchedEntityData.defineId(Axolotl.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> DATA_PLAYING_DEAD = SynchedEntityData.defineId(Axolotl.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> FROM_BUCKET = SynchedEntityData.defineId(Axolotl.class, EntityDataSerializers.BOOLEAN);
     public static final double PLAYER_REGEN_DETECTION_RANGE = 20.0D;
     public static final int RARE_VARIANT_CHANCE = 1200;
     private static final int AXOLOTL_TOTAL_AIR_SUPPLY = 6000;
     public static final String VARIANT_TAG = "Variant";
     private static final int REHYDRATE_AIR_SUPPLY = 1800;
     private static final int REGEN_BUFF_MAX_DURATION = 2400;
-    private final Map<String, Vector3fa> modelRotationValues = Maps.newHashMap();
+    private final Map<String, Vector3f> modelRotationValues = Maps.newHashMap();
     private static final int REGEN_BUFF_BASE_DURATION = 100;
 
-    public Axolotl(EntityTypes<? extends Axolotl> entitytypes, World world) {
-        super(entitytypes, world);
-        this.setPathfindingMalus(PathType.WATER, 0.0F);
-        this.moveControl = new Axolotl.c(this);
-        this.lookControl = new Axolotl.b(this, 20);
+    public Axolotl(EntityType<? extends Axolotl> type, Level world) {
+        super(type, world);
+        this.setPathfindingMalus(BlockPathTypes.WATER, 0.0F);
+        this.moveControl = new Axolotl.AxolotlMoveControl(this);
+        this.lookControl = new Axolotl.AxolotlLookControl(this, 20);
         this.maxUpStep = 1.0F;
     }
 
     @Override
-    public Map<String, Vector3fa> getModelRotationValues() {
+    public Map<String, Vector3f> getModelRotationValues() {
         return this.modelRotationValues;
     }
 
     @Override
-    public float getWalkTargetValue(BlockPosition blockposition, IWorldReader iworldreader) {
+    public float getWalkTargetValue(BlockPos pos, LevelReader world) {
         return 0.0F;
     }
 
@@ -116,17 +116,17 @@ public class Axolotl extends EntityAnimal implements LerpingModel, Bucketable {
     }
 
     @Override
-    public void addAdditionalSaveData(NBTTagCompound nbttagcompound) {
-        super.addAdditionalSaveData(nbttagcompound);
-        nbttagcompound.putInt("Variant", this.getVariant().getId());
-        nbttagcompound.putBoolean("FromBucket", this.fromBucket());
+    public void addAdditionalSaveData(CompoundTag nbt) {
+        super.addAdditionalSaveData(nbt);
+        nbt.putInt("Variant", this.getVariant().getId());
+        nbt.putBoolean("FromBucket", this.fromBucket());
     }
 
     @Override
-    public void readAdditionalSaveData(NBTTagCompound nbttagcompound) {
-        super.readAdditionalSaveData(nbttagcompound);
-        this.setVariant(Axolotl.Variant.BY_ID[nbttagcompound.getInt("Variant")]);
-        this.setFromBucket(nbttagcompound.getBoolean("FromBucket"));
+    public void readAdditionalSaveData(CompoundTag nbt) {
+        super.readAdditionalSaveData(nbt);
+        this.setVariant(Axolotl.Variant.BY_ID[nbt.getInt("Variant")]);
+        this.setFromBucket(nbt.getBoolean("FromBucket"));
     }
 
     @Override
@@ -137,28 +137,28 @@ public class Axolotl extends EntityAnimal implements LerpingModel, Bucketable {
     }
 
     @Override
-    public GroupDataEntity finalizeSpawn(WorldAccess worldaccess, DifficultyDamageScaler difficultydamagescaler, EnumMobSpawn enummobspawn, @Nullable GroupDataEntity groupdataentity, @Nullable NBTTagCompound nbttagcompound) {
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficulty, MobSpawnType spawnReason, @Nullable SpawnGroupData entityData, @Nullable CompoundTag entityNbt) {
         boolean flag = false;
 
-        if (enummobspawn == EnumMobSpawn.BUCKET) {
-            return (GroupDataEntity) groupdataentity;
+        if (spawnReason == MobSpawnType.BUCKET) {
+            return (SpawnGroupData) entityData;
         } else {
-            RandomSource randomsource = worldaccess.getRandom();
+            RandomSource randomsource = world.getRandom();
 
-            if (groupdataentity instanceof Axolotl.a) {
-                if (((Axolotl.a) groupdataentity).getGroupSize() >= 2) {
+            if (entityData instanceof Axolotl.AxolotlGroupData) {
+                if (((Axolotl.AxolotlGroupData) entityData).getGroupSize() >= 2) {
                     flag = true;
                 }
             } else {
-                groupdataentity = new Axolotl.a(new Axolotl.Variant[]{Axolotl.Variant.getCommonSpawnVariant(randomsource), Axolotl.Variant.getCommonSpawnVariant(randomsource)});
+                entityData = new Axolotl.AxolotlGroupData(new Axolotl.Variant[]{Axolotl.Variant.getCommonSpawnVariant(randomsource), Axolotl.Variant.getCommonSpawnVariant(randomsource)});
             }
 
-            this.setVariant(((Axolotl.a) groupdataentity).getVariant(randomsource));
+            this.setVariant(((Axolotl.AxolotlGroupData) entityData).getVariant(randomsource));
             if (flag) {
                 this.setAge(-24000);
             }
 
-            return super.finalizeSpawn(worldaccess, difficultydamagescaler, enummobspawn, (GroupDataEntity) groupdataentity, nbttagcompound);
+            return super.finalizeSpawn(world, difficulty, spawnReason, (SpawnGroupData) entityData, entityNbt);
         }
     }
 
@@ -173,9 +173,9 @@ public class Axolotl extends EntityAnimal implements LerpingModel, Bucketable {
 
     }
 
-    protected void handleAirSupply(int i) {
+    protected void handleAirSupply(int air) {
         if (this.isAlive() && !this.isInWaterRainOrBubble()) {
-            this.setAirSupply(i - 1);
+            this.setAirSupply(air - 1);
             if (this.getAirSupply() == -20) {
                 this.setAirSupply(0);
                 this.hurt(DamageSource.DRY_OUT, 2.0F);
@@ -201,17 +201,17 @@ public class Axolotl extends EntityAnimal implements LerpingModel, Bucketable {
         return Axolotl.Variant.BY_ID[(Integer) this.entityData.get(Axolotl.DATA_VARIANT)];
     }
 
-    public void setVariant(Axolotl.Variant axolotl_variant) {
-        this.entityData.set(Axolotl.DATA_VARIANT, axolotl_variant.getId());
+    public void setVariant(Axolotl.Variant variant) {
+        this.entityData.set(Axolotl.DATA_VARIANT, variant.getId());
     }
 
-    private static boolean useRareVariant(RandomSource randomsource) {
-        return randomsource.nextInt(1200) == 0;
+    private static boolean useRareVariant(RandomSource random) {
+        return random.nextInt(1200) == 0;
     }
 
     @Override
-    public boolean checkSpawnObstruction(IWorldReader iworldreader) {
-        return iworldreader.isUnobstructed(this);
+    public boolean checkSpawnObstruction(LevelReader world) {
+        return world.isUnobstructed(this);
     }
 
     @Override
@@ -225,12 +225,12 @@ public class Axolotl extends EntityAnimal implements LerpingModel, Bucketable {
     }
 
     @Override
-    public EnumMonsterType getMobType() {
-        return EnumMonsterType.WATER;
+    public MobType getMobType() {
+        return MobType.WATER;
     }
 
-    public void setPlayingDead(boolean flag) {
-        this.entityData.set(Axolotl.DATA_PLAYING_DEAD, flag);
+    public void setPlayingDead(boolean playingDead) {
+        this.entityData.set(Axolotl.DATA_PLAYING_DEAD, playingDead);
     }
 
     public boolean isPlayingDead() {
@@ -243,22 +243,22 @@ public class Axolotl extends EntityAnimal implements LerpingModel, Bucketable {
     }
 
     @Override
-    public void setFromBucket(boolean flag) {
-        this.entityData.set(Axolotl.FROM_BUCKET, flag);
+    public void setFromBucket(boolean fromBucket) {
+        this.entityData.set(Axolotl.FROM_BUCKET, fromBucket);
     }
 
     @Nullable
     @Override
-    public EntityAgeable getBreedOffspring(WorldServer worldserver, EntityAgeable entityageable) {
-        Axolotl axolotl = (Axolotl) EntityTypes.AXOLOTL.create(worldserver);
+    public AgeableMob getBreedOffspring(ServerLevel world, AgeableMob entity) {
+        Axolotl axolotl = (Axolotl) EntityType.AXOLOTL.create(world);
 
         if (axolotl != null) {
             Axolotl.Variant axolotl_variant;
 
-            if (useRareVariant(this.random)) {
+            if (Axolotl.useRareVariant(this.random)) {
                 axolotl_variant = Axolotl.Variant.getRareSpawnVariant(this.random);
             } else {
-                axolotl_variant = this.random.nextBoolean() ? this.getVariant() : ((Axolotl) entityageable).getVariant();
+                axolotl_variant = this.random.nextBoolean() ? this.getVariant() : ((Axolotl) entity).getVariant();
             }
 
             axolotl.setVariant(axolotl_variant);
@@ -269,24 +269,24 @@ public class Axolotl extends EntityAnimal implements LerpingModel, Bucketable {
     }
 
     @Override
-    public double getMeleeAttackRangeSqr(EntityLiving entityliving) {
-        return 1.5D + (double) entityliving.getBbWidth() * 2.0D;
+    public double getMeleeAttackRangeSqr(LivingEntity target) {
+        return 1.5D + (double) target.getBbWidth() * 2.0D;
     }
 
     @Override
-    public boolean isFood(ItemStack itemstack) {
-        return itemstack.is(TagsItem.AXOLOTL_TEMPT_ITEMS);
+    public boolean isFood(ItemStack stack) {
+        return stack.is(ItemTags.AXOLOTL_TEMPT_ITEMS);
     }
 
     @Override
-    public boolean canBeLeashed(EntityHuman entityhuman) {
+    public boolean canBeLeashed(Player player) {
         return true;
     }
 
     @Override
     protected void customServerAiStep() {
         this.level.getProfiler().push("axolotlBrain");
-        this.getBrain().tick((WorldServer) this.level, this);
+        this.getBrain().tick((ServerLevel) this.level, this);
         this.level.getProfiler().pop();
         this.level.getProfiler().push("axolotlActivityUpdate");
         AxolotlAi.updateActivity(this);
@@ -299,41 +299,41 @@ public class Axolotl extends EntityAnimal implements LerpingModel, Bucketable {
 
     }
 
-    public static AttributeProvider.Builder createAttributes() {
-        return EntityInsentient.createMobAttributes().add(GenericAttributes.MAX_HEALTH, 14.0D).add(GenericAttributes.MOVEMENT_SPEED, 1.0D).add(GenericAttributes.ATTACK_DAMAGE, 2.0D);
+    public static AttributeSupplier.Builder createAttributes() {
+        return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 14.0D).add(Attributes.MOVEMENT_SPEED, 1.0D).add(Attributes.ATTACK_DAMAGE, 2.0D);
     }
 
     @Override
-    protected NavigationAbstract createNavigation(World world) {
+    protected PathNavigation createNavigation(Level world) {
         return new AmphibiousPathNavigation(this, world);
     }
 
     @Override
-    public boolean doHurtTarget(Entity entity) {
-        boolean flag = entity.hurt(DamageSource.mobAttack(this), (float) ((int) this.getAttributeValue(GenericAttributes.ATTACK_DAMAGE)));
+    public boolean doHurtTarget(Entity target) {
+        boolean flag = target.hurt(DamageSource.mobAttack(this), (float) ((int) this.getAttributeValue(Attributes.ATTACK_DAMAGE)));
 
         if (flag) {
-            this.doEnchantDamageEffects(this, entity);
-            this.playSound(SoundEffects.AXOLOTL_ATTACK, 1.0F, 1.0F);
+            this.doEnchantDamageEffects(this, target);
+            this.playSound(SoundEvents.AXOLOTL_ATTACK, 1.0F, 1.0F);
         }
 
         return flag;
     }
 
     @Override
-    public boolean hurt(DamageSource damagesource, float f) {
+    public boolean hurt(DamageSource source, float amount) {
         float f1 = this.getHealth();
 
-        if (!this.level.isClientSide && !this.isNoAi() && this.level.random.nextInt(3) == 0 && ((float) this.level.random.nextInt(3) < f || f1 / this.getMaxHealth() < 0.5F) && f < f1 && this.isInWater() && (damagesource.getEntity() != null || damagesource.getDirectEntity() != null) && !this.isPlayingDead()) {
+        if (!this.level.isClientSide && !this.isNoAi() && this.level.random.nextInt(3) == 0 && ((float) this.level.random.nextInt(3) < amount || f1 / this.getMaxHealth() < 0.5F) && amount < f1 && this.isInWater() && (source.getEntity() != null || source.getDirectEntity() != null) && !this.isPlayingDead()) {
             this.brain.setMemory(MemoryModuleType.PLAY_DEAD_TICKS, (int) 200);
         }
 
-        return super.hurt(damagesource, f);
+        return super.hurt(source, amount);
     }
 
     @Override
-    protected float getStandingEyeHeight(EntityPose entitypose, EntitySize entitysize) {
-        return entitysize.height * 0.655F;
+    protected float getStandingEyeHeight(Pose pose, EntityDimensions dimensions) {
+        return dimensions.height * 0.655F;
     }
 
     @Override
@@ -347,18 +347,18 @@ public class Axolotl extends EntityAnimal implements LerpingModel, Bucketable {
     }
 
     @Override
-    public EnumInteractionResult mobInteract(EntityHuman entityhuman, EnumHand enumhand) {
-        return (EnumInteractionResult) Bucketable.bucketMobPickup(entityhuman, enumhand, this).orElse(super.mobInteract(entityhuman, enumhand));
+    public InteractionResult mobInteract(Player player, InteractionHand hand) {
+        return (InteractionResult) Bucketable.bucketMobPickup(player, hand, this).orElse(super.mobInteract(player, hand));
     }
 
     @Override
-    public void saveToBucketTag(ItemStack itemstack) {
-        Bucketable.saveDefaultDataToBucketTag(this, itemstack);
-        NBTTagCompound nbttagcompound = itemstack.getOrCreateTag();
+    public void saveToBucketTag(ItemStack stack) {
+        Bucketable.saveDefaultDataToBucketTag(this, stack);
+        CompoundTag nbttagcompound = stack.getOrCreateTag();
 
         nbttagcompound.putInt("Variant", this.getVariant().getId());
         nbttagcompound.putInt("Age", this.getAge());
-        BehaviorController<?> behaviorcontroller = this.getBrain();
+        Brain<?> behaviorcontroller = this.getBrain();
 
         if (behaviorcontroller.hasMemoryValue(MemoryModuleType.HAS_HUNTING_COOLDOWN)) {
             nbttagcompound.putLong("HuntingCooldown", behaviorcontroller.getTimeUntilExpiry(MemoryModuleType.HAS_HUNTING_COOLDOWN));
@@ -367,9 +367,9 @@ public class Axolotl extends EntityAnimal implements LerpingModel, Bucketable {
     }
 
     @Override
-    public void loadFromBucketTag(NBTTagCompound nbttagcompound) {
-        Bucketable.loadDefaultDataFromBucketTag(this, nbttagcompound);
-        int i = nbttagcompound.getInt("Variant");
+    public void loadFromBucketTag(CompoundTag nbt) {
+        Bucketable.loadDefaultDataFromBucketTag(this, nbt);
+        int i = nbt.getInt("Variant");
 
         if (i >= 0 && i < Axolotl.Variant.BY_ID.length) {
             this.setVariant(Axolotl.Variant.BY_ID[i]);
@@ -377,12 +377,12 @@ public class Axolotl extends EntityAnimal implements LerpingModel, Bucketable {
             Axolotl.LOGGER.error("Invalid variant: {}", i);
         }
 
-        if (nbttagcompound.contains("Age")) {
-            this.setAge(nbttagcompound.getInt("Age"));
+        if (nbt.contains("Age")) {
+            this.setAge(nbt.getInt("Age"));
         }
 
-        if (nbttagcompound.contains("HuntingCooldown")) {
-            this.getBrain().setMemoryWithExpiry(MemoryModuleType.HAS_HUNTING_COOLDOWN, true, nbttagcompound.getLong("HuntingCooldown"));
+        if (nbt.contains("HuntingCooldown")) {
+            this.getBrain().setMemoryWithExpiry(MemoryModuleType.HAS_HUNTING_COOLDOWN, true, nbt.getLong("HuntingCooldown"));
         }
 
     }
@@ -393,8 +393,8 @@ public class Axolotl extends EntityAnimal implements LerpingModel, Bucketable {
     }
 
     @Override
-    public SoundEffect getPickupSound() {
-        return SoundEffects.BUCKET_FILL_AXOLOTL;
+    public SoundEvent getPickupSound() {
+        return SoundEvents.BUCKET_FILL_AXOLOTL;
     }
 
     @Override
@@ -402,8 +402,8 @@ public class Axolotl extends EntityAnimal implements LerpingModel, Bucketable {
         return !this.isPlayingDead() && super.canBeSeenAsEnemy();
     }
 
-    public static void onStopAttacking(Axolotl axolotl, EntityLiving entityliving) {
-        World world = axolotl.level;
+    public static void onStopAttacking(Axolotl axolotl, LivingEntity entityliving) {
+        Level world = axolotl.level;
 
         if (entityliving.isDeadOrDying()) {
             DamageSource damagesource = entityliving.getLastDamageSource();
@@ -411,9 +411,9 @@ public class Axolotl extends EntityAnimal implements LerpingModel, Bucketable {
             if (damagesource != null) {
                 Entity entity = damagesource.getEntity();
 
-                if (entity != null && entity.getType() == EntityTypes.PLAYER) {
-                    EntityHuman entityhuman = (EntityHuman) entity;
-                    List<EntityHuman> list = world.getEntitiesOfClass(EntityHuman.class, axolotl.getBoundingBox().inflate(20.0D));
+                if (entity != null && entity.getType() == EntityType.PLAYER) {
+                    Player entityhuman = (Player) entity;
+                    List<Player> list = world.getEntitiesOfClass(Player.class, axolotl.getBoundingBox().inflate(20.0D));
 
                     if (list.contains(entityhuman)) {
                         axolotl.applySupportingEffects(entityhuman);
@@ -424,16 +424,16 @@ public class Axolotl extends EntityAnimal implements LerpingModel, Bucketable {
 
     }
 
-    public void applySupportingEffects(EntityHuman entityhuman) {
-        MobEffect mobeffect = entityhuman.getEffect(MobEffects.REGENERATION);
+    public void applySupportingEffects(Player player) {
+        MobEffectInstance mobeffect = player.getEffect(MobEffects.REGENERATION);
         int i = mobeffect != null ? mobeffect.getDuration() : 0;
 
         if (i < 2400) {
             i = Math.min(2400, 100 + i);
-            entityhuman.addEffect(new MobEffect(MobEffects.REGENERATION, i, 0), this, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.AXOLOTL); // CraftBukkit
+            player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, i, 0), this, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.AXOLOTL); // CraftBukkit
         }
 
-        entityhuman.removeEffect(MobEffects.DIG_SLOWDOWN);
+        player.removeEffect(MobEffects.DIG_SLOWDOWN);
     }
 
     @Override
@@ -442,89 +442,89 @@ public class Axolotl extends EntityAnimal implements LerpingModel, Bucketable {
     }
 
     @Override
-    protected SoundEffect getHurtSound(DamageSource damagesource) {
-        return SoundEffects.AXOLOTL_HURT;
+    protected SoundEvent getHurtSound(DamageSource source) {
+        return SoundEvents.AXOLOTL_HURT;
     }
 
     @Nullable
     @Override
-    protected SoundEffect getDeathSound() {
-        return SoundEffects.AXOLOTL_DEATH;
+    public SoundEvent getDeathSound() {
+        return SoundEvents.AXOLOTL_DEATH;
     }
 
     @Nullable
     @Override
-    protected SoundEffect getAmbientSound() {
-        return this.isInWater() ? SoundEffects.AXOLOTL_IDLE_WATER : SoundEffects.AXOLOTL_IDLE_AIR;
+    protected SoundEvent getAmbientSound() {
+        return this.isInWater() ? SoundEvents.AXOLOTL_IDLE_WATER : SoundEvents.AXOLOTL_IDLE_AIR;
     }
 
     @Override
-    protected SoundEffect getSwimSplashSound() {
-        return SoundEffects.AXOLOTL_SPLASH;
+    protected SoundEvent getSwimSplashSound() {
+        return SoundEvents.AXOLOTL_SPLASH;
     }
 
     @Override
-    protected SoundEffect getSwimSound() {
-        return SoundEffects.AXOLOTL_SWIM;
+    protected SoundEvent getSwimSound() {
+        return SoundEvents.AXOLOTL_SWIM;
     }
 
     @Override
-    protected BehaviorController.b<Axolotl> brainProvider() {
-        return BehaviorController.provider(Axolotl.MEMORY_TYPES, Axolotl.SENSOR_TYPES);
+    protected Brain.Provider<Axolotl> brainProvider() {
+        return Brain.provider(Axolotl.MEMORY_TYPES, Axolotl.SENSOR_TYPES);
     }
 
     @Override
-    protected BehaviorController<?> makeBrain(Dynamic<?> dynamic) {
+    protected Brain<?> makeBrain(Dynamic<?> dynamic) {
         return AxolotlAi.makeBrain(this.brainProvider().makeBrain(dynamic));
     }
 
     @Override
-    public BehaviorController<Axolotl> getBrain() {
-        return (BehaviorController<Axolotl>) super.getBrain(); // CraftBukkit - decompile error
+    public Brain<Axolotl> getBrain() {
+        return (Brain<Axolotl>) super.getBrain(); // CraftBukkit - decompile error
     }
 
     @Override
     protected void sendDebugPackets() {
         super.sendDebugPackets();
-        PacketDebug.sendEntityBrain(this);
+        DebugPackets.sendEntityBrain(this);
     }
 
     @Override
-    public void travel(Vec3D vec3d) {
+    public void travel(Vec3 movementInput) {
         if (this.isEffectiveAi() && this.isInWater()) {
-            this.moveRelative(this.getSpeed(), vec3d);
-            this.move(EnumMoveType.SELF, this.getDeltaMovement());
+            this.moveRelative(this.getSpeed(), movementInput);
+            this.move(MoverType.SELF, this.getDeltaMovement());
             this.setDeltaMovement(this.getDeltaMovement().scale(0.9D));
         } else {
-            super.travel(vec3d);
+            super.travel(movementInput);
         }
 
     }
 
     @Override
-    protected void usePlayerItem(EntityHuman entityhuman, EnumHand enumhand, ItemStack itemstack) {
-        if (itemstack.is(Items.TROPICAL_FISH_BUCKET)) {
-            entityhuman.setItemInHand(enumhand, new ItemStack(Items.WATER_BUCKET));
+    protected void usePlayerItem(Player player, InteractionHand hand, ItemStack stack) {
+        if (stack.is(Items.TROPICAL_FISH_BUCKET)) {
+            player.setItemInHand(hand, new ItemStack(Items.WATER_BUCKET));
         } else {
-            super.usePlayerItem(entityhuman, enumhand, itemstack);
+            super.usePlayerItem(player, hand, stack);
         }
 
     }
 
     @Override
-    public boolean removeWhenFarAway(double d0) {
+    public boolean removeWhenFarAway(double distanceSquared) {
         return !this.fromBucket() && !this.hasCustomName();
     }
 
-    public static boolean checkAxolotlSpawnRules(EntityTypes<? extends EntityLiving> entitytypes, WorldAccess worldaccess, EnumMobSpawn enummobspawn, BlockPosition blockposition, RandomSource randomsource) {
-        return worldaccess.getBlockState(blockposition.below()).is(TagsBlock.AXOLOTLS_SPAWNABLE_ON);
+    public static boolean checkAxolotlSpawnRules(EntityType<? extends LivingEntity> type, ServerLevelAccessor world, MobSpawnType reason, BlockPos pos, RandomSource random) {
+        return world.getBlockState(pos.below()).is(BlockTags.AXOLOTLS_SPAWNABLE_ON);
     }
 
-    private static class c extends SmoothSwimmingMoveControl {
+    private static class AxolotlMoveControl extends SmoothSwimmingMoveControl {
 
         private final Axolotl axolotl;
 
-        public c(Axolotl axolotl) {
+        public AxolotlMoveControl(Axolotl axolotl) {
             super(axolotl, 85, 10, 0.1F, 0.5F, false);
             this.axolotl = axolotl;
         }
@@ -538,9 +538,9 @@ public class Axolotl extends EntityAnimal implements LerpingModel, Bucketable {
         }
     }
 
-    private class b extends SmoothSwimmingLookControl {
+    private class AxolotlLookControl extends SmoothSwimmingLookControl {
 
-        public b(Axolotl axolotl, int i) {
+        public AxolotlLookControl(Axolotl axolotl, int i) {
             super(axolotl, i);
         }
 
@@ -578,36 +578,36 @@ public class Axolotl extends EntityAnimal implements LerpingModel, Bucketable {
             return this.name;
         }
 
-        public static Axolotl.Variant getCommonSpawnVariant(RandomSource randomsource) {
-            return getSpawnVariant(randomsource, true);
+        public static Axolotl.Variant getCommonSpawnVariant(RandomSource random) {
+            return getSpawnVariant(random, true);
         }
 
-        public static Axolotl.Variant getRareSpawnVariant(RandomSource randomsource) {
-            return getSpawnVariant(randomsource, false);
+        public static Axolotl.Variant getRareSpawnVariant(RandomSource random) {
+            return getSpawnVariant(random, false);
         }
 
-        private static Axolotl.Variant getSpawnVariant(RandomSource randomsource, boolean flag) {
+        private static Axolotl.Variant getSpawnVariant(RandomSource random, boolean natural) {
             Axolotl.Variant[] aaxolotl_variant = (Axolotl.Variant[]) Arrays.stream(Axolotl.Variant.BY_ID).filter((axolotl_variant) -> {
-                return axolotl_variant.common == flag;
+                return axolotl_variant.common == natural;
             }).toArray((i) -> {
                 return new Axolotl.Variant[i];
             });
 
-            return (Axolotl.Variant) SystemUtils.getRandom((Object[]) aaxolotl_variant, randomsource);
+            return (Axolotl.Variant) Util.getRandom((Object[]) aaxolotl_variant, random);
         }
     }
 
-    public static class a extends EntityAgeable.a {
+    public static class AxolotlGroupData extends AgeableMob.AgeableMobGroupData {
 
         public final Axolotl.Variant[] types;
 
-        public a(Axolotl.Variant... aaxolotl_variant) {
+        public AxolotlGroupData(Axolotl.Variant... variants) {
             super(false);
-            this.types = aaxolotl_variant;
+            this.types = variants;
         }
 
-        public Axolotl.Variant getVariant(RandomSource randomsource) {
-            return this.types[randomsource.nextInt(this.types.length)];
+        public Axolotl.Variant getVariant(RandomSource random) {
+            return this.types[random.nextInt(this.types.length)];
         }
     }
 }

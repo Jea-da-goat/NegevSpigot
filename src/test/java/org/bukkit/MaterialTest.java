@@ -11,8 +11,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.StreamSupport;
-import net.minecraft.core.IRegistry;
-import net.minecraft.resources.MinecraftKey;
+import net.minecraft.core.Registry;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.support.AbstractTestingBase;
@@ -22,7 +22,7 @@ public class MaterialTest extends AbstractTestingBase {
 
     @Test
     public void verifyMapping() {
-        Map<MinecraftKey, Material> materials = Maps.newHashMap();
+        Map<ResourceLocation, Material> materials = Maps.newHashMap();
         for (Material material : Material.values()) {
             if (INVALIDATED_MATERIALS.contains(material)) {
                 continue;
@@ -31,13 +31,13 @@ public class MaterialTest extends AbstractTestingBase {
             materials.put(CraftMagicNumbers.key(material), material);
         }
 
-        Iterator<Item> items = IRegistry.ITEM.iterator();
+        Iterator<Item> items = Registry.ITEM.iterator();
 
         while (items.hasNext()) {
             Item item = items.next();
             if (item == null) continue;
 
-            MinecraftKey id = IRegistry.ITEM.getKey(item);
+            ResourceLocation id = Registry.ITEM.getKey(item);
             String name = item.getDescriptionId();
 
             Material material = materials.remove(id);
@@ -54,12 +54,12 @@ public class MaterialTest extends AbstractTestingBase {
         List<Material> expectedOrder = new ArrayList<>(Material.values().length);
 
         // Start with items in the same order as IRegistry.ITEM
-        StreamSupport.stream(IRegistry.ITEM.spliterator(), false)
+        StreamSupport.stream(Registry.ITEM.spliterator(), false)
                 .map(CraftMagicNumbers::getMaterial)
                 .forEach(expectedOrder::add);
 
         // Then non-item blocks in the same order as IRegistry.BLOCK
-        StreamSupport.stream(IRegistry.BLOCK.spliterator(), false)
+        StreamSupport.stream(Registry.BLOCK.spliterator(), false)
                 .map(CraftMagicNumbers::getMaterial)
                 .filter(block -> !block.isItem())
                 .forEach(expectedOrder::add);

@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.core.Holder;
-import net.minecraft.core.IRegistry;
+import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.decoration.PaintingVariant;
 import org.bukkit.craftbukkit.CraftArt;
@@ -23,11 +23,11 @@ public class ArtTest extends AbstractTestingBase {
     public void verifyMapping() {
         List<Art> arts = Lists.newArrayList(Art.values());
 
-        for (ResourceKey<PaintingVariant> key : IRegistry.PAINTING_VARIANT.registryKeySet()) {
-            Holder<PaintingVariant> enumArt = IRegistry.PAINTING_VARIANT.getHolderOrThrow(key);
+        for (ResourceKey<PaintingVariant> key : Registry.PAINTING_VARIANT.registryKeySet()) {
+            Holder<PaintingVariant> enumArt = Registry.PAINTING_VARIANT.getHolderOrThrow(key);
             String name = key.location().getPath();
-            int width = enumArt.value().getWidth() / UNIT_MULTIPLIER;
-            int height = enumArt.value().getHeight() / UNIT_MULTIPLIER;
+            int width = enumArt.value().getWidth() / ArtTest.UNIT_MULTIPLIER;
+            int height = enumArt.value().getHeight() / ArtTest.UNIT_MULTIPLIER;
 
             Art subject = CraftArt.NotchToBukkit(enumArt);
 
@@ -57,7 +57,7 @@ public class ArtTest extends AbstractTestingBase {
     @Test
     public void testCraftArtToBukkit() {
         Map<Art, Holder<PaintingVariant>> cache = new EnumMap(Art.class);
-        for (Holder<PaintingVariant> enumArt : IRegistry.PAINTING_VARIANT.asHolderIdMap()) {
+        for (Holder<PaintingVariant> enumArt : Registry.PAINTING_VARIANT.asHolderIdMap()) {
             Art art = CraftArt.NotchToBukkit(enumArt);
             assertNotNull("Could not CraftArt.NotchToBukkit " + enumArt, art);
             assertThat("Duplicate artwork " + enumArt, cache.put(art, enumArt), is(nullValue()));

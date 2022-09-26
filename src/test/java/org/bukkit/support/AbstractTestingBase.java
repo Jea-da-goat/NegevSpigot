@@ -5,14 +5,14 @@ import com.google.common.util.concurrent.MoreExecutors;
 import java.util.Collections;
 import java.util.List;
 import net.minecraft.SharedConstants;
-import net.minecraft.commands.CommandDispatcher;
-import net.minecraft.core.IRegistryCustom;
-import net.minecraft.server.DataPackResources;
-import net.minecraft.server.DispenserRegistry;
-import net.minecraft.server.packs.EnumResourcePackType;
-import net.minecraft.server.packs.ResourcePackVanilla;
-import net.minecraft.server.packs.repository.ResourcePackSourceVanilla;
-import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.commands.Commands;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.server.Bootstrap;
+import net.minecraft.server.ReloadableServerResources;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.VanillaPackResources;
+import net.minecraft.server.packs.repository.ServerPacksSource;
+import net.minecraft.server.packs.resources.MultiPackResourceManager;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.junit.Assert;
@@ -29,18 +29,18 @@ public abstract class AbstractTestingBase {
     // Materials that only exist in block form (or are legacy)
     public static final List<Material> INVALIDATED_MATERIALS;
 
-    public static final DataPackResources DATA_PACK;
-    public static final IRegistryCustom.Dimension REGISTRY_CUSTOM;
+    public static final ReloadableServerResources DATA_PACK;
+    public static final RegistryAccess.Frozen REGISTRY_CUSTOM;
 
     static {
         SharedConstants.tryDetectVersion();
-        DispenserRegistry.bootStrap();
+        Bootstrap.bootStrap();
         // Set up resource manager
-        ResourceManager resourceManager = new ResourceManager(EnumResourcePackType.SERVER_DATA, Collections.singletonList(new ResourcePackVanilla(ResourcePackSourceVanilla.BUILT_IN_METADATA, "minecraft")));
+        MultiPackResourceManager resourceManager = new MultiPackResourceManager(PackType.SERVER_DATA, Collections.singletonList(new VanillaPackResources(ServerPacksSource.BUILT_IN_METADATA, "minecraft")));
         // add tags and loot tables for unit tests
-        REGISTRY_CUSTOM = IRegistryCustom.builtinCopy().freeze();
+        REGISTRY_CUSTOM = RegistryAccess.builtinCopy().freeze();
         // Register vanilla pack
-        DATA_PACK = DataPackResources.loadResources(resourceManager, REGISTRY_CUSTOM, CommandDispatcher.ServerType.DEDICATED, 0, MoreExecutors.directExecutor(), MoreExecutors.directExecutor()).join();
+        DATA_PACK = ReloadableServerResources.loadResources(resourceManager, REGISTRY_CUSTOM, Commands.CommandSelection.DEDICATED, 0, MoreExecutors.directExecutor(), MoreExecutors.directExecutor()).join();
         // Bind tags
         DATA_PACK.updateRegistryTags(REGISTRY_CUSTOM);
 

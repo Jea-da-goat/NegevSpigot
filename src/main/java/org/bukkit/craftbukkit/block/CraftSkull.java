@@ -3,7 +3,7 @@ package org.bukkit.craftbukkit.block;
 import com.google.common.base.Preconditions;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.world.level.block.entity.TileEntitySkull;
+import net.minecraft.world.level.block.entity.SkullBlockEntity;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.SkullType;
@@ -17,20 +17,20 @@ import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.profile.CraftPlayerProfile;
 import org.bukkit.profile.PlayerProfile;
 
-public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implements Skull {
+public class CraftSkull extends CraftBlockEntityState<SkullBlockEntity> implements Skull {
 
     private static final int MAX_OWNER_LENGTH = 16;
     private GameProfile profile;
 
-    public CraftSkull(World world, TileEntitySkull tileEntity) {
+    public CraftSkull(World world, SkullBlockEntity tileEntity) {
         super(world, tileEntity);
     }
 
     @Override
-    public void load(TileEntitySkull skull) {
+    public void load(SkullBlockEntity skull) {
         super.load(skull);
 
-        profile = skull.owner;
+        this.profile = skull.owner;
     }
 
     static int getSkullType(SkullType type) {
@@ -53,17 +53,17 @@ public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implement
 
     @Override
     public boolean hasOwner() {
-        return profile != null;
+        return this.profile != null;
     }
 
     @Override
     public String getOwner() {
-        return hasOwner() ? profile.getName() : null;
+        return this.hasOwner() ? this.profile.getName() : null;
     }
 
     @Override
     public boolean setOwner(String name) {
-        if (name == null || name.length() > MAX_OWNER_LENGTH) {
+        if (name == null || name.length() > CraftSkull.MAX_OWNER_LENGTH) {
             return false;
         }
 
@@ -78,13 +78,13 @@ public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implement
 
     @Override
     public OfflinePlayer getOwningPlayer() {
-        if (profile != null) {
-            if (profile.getId() != null) {
-                return Bukkit.getOfflinePlayer(profile.getId());
+        if (this.profile != null) {
+            if (this.profile.getId() != null) {
+                return Bukkit.getOfflinePlayer(this.profile.getId());
             }
 
-            if (profile.getName() != null) {
-                return Bukkit.getOfflinePlayer(profile.getName());
+            if (this.profile.getName() != null) {
+                return Bukkit.getOfflinePlayer(this.profile.getName());
             }
         }
 
@@ -104,11 +104,11 @@ public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implement
 
     @Override
     public PlayerProfile getOwnerProfile() {
-        if (!hasOwner()) {
+        if (!this.hasOwner()) {
             return null;
         }
 
-        return new CraftPlayerProfile(profile);
+        return new CraftPlayerProfile(this.profile);
     }
 
     @Override
@@ -169,10 +169,10 @@ public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implement
     }
 
     @Override
-    public void applyTo(TileEntitySkull skull) {
+    public void applyTo(SkullBlockEntity skull) {
         super.applyTo(skull);
 
-        if (getSkullType() == SkullType.PLAYER) {
+        if (this.getSkullType() == SkullType.PLAYER) {
             skull.setOwner(profile);
         }
     }

@@ -2,7 +2,7 @@ package org.bukkit.craftbukkit.entity;
 
 import java.util.UUID;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.item.EntityItem;
+import net.minecraft.world.entity.item.ItemEntity;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.EntityType;
@@ -10,25 +10,25 @@ import org.bukkit.entity.Item;
 import org.bukkit.inventory.ItemStack;
 
 public class CraftItem extends CraftEntity implements Item {
-    private final EntityItem item;
+    private final ItemEntity item;
 
-    public CraftItem(CraftServer server, Entity entity, EntityItem item) {
+    public CraftItem(CraftServer server, Entity entity, ItemEntity item) {
         super(server, entity);
         this.item = item;
     }
 
-    public CraftItem(CraftServer server, EntityItem entity) {
+    public CraftItem(CraftServer server, ItemEntity entity) {
         this(server, entity, entity);
     }
 
     @Override
     public ItemStack getItemStack() {
-        return CraftItemStack.asCraftMirror(item.getItem());
+        return CraftItemStack.asCraftMirror(this.item.getItem());
     }
 
     @Override
     public void setItemStack(ItemStack stack) {
-        item.setItem(CraftItemStack.asNMSCopy(stack));
+        this.item.setItem(CraftItemStack.asNMSCopy(stack));
     }
 
     @Override
@@ -61,29 +61,29 @@ public class CraftItem extends CraftEntity implements Item {
         super.setTicksLived(value);
 
         // Second field for EntityItem (don't set if lifetime is unlimited)
-        if (!isUnlimitedLifetime()) {
+        if (!this.isUnlimitedLifetime()) {
             item.age = value;
         }
     }
 
     @Override
     public void setOwner(UUID uuid) {
-        item.setOwner(uuid);
+        this.item.setOwner(uuid);
     }
 
     @Override
     public UUID getOwner() {
-        return item.getOwner();
+        return this.item.getOwner();
     }
 
     @Override
     public void setThrower(UUID uuid) {
-        item.setThrower(uuid);
+        this.item.setThrower(uuid);
     }
 
     @Override
     public UUID getThrower() {
-        return item.getThrower();
+        return this.item.getThrower();
     }
 
     @Override

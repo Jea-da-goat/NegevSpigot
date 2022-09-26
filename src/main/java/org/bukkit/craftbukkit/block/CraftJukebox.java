@@ -2,10 +2,10 @@ package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.BlockJukeBox;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.entity.TileEntity;
-import net.minecraft.world.level.block.entity.TileEntityJukeBox;
+import net.minecraft.world.level.block.JukeboxBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.JukeboxBlockEntity;
 import org.bukkit.Effect;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -14,9 +14,9 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 
-public class CraftJukebox extends CraftBlockEntityState<TileEntityJukeBox> implements Jukebox {
+public class CraftJukebox extends CraftBlockEntityState<JukeboxBlockEntity> implements Jukebox {
 
-    public CraftJukebox(World world, TileEntityJukeBox tileEntity) {
+    public CraftJukebox(World world, JukeboxBlockEntity tileEntity) {
         super(world, tileEntity);
     }
 
@@ -28,9 +28,9 @@ public class CraftJukebox extends CraftBlockEntityState<TileEntityJukeBox> imple
             CraftWorld world = (CraftWorld) this.getWorld();
             Material record = this.getPlaying();
             if (record == Material.AIR) {
-                getWorldHandle().setBlock(this.getPosition(), Blocks.JUKEBOX.defaultBlockState().setValue(BlockJukeBox.HAS_RECORD, false), 3);
+                getWorldHandle().setBlock(this.getPosition(), Blocks.JUKEBOX.defaultBlockState().setValue(JukeboxBlock.HAS_RECORD, false), 3);
             } else {
-                getWorldHandle().setBlock(this.getPosition(), Blocks.JUKEBOX.defaultBlockState().setValue(BlockJukeBox.HAS_RECORD, true), 3);
+                getWorldHandle().setBlock(this.getPosition(), Blocks.JUKEBOX.defaultBlockState().setValue(JukeboxBlock.HAS_RECORD, true), 3);
             }
             world.playEffect(this.getLocation(), Effect.RECORD_PLAY, record);
         }
@@ -40,7 +40,7 @@ public class CraftJukebox extends CraftBlockEntityState<TileEntityJukeBox> imple
 
     @Override
     public Material getPlaying() {
-        return getRecord().getType();
+        return this.getRecord().getType();
     }
 
     @Override
@@ -49,7 +49,7 @@ public class CraftJukebox extends CraftBlockEntityState<TileEntityJukeBox> imple
             record = Material.AIR;
         }
 
-        setRecord(new org.bukkit.inventory.ItemStack(record));
+        this.setRecord(new org.bukkit.inventory.ItemStack(record));
     }
 
     @Override
@@ -63,15 +63,15 @@ public class CraftJukebox extends CraftBlockEntityState<TileEntityJukeBox> imple
         ItemStack nms = CraftItemStack.asNMSCopy(record);
         this.getSnapshot().setRecord(nms);
         if (nms.isEmpty()) {
-            this.data = this.data.setValue(BlockJukeBox.HAS_RECORD, false);
+            this.data = this.data.setValue(JukeboxBlock.HAS_RECORD, false);
         } else {
-            this.data = this.data.setValue(BlockJukeBox.HAS_RECORD, true);
+            this.data = this.data.setValue(JukeboxBlock.HAS_RECORD, true);
         }
     }
 
     @Override
     public boolean isPlaying() {
-        return getHandle().getValue(BlockJukeBox.HAS_RECORD);
+        return getHandle().getValue(JukeboxBlock.HAS_RECORD);
     }
 
     @Override
@@ -83,13 +83,13 @@ public class CraftJukebox extends CraftBlockEntityState<TileEntityJukeBox> imple
     public boolean eject() {
         ensureNoWorldGeneration();
 
-        TileEntity tileEntity = this.getTileEntityFromWorld();
-        if (!(tileEntity instanceof TileEntityJukeBox)) return false;
+        BlockEntity tileEntity = this.getTileEntityFromWorld();
+        if (!(tileEntity instanceof JukeboxBlockEntity)) return false;
 
-        TileEntityJukeBox jukebox = (TileEntityJukeBox) tileEntity;
+        JukeboxBlockEntity jukebox = (JukeboxBlockEntity) tileEntity;
         boolean result = !jukebox.getRecord().isEmpty();
         CraftWorld world = (CraftWorld) this.getWorld();
-        ((BlockJukeBox) Blocks.JUKEBOX).dropRecording(world.getHandle(), getPosition());
+        ((JukeboxBlock) Blocks.JUKEBOX).dropRecording(world.getHandle(), getPosition());
         return result;
     }
 }

@@ -2,9 +2,9 @@ package org.bukkit;
 
 import java.util.ArrayList;
 import java.util.List;
-import net.minecraft.core.IRegistry;
+import net.minecraft.core.Registry;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.IBlockData;
+import net.minecraft.world.level.block.state.BlockState;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.Assert;
@@ -22,13 +22,13 @@ public class BlockDataConversionTest extends AbstractTestingBase {
     @Parameterized.Parameters(name = "{index}: {0}")
     public static List<Object[]> args() {
         List<Object[]> list = new ArrayList<>();
-        for (Block block : (Iterable<Block>) IRegistry.BLOCK) {
+        for (Block block : (Iterable<Block>) Registry.BLOCK) {
             list.add(new Object[]{block.defaultBlockState()});
         }
         return list;
     }
 
-    @Parameterized.Parameter(0) public IBlockData data;
+    @Parameterized.Parameter(0) public BlockState data;
 
     @Test
     public void testNotNull() {

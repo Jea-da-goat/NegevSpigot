@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit.generator.strucutre;
 
-import net.minecraft.core.IRegistry;
-import net.minecraft.core.IRegistryCustom;
+import net.minecraft.core.RegistryAccess;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
@@ -10,12 +9,12 @@ import org.bukkit.generator.structure.StructureType;
 
 public class CraftStructure extends Structure {
 
-    public static Structure minecraftToBukkit(net.minecraft.world.level.levelgen.structure.Structure minecraft, IRegistryCustom registryHolder) {
+    public static Structure minecraftToBukkit(net.minecraft.world.level.levelgen.structure.Structure minecraft, RegistryAccess registryHolder) {
         if (minecraft == null) {
             return null;
         }
 
-        return Registry.STRUCTURE.get(CraftNamespacedKey.fromMinecraft(registryHolder.registryOrThrow(IRegistry.STRUCTURE_REGISTRY).getKey(minecraft)));
+        return Registry.STRUCTURE.get(CraftNamespacedKey.fromMinecraft(registryHolder.registryOrThrow(net.minecraft.core.Registry.STRUCTURE_REGISTRY).getKey(minecraft)));
     }
 
     public static net.minecraft.world.level.levelgen.structure.Structure bukkitToMinecraft(Structure bukkit) {
@@ -37,16 +36,16 @@ public class CraftStructure extends Structure {
     }
 
     public net.minecraft.world.level.levelgen.structure.Structure getHandle() {
-        return structure;
+        return this.structure;
     }
 
     @Override
     public StructureType getStructureType() {
-        return structureType;
+        return this.structureType;
     }
 
     @Override
     public NamespacedKey getKey() {
-        return key;
+        return this.key;
     }
 }

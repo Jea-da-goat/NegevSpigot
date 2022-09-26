@@ -5,8 +5,8 @@ import static org.junit.Assert.*;
 import com.google.common.collect.Lists;
 import java.util.Collections;
 import java.util.List;
-import net.minecraft.core.IRegistry;
-import net.minecraft.resources.MinecraftKey;
+import net.minecraft.core.Registry;
+import net.minecraft.resources.ResourceLocation;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.support.AbstractTestingBase;
@@ -18,7 +18,7 @@ public class PotionEffectTypeTest extends AbstractTestingBase {
     public void verifyMapping() {
         List<PotionEffectType> effects = Lists.newArrayList(PotionEffectType.values());
 
-        for (MinecraftKey key : IRegistry.MOB_EFFECT.keySet()) {
+        for (ResourceLocation key : Registry.MOB_EFFECT.keySet()) {
             String name = key.getPath();
             PotionEffectType effect = PotionEffectType.getByKey(CraftNamespacedKey.fromMinecraft(key));
 
