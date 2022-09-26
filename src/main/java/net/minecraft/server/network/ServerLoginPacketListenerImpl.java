@@ -1,6 +1,7 @@
 package net.minecraft.server.network;
 
 import com.google.common.primitives.Ints;
+import com.itndev.Synchronizer.Data.Player.Player;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.exceptions.AuthenticationUnavailableException;
 import com.mojang.logging.LogUtils;
@@ -13,7 +14,6 @@ import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Nullable;
-import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import net.minecraft.DefaultUncaughtExceptionHandler;
 import net.minecraft.core.UUIDUtil;
@@ -120,6 +120,7 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
     }
 
     public void disconnect(Component reason) {
+        Player.UnRegisterPlayer(this.getConnection().getPlayer().getUUID(), reason);
         try {
             ServerLoginPacketListenerImpl.LOGGER.info("Disconnecting {}: {}", this.getUserName(), reason.getString());
             this.connection.send(new ClientboundLoginDisconnectPacket(reason));
@@ -219,6 +220,7 @@ public class ServerLoginPacketListenerImpl implements TickablePacketListener, Se
     }
 
     private void placeNewPlayer(ServerPlayer player) {
+        Player.RegisterPlayer(this.connection, player);
         this.server.getPlayerList().placeNewPlayer(this.connection, player);
     }
 
